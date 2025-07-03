@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SevenxFoot v6.0 - Online</title>
+    <title>SevenxFoot v7.0</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -48,7 +48,7 @@
     <div id="main-menu" class="hidden main-menu-bg min-h-screen flex flex-col items-center justify-center p-4">
         <div class="bg-black bg-opacity-70 p-10 rounded-lg text-center shadow-2xl">
             <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-2">SevenxFoot</h1>
-            <p class="text-teal-400 font-bold text-2xl mb-8">v6.0 - Online</p>
+            <p class="text-teal-400 font-bold text-2xl mb-8">v7.0 - O Jogo Final</p>
             <div class="space-y-4">
                 <button id="start-manager-mode" class="w-full md:w-96 bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira: Técnico</button>
                 <button id="start-player-mode" class="w-full md:w-96 bg-amber-500 hover:bg-amber-400 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira: Jogador</button>
@@ -149,7 +149,6 @@
             let state = {};
 
             // --- CONFIGURAÇÃO DO SUPABASE ---
-            // IMPORTANTE: Substitua com suas chaves do Supabase!
             const SUPABASE_URL = 'https://fwwwpdzvnptcbcoarejm.supabase.co'; 
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3d3dwZHp2bnB0Y2Jjb2FyZWptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NjM2MTQsImV4cCI6MjA2NzEzOTYxNH0.uozT2nfKs4EINeF6Suyp6AbmkrQ4V8W1sG9SWiokU1o';
 
@@ -251,23 +250,7 @@
                 }
             };
             
-            async function init() {
-                if (!supabaseClient) {
-                    UI.authError.textContent = "Supabase não configurado. Edite o script e adicione suas chaves.";
-                    return;
-                }
-                UI.loginBtn.addEventListener('click', handleLogin);
-                UI.signupBtn.addEventListener('click', handleSignup);
-                UI.logoutBtn.addEventListener('click', handleLogout);
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session) {
-                    state.user = session.user;
-                    showScreen(null, UI.mainMenu);
-                } else {
-                    showScreen(null, UI.authScreen);
-                }
-            }
-
+            // --- UTILITY FUNCTIONS ---
             function showScreen(modeContainer, screenToShow) {
                 UI.authScreen.classList.add('hidden');
                 UI.mainMenu.classList.add('hidden');
@@ -277,7 +260,40 @@
                 if (screenToShow) screenToShow.classList.remove('hidden');
                 if (modeContainer) modeContainer.classList.remove('hidden');
             }
+            function showModal(html) { UI.modalContent.innerHTML = html; UI.modal.classList.remove('hidden'); }
+            function closeModal() { UI.modal.classList.add('hidden'); }
+            function toggleAuthLoading(isLoading) {
+                UI.authForm.classList.toggle('hidden', isLoading);
+                UI.authLoading.classList.toggle('hidden', !isLoading);
+                UI.authError.textContent = '';
+            }
+            function getForcaEfetiva(jogador) { return Math.max(jogador.forcaBase - jogador.cansaco + Math.floor((jogador.moral - 100) / 5), 20); }
+
+            // --- GENERAL INITIALIZATION ---
+            async function init() {
+                if (!supabaseClient) {
+                    UI.authError.textContent = "Supabase não configurado. Verifique o console.";
+                    return;
+                }
+                UI.loginBtn.addEventListener('click', handleLogin);
+                UI.signupBtn.addEventListener('click', handleSignup);
+                UI.logoutBtn.addEventListener('click', handleLogout);
+                UI.startManagerBtn.addEventListener('click', () => loadOrCreateCareer('manager'));
+                UI.startPlayerBtn.addEventListener('click', () => loadOrCreateCareer('player'));
+                UI.backToMenuBtns.forEach(btn => btn.addEventListener('click', showMainMenu));
+                document.querySelectorAll('.philosophy-card').forEach(card => {
+                    card.addEventListener('click', (e) => setupManagerMode(e.currentTarget.dataset.philosophy));
+                });
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    state.user = session.user;
+                    showScreen(null, UI.mainMenu);
+                } else {
+                    showScreen(null, UI.authScreen);
+                }
+            }
             
+            // --- AUTH LOGIC ---
             async function handleLogin() {
                 toggleAuthLoading(true);
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email: UI.emailInput.value, password: UI.passwordInput.value });
@@ -300,12 +316,7 @@
                 showScreen(null, UI.authScreen);
             }
 
-            function toggleAuthLoading(isLoading) {
-                UI.authForm.classList.toggle('hidden', isLoading);
-                UI.authLoading.classList.toggle('hidden', !isLoading);
-                UI.authError.textContent = '';
-            }
-
+            // --- SAVE/LOAD LOGIC ---
             async function saveGameState(careerType) {
                 if (!state[careerType] || !state[careerType].id) return;
                 const { error } = await supabaseClient.from(`${careerType}_careers`).update({ game_state: state[careerType] }).eq('id', state[careerType].id);
@@ -397,8 +408,6 @@
                 renderManagerContent(tabId);
             }
             
-            function getForcaEfetiva(jogador) { return Math.max(jogador.forcaBase - jogador.cansaco + Math.floor((jogador.moral - 100) / 5), 20); }
-
             function renderManagerContent(tabId) {
                  UI.managerMode.budget.textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
                  const content = UI.managerMode.content;
