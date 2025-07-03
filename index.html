@@ -94,7 +94,22 @@
                     <h2 id="league-hub-title" class="text-2xl font-bold"></h2>
                     <button class="back-to-menu bg-red-600 hover:bg-red-500 p-2 rounded">Sair da Liga</button>
                 </header>
-                <main id="online-league-content" class="p-4"></main>
+                <main id="online-league-content" class="p-4">
+                    <section id="my-leagues-section">
+                        <h3 class="text-xl font-semibold mb-2">Minhas Ligas</h3>
+                        <ul id="my-leagues-list" class="list-disc list-inside mb-6"></ul>
+                    </section>
+                    <section id="public-leagues-section">
+                        <h3 class="text-xl font-semibold mb-2">Ligas Públicas</h3>
+                        <ul id="public-leagues-list" class="list-disc list-inside"></ul>
+                    </section>
+                    <div class="mt-6">
+                        <input type="text" id="league-name-input" class="w-full p-2 rounded bg-gray-700 border border-gray-600 mb-2" placeholder="Nome da Liga">
+                        <button id="create-league-btn" class="w-full bg-green-600 p-3 rounded btn-action mb-4">Criar Nova Liga</button>
+                        <input type="text" id="league-code-input" class="w-full p-2 rounded bg-gray-700 border border-gray-600 mb-2" placeholder="Código da Liga">
+                        <button id="join-league-btn" class="w-full bg-blue-600 p-3 rounded btn-action">Entrar em Liga</button>
+                    </div>
+                </main>
             </div>
         </div>
         
@@ -221,7 +236,10 @@
                     leagueNameInput: document.getElementById('league-name-input'),
                     leagueCodeInput: document.getElementById('league-code-input'),
                     leagueHubTitle: document.getElementById('league-hub-title'),
+                    myLeaguesList: document.getElementById('my-leagues-list'),
+                    publicLeaguesList: document.getElementById('public-leagues-list'),
                 },
+
                 managerMode: {
                     container: document.getElementById('manager-mode'),
                     philosophyScreen: document.getElementById('manager-philosophy-screen'),
@@ -457,6 +475,79 @@
                 
                 state.onlineLeague = data;
                 await enterLeagueLobby(data.id);
+                await loadUserLeagues();
+                await loadPublicLeagues();
+            }
+
+            async function loadUserLeagues() {
+                const { data, error } = await supabaseClient
+                    .from('online_managers')
+                    .select('league_id, online_leagues(name, code)')
+                    .eq('user_id', state.user.id);
+                if (error) {
+                    console.error(error);
+                    return;
+                }
+                const listEl = document.getElementById('my-leagues-list');
+                listEl.innerHTML = '';
+                data.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = `${item.online_leagues.name} (Código: ${item.online_leagues.code})`;
+                    li.className = 'p-2 cursor-pointer hover:bg-gray-600 rounded';
+                    li.onclick = () => enterLeagueLobby(item.league_id);
+                    listEl.appendChild(li);
+                });
+            }
+
+            async function loadPublicLeagues() {
+                const { data, error } = await supabaseClient
+                    .from('online_leagues')
+                    .select('*')
+                    .neq('owner_id', state.user.id)
+                    .neq('status', 'in_progress');
+                if (error) {
+                    console.error(error);
+                    return;
+                }
+                const listEl = document.getElementById('public-leagues-list');
+                listEl.innerHTML = '';
+                data.forEach(league => {
+                    const li = document.createElement('li');
+                    li.textContent = `${league.name} (Código: ${league.code})`;
+                    li.className = 'p-2 cursor-pointer hover:bg-gray-600 rounded';
+                    li.onclick = () => enterLeagueLobby(league.id);
+                    listEl.appendChild(li);
+                });
+            }
+
+            document.getElementById('create-league-btn').addEventListener('click', createOnlineLeague);
+            document.getElementById('join-league-btn').addEventListener('click', async () => {
+                await joinOnlineLeague();
+                await loadUserLeagues();
+                await loadPublicLeagues();
+            });
+
+            async function enterLeagueLobby(leagueId) {
+                const { data: profile } = await supabaseClient.from('profiles').select('email').eq('id', state.user.id).single();
+                const { error } = await supabaseClient
+                    .from('online_managers')
+                    .insert({ league_id: leagueId, user_id: state.user.id, manager_name: profile.email, team_name: `Time de ${profile.email.split('@')[0]}` });
+
+                if (error && error.code !== '23505') {
+                     console.error(error);
+                     alert("Erro ao entrar no lobby.");
+                     closeModal();
+                     return;
+                }
+
+                showSubScreen('online-mode', 'online-league-hub-screen');
+                UI.onlineMode.leagueHubTitle.textContent = `${state.onlineLeague.name} (Código: ${state.onlineLeague.code})`;
+                
+                await loadUserLeagues();
+                await loadPublicLeagues();
+                await fetchAndRenderLeagueHub(leagueId);
+                setupRealtimeForLeague(leagueId);
+                closeModal();
             }
             
             async function joinOnlineLeague() {
@@ -528,6 +619,10 @@
                 alert("Temporada iniciada! (Funcionalidade em desenvolvimento)");
                 const { error } = await supabaseClient.from('online_leagues').update({ status: 'in_progress' }).eq('id', state.onlineLeague.id);
                 if(error) console.error(error);
+                // TODO: Add real match simulation and progression logic here
+                // Notify players and update league status in real-time
+                // Implement match scheduling and results processing
+                // Enhance UI with match details and stats
             }
 
             function setupRealtimeForLeague(leagueId) {
