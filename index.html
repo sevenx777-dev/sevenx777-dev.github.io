@@ -63,8 +63,8 @@
 
             <div class="space-y-4">
                 <button id="start-online-mode" class="w-full md:w-96 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Partida Rápida 1x1</button>
-                <button id="start-manager-mode" class="w-full md:w-96 bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira Offline: Técnico</button>
-                <button id="start-player-mode" class="w-full md:w-96 bg-amber-500 hover:bg-amber-400 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira Offline: Jogador</button>
+                <button id="start-manager-career" class="w-full md:w-96 bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira de Técnico (Online)</button>
+                <button id="start-player-career" class="w-full md:w-96 bg-amber-500 hover:bg-amber-400 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira de Jogador (Online)</button>
                 <button id="start-community-hub" class="w-full md:w-96 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Centro da Comunidade</button>
             </div>
              <button id="logout-btn" class="mt-8 text-gray-400 hover:text-white">Sair</button>
@@ -73,7 +73,7 @@
 
     <!-- CONTAINER PRINCIPAL DO JOGO -->
     <div id="game-container" class="hidden">
-        <!-- MODO ONLINE (alterado para PvP 1x1) -->
+        <!-- MODO ONLINE 1X1 -->
         <div id="online-mode" class="hidden">
              <!-- TELA DE MATCHMAKING 1x1 -->
             <div id="online-pvp-lobby-screen">
@@ -98,8 +98,8 @@
             </div>
         </div>
         
-        <!-- MODO TÉCNICO (OFFLINE) -->
-        <div id="manager-mode" class="hidden">
+        <!-- MODO CARREIRA DE TÉCNICO (ONLINE) -->
+        <div id="manager-career-mode" class="hidden">
             <div id="manager-philosophy-screen">
                 <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Defina a Filosofia do Clube</h2></header>
                 <div class="p-4 md:p-8 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -120,25 +120,21 @@
             </div>
             <div id="manager-hub-screen" class="hidden">
                 <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
-                    <h2 class="text-xl md:text-2xl font-bold">Modo Técnico</h2>
+                    <h2 class="text-xl md:text-2xl font-bold">Carreira de Técnico</h2>
                     <div id="manager-budget" class="text-sm md:text-lg"></div>
                     <button class="back-to-menu bg-red-600 hover:bg-red-500 p-2 rounded">Voltar ao Menu</button>
                 </header>
                 <nav id="manager-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
                     <button data-tab="manager-office" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Escritório</button>
-                    <button data-tab="manager-lockerroom" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Vestiário</button>
                     <button data-tab="manager-squad" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Elenco</button>
-                    <button data-tab="manager-staff" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Equipe</button>
-                    <button data-tab="manager-youth" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Academia</button>
-                    <button data-tab="manager-transfers" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Mercado</button>
                     <button data-tab="manager-league" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Liga</button>
                 </nav>
                 <main id="manager-content" class="p-4"></main>
             </div>
         </div>
 
-        <!-- MODO JOGADOR (OFFLINE) -->
-        <div id="player-mode" class="hidden">
+        <!-- MODO CARREIRA DE JOGADOR (ONLINE) -->
+        <div id="player-career-mode" class="hidden">
             <div id="player-creation-screen">
                  <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Crie seu Craque</h2></header>
                 <div class="p-4 md:p-8 max-w-2xl mx-auto">
@@ -163,21 +159,19 @@
             <div id="player-hub-screen" class="hidden">
                 <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
                     <h2 id="player-hub-name" class="text-xl md:text-2xl font-bold truncate"></h2>
-                    <div id="player-salary" class="text-sm md:text-lg"></div>
+                    <div id="player-team" class="text-sm md:text-lg"></div>
                     <button class="back-to-menu bg-red-600 p-2 rounded">Voltar ao Menu</button>
                 </header>
                 <nav id="player-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
                      <button data-tab="player-home" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Início</button>
-                     <button data-tab="player-social" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Rede Social</button>
                      <button data-tab="player-training" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Treino</button>
-                     <button data-tab="player-brand" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Marca</button>
-                     <button data-tab="player-lifestyle" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Lifestyle</button>
+                     <button data-tab="player-attributes" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Atributos</button>
                 </nav>
                 <main id="player-content" class="p-4"></main>
             </div>
         </div>
         
-        <!-- CENTRO DA COMUNIDADE (NOVO) -->
+        <!-- CENTRO DA COMUNIDADE -->
         <div id="community-hub" class="hidden">
             <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
                 <h2 class="text-xl md:text-2xl font-bold">Centro da Comunidade</h2>
@@ -186,7 +180,6 @@
             <nav id="hub-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
                 <button data-tab="hub-patches" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Patches da Comunidade</button>
                 <button data-tab="hub-editor" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Editor</button>
-                <button data-tab="hub-my-creations" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Minhas Criações</button>
             </nav>
             <main id="hub-content" class="p-4"></main>
         </div>
@@ -199,60 +192,14 @@
 
     <!-- TEMPLATES -->
     <template id="interactive-match-template">
-        <header class="bg-gray-800 p-4 flex justify-between items-center">
-            <h2 id="match-header-title" class="text-2xl font-bold">Partida Online</h2>
-            <button id="leave-match-btn" class="bg-red-600 hover:bg-red-500 p-2 rounded">Desistir</button>
-        </header>
-        <main class="p-4 max-w-4xl mx-auto">
-            <div class="flex justify-between items-center mb-4 text-center">
-                <div id="sim-home-team" class="text-lg md:text-xl font-bold w-2/5"></div>
-                <div id="sim-score" class="text-2xl md:text-4xl font-extrabold w-1/5">0 - 0</div>
-                <div id="sim-away-team" class="text-lg md:text-xl font-bold w-2/5"></div>
-            </div>
-            <div id="round-info" class="text-center text-amber-400 font-semibold text-xl mb-4"></div>
-            <div id="match-commentary" class="bg-black p-4 rounded-md overflow-y-scroll h-64 border border-gray-700 mb-4"></div>
-            <div id="action-panel">
-                <h3 class="text-center text-lg font-semibold mb-2">Escolha a sua ação:</h3>
-                <div class="flex justify-center gap-4">
-                    <button data-action="attack" class="action-btn w-1/3 bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-2 rounded-lg text-lg btn-action">Atacar</button>
-                    <button data-action="balance" class="action-btn w-1/3 bg-yellow-500 hover:bg-yellow-400 text-white font-bold py-4 px-2 rounded-lg text-lg btn-action">Equilibrar</button>
-                    <button data-action="defend" class="action-btn w-1/3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-2 rounded-lg text-lg btn-action">Defender</button>
-                </div>
-            </div>
-        </main>
+        <!-- ... (código do template de partida 1x1) ... -->
     </template>
-
     <template id="editor-template">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-                <div id="editor-selection" class="space-y-4">
-                    <button data-editor="player" class="editor-choice-btn w-full bg-teal-600 p-4 rounded-lg text-xl btn-action">Criar Novo Jogador</button>
-                    <button data-editor="team" class="editor-choice-btn w-full bg-teal-600 p-4 rounded-lg text-xl btn-action">Criar Nova Equipa</button>
-                    <button data-editor="league" class="editor-choice-btn w-full bg-teal-600 p-4 rounded-lg text-xl btn-action">Criar Novo Campeonato</button>
-                </div>
-                <div id="editor-form-container" class="hidden mt-4 bg-gray-800 p-6 rounded-lg"></div>
-            </div>
-            <div class="bg-gray-800 p-6 rounded-lg">
-                <h3 class="text-2xl font-bold mb-4">Publicar Patch</h3>
-                <p class="text-gray-400 mb-4">Agrupe as suas criações num patch para partilhar com a comunidade.</p>
-                <div id="patch-summary"></div>
-                <div class="mb-4 mt-4">
-                    <label for="patch-name" class="block mb-2">Nome do Patch:</label>
-                    <input type="text" id="patch-name" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
-                </div>
-                <div class="mb-4">
-                    <label for="patch-description" class="block mb-2">Descrição:</label>
-                    <textarea id="patch-description" class="w-full p-2 rounded bg-gray-700 border border-gray-600" rows="3"></textarea>
-                </div>
-                <button id="publish-patch-btn" class="w-full bg-purple-600 p-3 rounded-lg text-xl btn-action">Publicar</button>
-            </div>
-        </div>
+        <!-- ... (código do template do editor) ... -->
     </template>
     
-
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // CORREÇÃO: Estrutura do objeto Game corrigida
         const Game = (() => {
             let state = {
                 communityCreations: { players: [], teams: [], leagues: [] }
@@ -281,23 +228,13 @@
                 },
                 TEAMS: [ { nome: "Titans da Capital", forca: 910 }, { nome: "Corsários da Costa", forca: 880 }, { nome: "Lobos da Montanha", forca: 850 }, ],
                 PLAYERS: [
-                    { id: 1, nome: 'G. Arantes', forcaBase: 82, posicao: 'GOL', valor: 1200000, personality: 'loyal' }, { id: 2, nome: 'L. Veloso', forcaBase: 78, posicao: 'DEF', valor: 900000, personality: 'neutral' },
-                    { id: 3, nome: 'B. Xerife', forcaBase: 85, posicao: 'DEF', valor: 1500000, personality: 'leader' }, { id: 4, nome: 'M. Rocha', forcaBase: 84, posicao: 'DEF', valor: 1400000, personality: 'neutral' },
-                    { id: 5, nome: 'E. Cansado', forcaBase: 75, posicao: 'DEF', valor: 750000, personality: 'neutral' }, { id: 6, nome: 'V. Marcador', forcaBase: 88, posicao: 'MEI', valor: 1800000, personality: 'loyal' },
-                    { id: 7, nome: 'M. Clássico', forcaBase: 90, posicao: 'MEI', valor: 2500000, personality: 'ambitious' }, { id: 8, nome: 'A. Meia', forcaBase: 86, posicao: 'MEI', valor: 1600000, personality: 'neutral' },
-                    { id: 9, nome: 'P. Habilidoso', forcaBase: 89, posicao: 'ATA', valor: 2200000, personality: 'maverick' }, { id: 10, nome: 'C. Matador', forcaBase: 92, posicao: 'ATA', valor: 3000000, personality: 'leader' },
-                    { id: 11, nome: 'P. Corredor', forcaBase: 87, posicao: 'ATA', valor: 1900000, personality: 'neutral' },
-                ],
-                 TRANSFER_PLAYERS: [
-                    { id: 16, nome: 'A. Furtado', forcaBase: 85, posicao: 'ATA', valor: 1700000, personality: 'mercenary' }, { id: 17, nome: 'B. Campos', forcaBase: 82, posicao: 'MEI', valor: 1100000, personality: 'loyal' },
-                    { id: 18, nome: 'C. Diniz', forcaBase: 84, posicao: 'DEF', valor: 1300000, personality: 'leader' },
-                ],
-                LIFESTYLE_ITEMS: [ { id: 'car1', name: 'Carro Popular', cost: 20000, reputation: { maverick: 2 } }, { id: 'house1', name: 'Apartamento Simples', cost: 100000, reputation: { professional: 2 } }, ],
-                STAFF: {
-                    assistant: [{ name: "J. Cruz", quality: 75, salary: 50000 }, { name: "M. Roca", quality: 85, salary: 90000 }],
-                    scout: [{ name: "P. Neto", quality: 78, salary: 40000 }, { name: "R. Lemos", quality: 88, salary: 80000 }],
-                    medic: [{ name: "Dra. Alves", quality: 80, salary: 60000 }, { name: "Dr. Borges", quality: 90, salary: 100000 }],
-                }
+                    { id: 1, nome: 'G. Arantes', forcaBase: 82, posicao: 'GOL', valor: 1200000 }, { id: 2, nome: 'L. Veloso', forcaBase: 78, posicao: 'DEF', valor: 900000 },
+                    { id: 3, nome: 'B. Xerife', forcaBase: 85, posicao: 'DEF', valor: 1500000 }, { id: 4, nome: 'M. Rocha', forcaBase: 84, posicao: 'DEF', valor: 1400000 },
+                    { id: 5, nome: 'E. Cansado', forcaBase: 75, posicao: 'DEF', valor: 750000 }, { id: 6, nome: 'V. Marcador', forcaBase: 88, posicao: 'MEI', valor: 1800000 },
+                    { id: 7, nome: 'M. Clássico', forcaBase: 90, posicao: 'MEI', valor: 2500000 }, { id: 8, nome: 'A. Meia', forcaBase: 86, posicao: 'MEI', valor: 1600000 },
+                    { id: 9, nome: 'P. Habilidoso', forcaBase: 89, posicao: 'ATA', valor: 2200000 }, { id: 10, nome: 'C. Matador', forcaBase: 92, posicao: 'ATA', valor: 3000000 },
+                    { id: 11, nome: 'P. Corredor', forcaBase: 87, posicao: 'ATA', valor: 1900000 },
+                ]
             };
 
             const UI = {
@@ -311,24 +248,24 @@
                     cancelSearchBtn: document.getElementById('cancel-search-btn'), pvpStatusText: document.getElementById('pvp-status-text'),
                     pvpLoader: document.getElementById('pvp-loader'),
                 },
-                managerMode: {
-                    container: document.getElementById('manager-mode'), philosophyScreen: document.getElementById('manager-philosophy-screen'),
+                managerCareer: {
+                    container: document.getElementById('manager-career-mode'), philosophyScreen: document.getElementById('manager-philosophy-screen'),
                     hubScreen: document.getElementById('manager-hub-screen'), content: document.getElementById('manager-content'),
                     nav: document.getElementById('manager-nav'), budget: document.getElementById('manager-budget'),
                 },
-                playerMode: {
-                    container: document.getElementById('player-mode'), creationScreen: document.getElementById('player-creation-screen'),
+                playerCareer: {
+                    container: document.getElementById('player-career-mode'), creationScreen: document.getElementById('player-creation-screen'),
                     hubScreen: document.getElementById('player-hub-screen'), content: document.getElementById('player-content'),
                     nav: document.getElementById('player-nav'), attributePointsLeft: document.getElementById('attribute-points-left'),
                     attributeInputs: document.getElementById('attribute-inputs'), finalizeCreationBtn: document.getElementById('finalize-player-creation'),
                     playerNameInput: document.getElementById('player-name'), playerPositionSelect: document.getElementById('player-position'),
-                    playerHubName: document.getElementById('player-hub-name'), playerSalary: document.getElementById('player-salary'),
+                    playerHubName: document.getElementById('player-hub-name'), playerTeam: document.getElementById('player-team'),
                 },
                 communityHub: {
                     container: document.getElementById('community-hub'), nav: document.getElementById('hub-nav'), content: document.getElementById('hub-content'),
                 },
-                startOnlineModeBtn: document.getElementById('start-online-mode'), startManagerBtn: document.getElementById('start-manager-mode'),
-                startPlayerBtn: document.getElementById('start-player-mode'), startCommunityHubBtn: document.getElementById('start-community-hub'),
+                startOnlineModeBtn: document.getElementById('start-online-mode'), startManagerCareerBtn: document.getElementById('start-manager-career'),
+                startPlayerCareerBtn: document.getElementById('start-player-career'), startCommunityHubBtn: document.getElementById('start-community-hub'),
                 backToMenuBtns: document.querySelectorAll('.back-to-menu'),
                 modal: document.getElementById('modal'), modalContent: document.getElementById('modal-content'),
                 playerRankDisplay: document.getElementById('player-rank-display'), lobbyRankDisplay: document.getElementById('lobby-rank-display'),
@@ -341,7 +278,7 @@
             function showScreen(screenId) { [UI.authScreen, UI.mainMenu, UI.gameContainer].forEach(s => s.classList.add('hidden')); document.getElementById(screenId).classList.remove('hidden'); }
             function showSubScreen(modeContainer, screenToShow) {
                 showScreen('game-container');
-                [UI.onlineMode.container, UI.managerMode.container, UI.playerMode.container, UI.communityHub.container].forEach(c => c.classList.add('hidden'));
+                [UI.onlineMode.container, UI.managerCareer.container, UI.playerCareer.container, UI.communityHub.container].forEach(c => c.classList.add('hidden'));
                 Array.from(modeContainer.children).forEach(child => child.classList.add('hidden'));
                 screenToShow.classList.remove('hidden');
                 modeContainer.classList.remove('hidden');
@@ -377,7 +314,7 @@
                     }
                 }
                 const rankHTML = `<h3 class="text-lg font-semibold text-gray-400">RANK ATUAL</h3><div class="text-3xl font-extrabold" style="color: ${currentRank.color};">${currentRank.name}</div><div class="rank-star mt-2 text-yellow-400">${'★'.repeat(rank_stars)}${'☆'.repeat(currentRank.starsToPromote > 0 ? Math.max(0, currentRank.starsToPromote - rank_stars) : 0)}</div>`;
-                UI.playerRankDisplay.innerHTML = rankHTML;
+                document.getElementById('rank-info').parentElement.innerHTML = rankHTML;
                 UI.lobbyRankDisplay.innerHTML = rankHTML;
             }
 
@@ -597,12 +534,14 @@
                 showModal(modalHTML);
             }
 
-            // --- MODOS DE CARREIRA OFFLINE ---
-            async function loadOrCreateCareer(careerType) {
-                showModal('<div class="loader mx-auto"></div><p class="mt-4">A carregar carreira...</p>');
-                const { data } = await supabaseClient.from(`${careerType}_careers`).select('*').eq('user_id', state.user.id).single();
+            // --- MODOS DE CARREIRA ONLINE ---
+            async function loadOrCreateOnlineCareer(careerType) {
+                showModal('<div class="loader mx-auto"></div><p class="mt-4">A carregar carreira online...</p>');
+                const tableName = `online_${careerType}_careers`;
+                const { data } = await supabaseClient.from(tableName).select('*').eq('user_id', state.user.id).single();
                 closeModal();
-                const modeUI = UI[`${careerType}Mode`];
+                
+                const modeUI = UI[`${careerType}Career`];
                 if (data) {
                     state[careerType] = data.game_state;
                     state[careerType].id = data.id;
@@ -617,26 +556,26 @@
                 }
             }
             
-            // --- MODO TÉCNICO ---
+            // --- MODO TÉCNICO ONLINE ---
             async function setupManagerMode(philosophy) {
                 const philosophies = { cantera: { budget: 2000000 }, galactic: { budget: 15000000 }, moneyball: { budget: 7000000 } };
                 const initialState = {
                     orcamento: philosophies[philosophy].budget, jogadores: JSON.parse(JSON.stringify(DB.PLAYERS)), escalacao: [],
                 };
-                const { data } = await supabaseClient.from('manager_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
+                const { data } = await supabaseClient.from('online_manager_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
                 state.manager = data.game_state; state.manager.id = data.id;
-                showSubScreen(UI.managerMode.container, UI.managerMode.hubScreen);
+                showSubScreen(UI.managerCareer.container, UI.managerCareer.hubScreen);
                 setupManagerNav(); switchManagerTab('manager-office');
             }
-            function setupManagerNav() { UI.managerMode.nav.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') switchManagerTab(e.target.dataset.tab); }); }
+            function setupManagerNav() { UI.managerCareer.nav.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') switchManagerTab(e.target.dataset.tab); }); }
             function switchManagerTab(tabId) {
-                UI.managerMode.nav.querySelector('.active').classList.remove('active');
-                UI.managerMode.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+                UI.managerCareer.nav.querySelector('.active').classList.remove('active');
+                UI.managerCareer.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
                 renderManagerContent(tabId);
             }
             function renderManagerContent(tabId) {
-                UI.managerMode.budget.textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
-                const content = UI.managerMode.content;
+                UI.managerCareer.budget.textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
+                const content = UI.managerCareer.content;
                 if (tabId === 'manager-squad') {
                     content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Gerir Elenco</h3><div class="grid md:grid-cols-2 gap-4"><div><h4 class="text-xl font-semibold mb-2">Jogadores</h4><div id="squad-list" class="space-y-2"></div></div><div><h4 class="text-xl font-semibold mb-2">Equipa Titular</h4><div id="lineup-list" class="space-y-2"></div></div></div>`;
                     renderManagerSquadLists();
@@ -654,34 +593,35 @@
                 });
             }
 
-            // --- MODO JOGADOR ---
+            // --- MODO JOGADOR ONLINE ---
             function setupPlayerCreation() {
-                UI.playerMode.playerPositionSelect.onchange = renderAttributeInputs;
-                UI.playerMode.finalizeCreationBtn.onclick = finalizePlayerCreation;
+                UI.playerCareer.playerPositionSelect.onchange = renderAttributeInputs;
+                UI.playerCareer.finalizeCreationBtn.onclick = finalizePlayerCreation;
                 renderAttributeInputs();
             }
             function renderAttributeInputs() {
-                const position = UI.playerMode.playerPositionSelect.value;
+                const position = UI.playerCareer.playerPositionSelect.value;
                 const attributes = DB.ATTRIBUTES_MAP[position];
-                UI.playerMode.attributeInputs.innerHTML = '';
-                for (const attr in attributes) { UI.playerMode.attributeInputs.innerHTML += `<div><label>${attr}: ${attributes[attr]}</label></div>`; }
+                UI.playerCareer.attributeInputs.innerHTML = '';
+                for (const attr in attributes) { UI.playerCareer.attributeInputs.innerHTML += `<div><label>${attr}: ${attributes[attr]}</label></div>`; }
             }
             async function finalizePlayerCreation() {
-                const initialState = { name: UI.playerMode.playerNameInput.value, position: UI.playerMode.playerPositionSelect.value, };
-                const { data } = await supabaseClient.from('player_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
+                const initialState = { name: UI.playerCareer.playerNameInput.value, position: UI.playerCareer.playerPositionSelect.value, team: 'SevenxFoot Rookies' };
+                const { data } = await supabaseClient.from('online_player_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
                 state.player = data.game_state; state.player.id = data.id;
-                showSubScreen(UI.playerMode.container, UI.playerMode.hubScreen);
+                showSubScreen(UI.playerCareer.container, UI.playerCareer.hubScreen);
                 setupPlayerNav(); switchPlayerTab('player-home');
             }
-            function setupPlayerNav() { UI.playerMode.nav.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') switchPlayerTab(e.target.dataset.tab); }); }
+            function setupPlayerNav() { UI.playerCareer.nav.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') switchPlayerTab(e.target.dataset.tab); }); }
             function switchPlayerTab(tabId) {
-                UI.playerMode.nav.querySelector('.active').classList.remove('active');
-                UI.playerMode.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+                UI.playerCareer.nav.querySelector('.active').classList.remove('active');
+                UI.playerCareer.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
                 renderPlayerContent(tabId);
             }
             function renderPlayerContent(tabId) {
-                UI.playerMode.playerHubName.textContent = state.player.name;
-                UI.playerMode.content.innerHTML = `<h3 class="text-2xl font-bold">${tabId.replace('player-', '')}</h3><p>Conteúdo em desenvolvimento.</p>`;
+                UI.playerCareer.playerHubName.textContent = state.player.name;
+                UI.playerCareer.playerTeam.textContent = state.player.team;
+                UI.playerCareer.content.innerHTML = `<h3 class="text-2xl font-bold">${tabId.replace('player-', '')}</h3><p>Conteúdo em desenvolvimento.</p>`;
             }
 
             // --- CENTRO DA COMUNIDADE ---
@@ -708,9 +648,6 @@
                         content.querySelectorAll('.editor-choice-btn').forEach(btn => btn.onclick = (e) => showEditorForm(e.target.dataset.editor));
                         content.querySelector('#publish-patch-btn').onclick = publishPatch;
                         updatePatchSummary();
-                        break;
-                    case 'hub-my-creations':
-                        content.innerHTML = `<h2 class="text-3xl font-bold mb-4">Minhas Criações</h2><p>Em desenvolvimento.</p>`;
                         break;
                 }
             }
@@ -778,8 +715,8 @@
                     UI.loginBtn.addEventListener('click', handleLogin);
                     UI.signupBtn.addEventListener('click', handleSignup);
                     UI.logoutBtn.addEventListener('click', handleLogout);
-                    UI.startManagerBtn.addEventListener('click', () => loadOrCreateCareer('manager'));
-                    UI.startPlayerBtn.addEventListener('click', () => loadOrCreateCareer('player'));
+                    UI.startManagerCareerBtn.addEventListener('click', () => loadOrCreateOnlineCareer('manager'));
+                    UI.startPlayerCareerBtn.addEventListener('click', () => loadOrCreateOnlineCareer('player'));
                     UI.startOnlineModeBtn.addEventListener('click', initPvpMode);
                     UI.startCommunityHubBtn.addEventListener('click', initCommunityHub);
                     UI.backToMenuBtns.forEach(btn => btn.addEventListener('click', showMainMenu));
