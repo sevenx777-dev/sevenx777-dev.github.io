@@ -29,6 +29,7 @@
         .rank-star { font-size: 1.5rem; letter-spacing: 0.2em; }
         .action-btn { border: 2px solid transparent; }
         .action-btn.selected { border-color: #34d399; transform: scale(1.05); }
+        .image-preview { width: 100px; height: 100px; object-fit: cover; border-radius: 0.5rem; background-color: #374151; }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
@@ -64,6 +65,7 @@
                 <button id="start-online-mode" class="w-full md:w-96 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Partida Rápida 1x1</button>
                 <button id="start-manager-mode" class="w-full md:w-96 bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira Offline: Técnico</button>
                 <button id="start-player-mode" class="w-full md:w-96 bg-amber-500 hover:bg-amber-400 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira Offline: Jogador</button>
+                <button id="start-community-hub" class="w-full md:w-96 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Centro da Comunidade</button>
             </div>
              <button id="logout-btn" class="mt-8 text-gray-400 hover:text-white">Sair</button>
         </div>
@@ -174,6 +176,20 @@
                 <main id="player-content" class="p-4"></main>
             </div>
         </div>
+        
+        <!-- CENTRO DA COMUNIDADE (NOVO) -->
+        <div id="community-hub" class="hidden">
+            <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
+                <h2 class="text-xl md:text-2xl font-bold">Centro da Comunidade</h2>
+                <button class="back-to-menu bg-red-600 hover:bg-red-500 p-2 rounded">Voltar ao Menu</button>
+            </header>
+            <nav id="hub-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
+                <button data-tab="hub-patches" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Patches da Comunidade</button>
+                <button data-tab="hub-editor" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Editor</button>
+                <button data-tab="hub-my-creations" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Minhas Criações</button>
+            </nav>
+            <main id="hub-content" class="p-4"></main>
+        </div>
     </div>
 
     <!-- MODAL UNIVERSAL -->
@@ -181,7 +197,7 @@
         <div id="modal-content" class="bg-gray-800 p-6 md:p-8 rounded-lg text-center max-w-lg w-full shadow-2xl"></div>
     </div>
 
-    <!-- TEMPLATE DO SIMULADOR DE PARTIDA INTERATIVO -->
+    <!-- TEMPLATES -->
     <template id="interactive-match-template">
         <header class="bg-gray-800 p-4 flex justify-between items-center">
             <h2 id="match-header-title" class="text-2xl font-bold">Partida Online</h2>
@@ -206,19 +222,47 @@
         </main>
     </template>
 
+    <template id="editor-template">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <div id="editor-selection" class="space-y-4">
+                    <button data-editor="player" class="editor-choice-btn w-full bg-teal-600 p-4 rounded-lg text-xl btn-action">Criar Novo Jogador</button>
+                    <button data-editor="team" class="editor-choice-btn w-full bg-teal-600 p-4 rounded-lg text-xl btn-action">Criar Nova Equipa</button>
+                    <button data-editor="league" class="editor-choice-btn w-full bg-teal-600 p-4 rounded-lg text-xl btn-action">Criar Novo Campeonato</button>
+                </div>
+                <div id="editor-form-container" class="hidden mt-4 bg-gray-800 p-6 rounded-lg"></div>
+            </div>
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <h3 class="text-2xl font-bold mb-4">Publicar Patch</h3>
+                <p class="text-gray-400 mb-4">Agrupe as suas criações num patch para partilhar com a comunidade.</p>
+                <div id="patch-summary"></div>
+                <div class="mb-4 mt-4">
+                    <label for="patch-name" class="block mb-2">Nome do Patch:</label>
+                    <input type="text" id="patch-name" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                </div>
+                <div class="mb-4">
+                    <label for="patch-description" class="block mb-2">Descrição:</label>
+                    <textarea id="patch-description" class="w-full p-2 rounded bg-gray-700 border border-gray-600" rows="3"></textarea>
+                </div>
+                <button id="publish-patch-btn" class="w-full bg-purple-600 p-3 rounded-lg text-xl btn-action">Publicar</button>
+            </div>
+        </div>
+    </template>
+    
+
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        window.Game = (() => {
-            let state = {};
+        const Game = (() => {
+            let state = {
+                communityCreations: { players: [], teams: [], leagues: [] }
+            };
             let matchmakingTimer = null;
 
-            // --- CONFIGURAÇÃO DO SUPABASE ---
             const SUPABASE_URL = 'https://fwwwpdzvnptcbcoarejm.supabase.co'; 
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3d3dwZHp2bnB0Y2Jjb2FyZWptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NjM2MTQsImV4cCI6MjA2NzEzOTYxNH0.uozT2nfKs4EINeF6Suyp6AbmkrQ4V8W1sG9SWiokU1o';
             let supabaseClient;
             try { supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { console.error("Erro ao inicializar o Supabase.", e); }
 
-            // --- CONFIGURAÇÃO DO JOGO ---
             const RANKS = [
                 { name: 'Bronze III', starsToPromote: 3, color: '#a97142' }, { name: 'Bronze II',  starsToPromote: 3, color: '#a97142' }, { name: 'Bronze I',   starsToPromote: 4, color: '#a97142' },
                 { name: 'Prata III',  starsToPromote: 4, color: '#a8a8a8' }, { name: 'Prata II',   starsToPromote: 4, color: '#a8a8a8' }, { name: 'Prata I',    starsToPromote: 5, color: '#a8a8a8' },
@@ -229,17 +273,12 @@
                 { name: 'Global',       starsToPromote: 0, color: '#ff4500' }
             ];
             
-            // --- DADOS PARA MODOS OFFLINE ---
             const DB = {
                 ATTRIBUTES_MAP: {
-                    ATA: { Chute: 8, Drible: 7, Velocidade: 6, Passe: 4, Força: 5 },
-                    MEI: { Passe: 8, Drible: 7, Chute: 5, Defesa: 5, Visão: 6 },
-                    DEF: { Defesa: 8, Força: 7, Passe: 5, Velocidade: 5, Marcação: 6 },
-                    GOL: { Reflexos: 8, Posicionamento: 7, 'Um-pra-um': 6, Passe: 4, Agilidade: 5 }
+                    ATA: { Chute: 8, Drible: 7, Velocidade: 6, Passe: 4, Força: 5 }, MEI: { Passe: 8, Drible: 7, Chute: 5, Defesa: 5, Visão: 6 },
+                    DEF: { Defesa: 8, Força: 7, Passe: 5, Velocidade: 5, Marcação: 6 }, GOL: { Reflexos: 8, Posicionamento: 7, 'Um-pra-um': 6, Passe: 4, Agilidade: 5 }
                 },
-                TEAMS: [
-                    { nome: "Titans da Capital", forca: 910 }, { nome: "Corsários da Costa", forca: 880 }, { nome: "Lobos da Montanha", forca: 850 },
-                ],
+                TEAMS: [ { nome: "Titans da Capital", forca: 910 }, { nome: "Corsários da Costa", forca: 880 }, { nome: "Lobos da Montanha", forca: 850 }, ],
                 PLAYERS: [
                     { id: 1, nome: 'G. Arantes', forcaBase: 82, posicao: 'GOL', valor: 1200000, personality: 'loyal' }, { id: 2, nome: 'L. Veloso', forcaBase: 78, posicao: 'DEF', valor: 900000, personality: 'neutral' },
                     { id: 3, nome: 'B. Xerife', forcaBase: 85, posicao: 'DEF', valor: 1500000, personality: 'leader' }, { id: 4, nome: 'M. Rocha', forcaBase: 84, posicao: 'DEF', valor: 1400000, personality: 'neutral' },
@@ -252,9 +291,7 @@
                     { id: 16, nome: 'A. Furtado', forcaBase: 85, posicao: 'ATA', valor: 1700000, personality: 'mercenary' }, { id: 17, nome: 'B. Campos', forcaBase: 82, posicao: 'MEI', valor: 1100000, personality: 'loyal' },
                     { id: 18, nome: 'C. Diniz', forcaBase: 84, posicao: 'DEF', valor: 1300000, personality: 'leader' },
                 ],
-                LIFESTYLE_ITEMS: [
-                    { id: 'car1', name: 'Carro Popular', cost: 20000, reputation: { maverick: 2 } }, { id: 'house1', name: 'Apartamento Simples', cost: 100000, reputation: { professional: 2 } },
-                ],
+                LIFESTYLE_ITEMS: [ { id: 'car1', name: 'Carro Popular', cost: 20000, reputation: { maverick: 2 } }, { id: 'house1', name: 'Apartamento Simples', cost: 100000, reputation: { professional: 2 } }, ],
                 STAFF: {
                     assistant: [{ name: "J. Cruz", quality: 75, salary: 50000 }, { name: "M. Roca", quality: 85, salary: 90000 }],
                     scout: [{ name: "P. Neto", quality: 78, salary: 40000 }, { name: "R. Lemos", quality: 88, salary: 80000 }],
@@ -262,7 +299,6 @@
                 }
             };
 
-            // --- CACHE DE ELEMENTOS UI ---
             const UI = {
                 authScreen: document.getElementById('auth-screen'), mainMenu: document.getElementById('main-menu'), gameContainer: document.getElementById('game-container'),
                 authForm: document.getElementById('auth-form'), authLoading: document.getElementById('auth-loading'), authError: document.getElementById('auth-error'),
@@ -287,8 +323,12 @@
                     playerNameInput: document.getElementById('player-name'), playerPositionSelect: document.getElementById('player-position'),
                     playerHubName: document.getElementById('player-hub-name'), playerSalary: document.getElementById('player-salary'),
                 },
+                communityHub: {
+                    container: document.getElementById('community-hub'), nav: document.getElementById('hub-nav'), content: document.getElementById('hub-content'),
+                },
                 startOnlineModeBtn: document.getElementById('start-online-mode'), startManagerBtn: document.getElementById('start-manager-mode'),
-                startPlayerBtn: document.getElementById('start-player-mode'), backToMenuBtns: document.querySelectorAll('.back-to-menu'),
+                startPlayerBtn: document.getElementById('start-player-mode'), startCommunityHubBtn: document.getElementById('start-community-hub'),
+                backToMenuBtns: document.querySelectorAll('.back-to-menu'),
                 modal: document.getElementById('modal'), modalContent: document.getElementById('modal-content'),
                 playerRankDisplay: document.getElementById('player-rank-display'), lobbyRankDisplay: document.getElementById('lobby-rank-display'),
             };
@@ -300,13 +340,13 @@
             function showScreen(screenId) { [UI.authScreen, UI.mainMenu, UI.gameContainer].forEach(s => s.classList.add('hidden')); document.getElementById(screenId).classList.remove('hidden'); }
             function showSubScreen(modeContainer, screenToShow) {
                 showScreen('game-container');
-                [UI.onlineMode.container, UI.managerMode.container, UI.playerMode.container].forEach(c => c.classList.add('hidden'));
+                [UI.onlineMode.container, UI.managerMode.container, UI.playerMode.container, UI.communityHub.container].forEach(c => c.classList.add('hidden'));
                 Array.from(modeContainer.children).forEach(child => child.classList.add('hidden'));
                 screenToShow.classList.remove('hidden');
                 modeContainer.classList.remove('hidden');
             }
             function getForcaEfetiva(jogador) { return Math.max(jogador.forcaBase - (jogador.cansaco || 0) + Math.floor(((jogador.moral || 100) - 100) / 5), 20); }
-
+            
             // --- LÓGICA DE RANKING ---
             async function updateRankDisplay() {
                 if (!state.profile) return;
@@ -643,7 +683,95 @@
                 UI.playerMode.content.innerHTML = `<h3 class="text-2xl font-bold">${tabId.replace('player-', '')}</h3><p>Conteúdo em desenvolvimento.</p>`;
             }
 
+            // --- CENTRO DA COMUNIDADE ---
+            function initCommunityHub() {
+                showSubScreen(UI.communityHub.container, UI.communityHub.content.parentElement);
+                UI.communityHub.nav.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') switchHubTab(e.target.dataset.tab); });
+                switchHubTab('hub-patches');
+            }
+            function switchHubTab(tabId) {
+                UI.communityHub.nav.querySelector('.active').classList.remove('active');
+                UI.communityHub.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+                renderHubContent(tabId);
+            }
+            async function renderHubContent(tabId) {
+                const content = UI.communityHub.content;
+                content.innerHTML = '<div class="loader mx-auto"></div>';
+                switch (tabId) {
+                    case 'hub-patches':
+                        const { data: patches } = await supabaseClient.from('community_patches').select('*').order('created_at', { ascending: false });
+                        content.innerHTML = `<h2 class="text-3xl font-bold mb-4">Patches da Comunidade</h2><div class="space-y-4">${patches.map(p => `<div class="bg-gray-800 p-4 rounded-lg"><h3>${p.patch_name}</h3><p>por ${p.creator_email}</p></div>`).join('') || '<p>Ainda não há patches. Seja o primeiro a criar um!</p>'}</div>`;
+                        break;
+                    case 'hub-editor':
+                        content.innerHTML = document.getElementById('editor-template').innerHTML;
+                        content.querySelectorAll('.editor-choice-btn').forEach(btn => btn.onclick = (e) => showEditorForm(e.target.dataset.editor));
+                        content.querySelector('#publish-patch-btn').onclick = publishPatch;
+                        updatePatchSummary();
+                        break;
+                    case 'hub-my-creations':
+                        content.innerHTML = `<h2 class="text-3xl font-bold mb-4">Minhas Criações</h2><p>Em desenvolvimento.</p>`;
+                        break;
+                }
+            }
+            function showEditorForm(editorType) {
+                const container = document.getElementById('editor-form-container');
+                container.classList.remove('hidden');
+                let formHTML = '';
+                switch (editorType) {
+                    case 'player':
+                        formHTML = `<h4 class="text-xl font-bold mb-4">Criar Jogador</h4><input id="new-player-name" type="text" placeholder="Nome do Jogador" class="w-full p-2 bg-gray-700 rounded mb-2"><select id="new-player-pos" class="w-full p-2 bg-gray-700 rounded mb-2"><option>ATA</option><option>MEI</option><option>DEF</option><option>GOL</option></select><input id="new-player-forca" type="number" placeholder="Força (1-99)" class="w-full p-2 bg-gray-700 rounded mb-2"><label class="block mb-2">Foto do Jogador:</label><input id="new-player-photo" type="file" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 mb-4"><button id="save-player-btn" class="w-full bg-green-600 p-2 rounded">Salvar Jogador</button>`;
+                        break;
+                    case 'team': formHTML = `<h4 class="text-xl font-bold mb-4">Criar Equipa</h4><p>Em desenvolvimento.</p>`; break;
+                    case 'league': formHTML = `<h4 class="text-xl font-bold mb-4">Criar Campeonato</h4><p>Em desenvolvimento.</p>`; break;
+                }
+                container.innerHTML = formHTML;
+                if (editorType === 'player') { document.getElementById('save-player-btn').onclick = saveNewPlayer; }
+            }
+            async function saveNewPlayer() {
+                const name = document.getElementById('new-player-name').value;
+                const photoFile = document.getElementById('new-player-photo').files[0];
+                if (!name || !photoFile) { alert("Preencha o nome e selecione uma foto."); return; }
+                const filePath = `${state.user.id}/${Date.now()}_${photoFile.name}`;
+                const { error: uploadError } = await supabaseClient.storage.from('player_photos').upload(filePath, photoFile);
+                if (uploadError) { console.error(uploadError); alert("Erro ao fazer upload da foto."); return; }
+                const { data: { publicUrl } } = supabaseClient.storage.from('player_photos').getPublicUrl(filePath);
+                const newPlayer = {
+                    id: `player_${Date.now()}`, name, position: document.getElementById('new-player-pos').value,
+                    forca: parseInt(document.getElementById('new-player-forca').value) || 70, photoUrl: publicUrl
+                };
+                state.communityCreations.players.push(newPlayer);
+                alert(`${name} salvo com sucesso!`);
+                document.getElementById('editor-form-container').classList.add('hidden');
+                updatePatchSummary();
+            }
+            function updatePatchSummary() {
+                const summaryEl = document.getElementById('patch-summary');
+                if (!summaryEl) return;
+                summaryEl.innerHTML = `
+                    <h4 class="text-lg font-bold">Conteúdo do Patch:</h4>
+                    <p>${state.communityCreations.players.length} Jogadores</p>
+                    <p>${state.communityCreations.teams.length} Equipas</p>
+                    <p>${state.communityCreations.leagues.length} Campeonatos</p>
+                `;
+            }
+            async function publishPatch() {
+                const patchName = document.getElementById('patch-name').value;
+                if (!patchName) { alert("Dê um nome ao seu patch."); return; }
+                const patchData = { players: state.communityCreations.players, teams: state.communityCreations.teams, leagues: state.communityCreations.leagues, };
+                const { error } = await supabaseClient.from('community_patches').insert({
+                    creator_id: state.user.id, creator_email: state.user.email, patch_name: patchName,
+                    patch_description: document.getElementById('patch-description').value, patch_data: patchData
+                });
+                if (error) { console.error(error); alert("Erro ao publicar o patch."); }
+                else {
+                    alert("Patch publicado com sucesso!");
+                    state.communityCreations = { players: [], teams: [], leagues: [] };
+                    switchHubTab('hub-patches');
+                }
+            }
+            
             // --- OBJETO PÚBLICO ---
+            // CORREÇÃO: As funções públicas são retornadas aqui
             return {
                 init: async function() {
                     if (!supabaseClient) { UI.authError.textContent = "Supabase não configurado."; return; }
@@ -653,7 +781,9 @@
                     UI.startManagerBtn.addEventListener('click', () => loadOrCreateCareer('manager'));
                     UI.startPlayerBtn.addEventListener('click', () => loadOrCreateCareer('player'));
                     UI.startOnlineModeBtn.addEventListener('click', initPvpMode);
+                    UI.startCommunityHubBtn.addEventListener('click', initCommunityHub);
                     UI.backToMenuBtns.forEach(btn => btn.addEventListener('click', showMainMenu));
+                    
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (session) {
                         state.user = session.user;
@@ -663,10 +793,14 @@
                         showScreen('main-menu');
                     } else { showScreen('auth-screen'); }
                 },
-                closeAndGoToMenu: () => { closeModal(); showMainMenu(); }
+                closeAndGoToMenu: () => {
+                    closeModal();
+                    showMainMenu();
+                }
             };
         })();
 
+        // CORREÇÃO: A chamada `Game.init()` é feita aqui, depois de o objeto Game estar completamente definido.
         Game.init();
     });
     </script>
