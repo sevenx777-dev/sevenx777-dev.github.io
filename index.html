@@ -23,8 +23,18 @@
         .mobile-scroll::-webkit-scrollbar { display: none; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #match-commentary { height: 300px; }
-        #match-commentary p { transition: opacity 0.5s; }
+        #match-commentary, #league-chat-messages { height: 300px; }
+        #match-commentary p, #league-chat-messages div { transition: opacity 0.5s; }
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 10px;
+            height: 10px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            border: 2px solid #1f2937;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
@@ -172,19 +182,6 @@
         <div id="modal-content" class="bg-gray-800 p-6 md:p-8 rounded-lg text-center max-w-lg w-full shadow-2xl"></div>
     </div>
 
-    <!-- TEMPLATE DO SIMULADOR DE PARTIDA -->
-    <template id="match-simulator-template">
-        <div class="bg-gray-900 p-4 rounded-lg w-full max-w-3xl mx-auto">
-            <div class="flex justify-between items-center mb-4">
-                <div id="sim-home-team" class="text-lg md:text-xl font-bold text-center w-2/5">Time Casa</div>
-                <div id="sim-score" class="text-2xl md:text-3xl font-extrabold w-1/5 text-center">0 - 0</div>
-                <div id="sim-away-team" class="text-lg md:text-xl font-bold text-center w-2/5">Time Fora</div>
-            </div>
-            <div id="match-commentary" class="bg-black p-4 rounded-md overflow-y-scroll h-64 border border-gray-700"></div>
-            <button id="close-sim-btn" class="w-full mt-4 bg-teal-600 p-2 rounded btn-action">Fechar</button>
-        </div>
-    </template>
-
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const Game = (() => {
@@ -253,7 +250,6 @@
                 backToMenuBtns: document.querySelectorAll('.back-to-menu'),
                 modal: document.getElementById('modal'),
                 modalContent: document.getElementById('modal-content'),
-                matchSimTemplate: document.getElementById('match-simulator-template'),
             };
 
             const DB = {
@@ -321,10 +317,12 @@
                 document.getElementById(screenId).classList.remove('hidden');
             }
 
-            function showSubScreen(modeContainer, screenToShow) {
+            function showSubScreen(modeContainerId, screenToShowId) {
                 showScreen('game-container');
                 const allModeContainers = [UI.onlineMode.container, UI.managerMode.container, UI.playerMode.container];
                 allModeContainers.forEach(c => c.classList.add('hidden'));
+                const modeContainer = document.getElementById(modeContainerId);
+                const screenToShow = document.getElementById(screenToShowId);
                 Array.from(modeContainer.children).forEach(child => child.classList.add('hidden'));
                 screenToShow.classList.remove('hidden');
                 modeContainer.classList.remove('hidden');
@@ -342,7 +340,7 @@
                 UI.startManagerBtn.addEventListener('click', () => loadOrCreateCareer('manager'));
                 UI.startPlayerBtn.addEventListener('click', () => loadOrCreateCareer('player'));
                 UI.startOnlineModeBtn.addEventListener('click', () => {
-                    showSubScreen(UI.onlineMode.container, UI.onlineMode.lobbyScreen);
+                    showSubScreen('online-mode', 'online-lobby-screen');
                 });
                 UI.onlineMode.createLeagueBtn.addEventListener('click', createOnlineLeague);
                 UI.onlineMode.joinLeagueBtn.addEventListener('click', joinOnlineLeague);
@@ -401,13 +399,12 @@
                 if (data) {
                     state[careerType] = data.game_state;
                     state[careerType].id = data.id;
-                    showSubScreen(modeUI.container, document.getElementById(`${careerType}-hub-screen`));
+                    showSubScreen(modeUI.container.id, `${careerType}-hub-screen`);
                     if (careerType === 'manager') { setupManagerNav(); switchManagerTab('manager-office'); }
                     if (careerType === 'player') { setupPlayerNav(); switchPlayerTab('player-home'); }
                 } else {
                     const creationScreenId = careerType === 'manager' ? 'manager-philosophy-screen' : 'player-creation-screen';
-                    const creationScreen = document.getElementById(creationScreenId);
-                    showSubScreen(modeUI.container, creationScreen);
+                    showSubScreen(modeUI.container.id, creationScreenId);
                     if (careerType === 'manager') {
                          document.querySelectorAll('.philosophy-card').forEach(card => {
                             card.addEventListener('click', (e) => setupManagerMode(e.currentTarget.dataset.philosophy));
@@ -497,7 +494,7 @@
                      return;
                 }
 
-                showSubScreen(UI.onlineMode.container, UI.onlineMode.leagueHubScreen);
+                showSubScreen('online-mode', 'online-league-hub-screen');
                 UI.onlineMode.leagueHubTitle.textContent = `${state.onlineLeague.name} (Código: ${state.onlineLeague.code})`;
                 
                 await fetchAndRenderLeagueHub(leagueId);
@@ -569,7 +566,7 @@
                 
                 state.manager = data.game_state;
                 state.manager.id = data.id;
-                showSubScreen(UI.managerMode.container, document.getElementById('manager-hub-screen'));
+                showSubScreen('manager-mode', 'manager-hub-screen');
                 setupManagerNav();
                 switchManagerTab('manager-office');
             }
@@ -877,7 +874,7 @@
                 if (error) { alert("Erro ao criar nova carreira."); console.error(error); return; }
                 state.player = data.game_state;
                 state.player.id = data.id;
-                showSubScreen(UI.playerMode.container, document.getElementById('player-hub-screen'));
+                showSubScreen('player-mode', 'player-hub-screen');
                 setupPlayerNav();
                 switchPlayerTab('player-home');
             }
@@ -919,6 +916,10 @@
                         content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Lifestyle</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${DB.LIFESTYLE_ITEMS.map(item => `<div class="card bg-gray-800 p-4 rounded-lg text-center"><h4 class="text-lg font-bold">${item.name}</h4><p class="text-green-400 font-semibold my-2">$${item.cost.toLocaleString()}</p><button data-item-id="${item.id}" class="buy-lifestyle-btn w-full p-2 rounded ${state.player.ownedItems.includes(item.id) ? 'bg-gray-600' : 'bg-green-600 btn-action'}" ${state.player.ownedItems.includes(item.id) ? 'disabled' : ''}>${state.player.ownedItems.includes(item.id) ? 'Comprado' : 'Comprar'}</button></div>`).join('')}</div>`;
                         document.querySelectorAll('.buy-lifestyle-btn').forEach(btn => { if (!btn.disabled) btn.addEventListener('click', (e) => buyLifestyleItem(e.target.dataset.itemId)); });
                         break;
+                    case 'player-stats':
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Estatísticas da Carreira</h3><div id="player-stats-table" class="overflow-x-auto">Carregando...</div>`;
+                        loadAndRenderPlayerStats();
+                        break;
                 }
             }
             
@@ -932,19 +933,34 @@
             }
             
             async function playPlayerMatch() {
-                let matchState = { score: [0, 0], events: 5, currentEvent: 0, successfulActions: 0 };
+                let matchState = { score: [0, 0], events: 5, currentEvent: 0, successfulActions: 0, goals: 0, assists: 0 };
                 const playMatchBtn = document.getElementById('play-match-btn');
                 playMatchBtn.disabled = true;
                 while (matchState.currentEvent < matchState.events) {
                     matchState.currentEvent++;
                     const event = generatePlayerMatchEvent();
-                    const success = await showPlayerMatchEvent(event, matchState);
-                    if (success) matchState.successfulActions++;
+                    const result = await showPlayerMatchEvent(event, matchState);
+                    if (result.success) {
+                        matchState.successfulActions++;
+                        if(result.goal) matchState.goals++;
+                        if(result.assist) matchState.assists++;
+                    }
                 }
                 const ourGoals = matchState.score[0] + (Math.random() < (matchState.successfulActions / matchState.events) ? 1 : 0);
                 const theirGoals = Math.floor(Math.random() * 3);
                 const xpGained = matchState.successfulActions * 10 + (ourGoals > theirGoals ? 20 : (ourGoals === theirGoals ? 10 : 0));
                 state.player.xp += xpGained;
+
+                const rating = 6.0 + (matchState.successfulActions * 0.5) + (matchState.goals * 1.5) + (matchState.assists * 1.0);
+                
+                await supabaseClient.from('player_stats').insert({
+                    career_id: state.player.id,
+                    opponent: "Titans da Cidade",
+                    gols: matchState.goals,
+                    assistencias: matchState.assists,
+                    nota: Math.min(10.0, rating).toFixed(1)
+                });
+
                 showModal(`<h3 class="text-2xl font-bold mb-4">Fim de Jogo!</h3><p class="text-4xl mb-4">${state.player.team} ${Math.floor(ourGoals)} x ${theirGoals} Titans da Cidade</p><p class="text-lg">Você teve ${matchState.successfulActions} ações de sucesso.</p><p class="text-xl text-amber-400 font-bold mt-2">Você ganhou ${xpGained} XP!</p><button id="close-modal-btn" class="w-full mt-6 bg-teal-600 p-2 rounded">OK</button>`);
                 document.getElementById('close-modal-btn').onclick = async () => {
                     closeModal();
@@ -969,8 +985,15 @@
                     showModal(`<p class="text-sm text-gray-400">Placar: ${matchState.score[0]} x ${matchState.score[1]} | Evento ${matchState.currentEvent}/${matchState.events}</p><p class="text-xl my-4">${event.d}</p><div class="space-y-3">${event.o.map((opt, i) => `<button class="event-option w-full p-3 bg-teal-700 hover:bg-teal-600 rounded" data-index="${i}">${opt}</button>`).join('')}</div>`);
                     document.querySelectorAll('.event-option').forEach(btn => btn.onclick = (e) => {
                         const success = Math.random() < (state.player.attributes[event.a] / 20);
-                        if (success) matchState.score[0]++; else matchState.score[1]++;
-                        resolve(success);
+                        let goal = false, assist = false;
+                        if (success) {
+                            matchState.score[0]++;
+                            if(event.a === 'Chute' && Math.random() > 0.3) goal = true;
+                            if(event.a === 'Passe' && Math.random() > 0.5) assist = true;
+                        } else {
+                            matchState.score[1]++;
+                        }
+                        resolve({success, goal, assist});
                     });
                 });
             }
@@ -1002,6 +1025,29 @@
                 } else {
                     alert("Salário insuficiente!");
                 }
+            }
+
+            async function loadAndRenderPlayerStats() {
+                const container = document.getElementById('player-stats-table');
+                if (!container) return;
+                const { data, error } = await supabaseClient.from('player_stats').select('*').eq('career_id', state.player.id).order('match_date', { ascending: false });
+                if (error) { console.error(error); return; }
+                if(data.length === 0) {
+                    container.innerHTML = '<p class="text-gray-400">Nenhuma partida jogada ainda.</p>';
+                    return;
+                }
+                container.innerHTML = `<table class="w-full text-left">
+                    <thead class="bg-gray-800"><tr>
+                        <th class="p-2">Data</th><th class="p-2">Adversário</th><th class="p-2">G</th><th class="p-2">A</th><th class="p-2">Nota</th>
+                    </tr></thead>
+                    <tbody>${data.map(s => `<tr>
+                        <td class="p-2">${new Date(s.match_date).toLocaleDateString()}</td>
+                        <td class="p-2">${s.opponent}</td>
+                        <td class="p-2">${s.gols}</td>
+                        <td class="p-2">${s.assistencias}</td>
+                        <td class="p-2">${s.nota}</td>
+                    </tr>`).join('')}</tbody>
+                </table>`;
             }
 
             return { init };
