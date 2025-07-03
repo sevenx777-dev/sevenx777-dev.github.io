@@ -16,6 +16,7 @@
         .nav-item.active { background-color: #047857; color: white; border-bottom: 2px solid #34d399; }
         .btn-action { transition: all 0.2s ease-in-out; }
         .btn-action:hover { transform: scale(1.05); }
+        .btn-action:disabled { background-color: #4b5563; cursor: not-allowed; }
         .card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
         .modal-overlay { background-color: rgba(0,0,0,0.8); }
@@ -23,9 +24,11 @@
         .mobile-scroll::-webkit-scrollbar { display: none; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #match-commentary { height: 300px; }
+        #match-commentary { height: 250px; }
         #match-commentary p { transition: opacity 0.5s; }
         .rank-star { font-size: 1.5rem; letter-spacing: 0.2em; }
+        .action-btn { border: 2px solid transparent; }
+        .action-btn.selected { border-color: #34d399; transform: scale(1.05); }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
@@ -89,90 +92,18 @@
             </div>
             <!-- TELA DA PARTIDA ONLINE -->
             <div id="online-match-screen" class="hidden">
-                 <header class="bg-gray-800 p-4 flex justify-between items-center">
-                    <h2 id="match-header-title" class="text-2xl font-bold">Partida Online</h2>
-                    <button id="leave-match-btn" class="bg-red-600 hover:bg-red-500 p-2 rounded">Desistir</button>
-                </header>
-                <main id="online-match-content" class="p-4"></main>
+                <!-- O conteúdo será gerado pelo template -->
             </div>
         </div>
         
         <!-- MODO TÉCNICO (OFFLINE) -->
         <div id="manager-mode" class="hidden">
-            <div id="manager-philosophy-screen">
-                <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Defina a Filosofia do Clube</h2></header>
-                <div class="p-4 md:p-8 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer philosophy-card" data-philosophy="cantera">
-                        <h3 class="text-2xl font-bold mb-2">Cantera</h3>
-                        <p class="text-gray-400 mb-4">Foco na base. Orçamento menor, academia de elite. Paciência da diretoria com resultados.</p>
-                    </div>
-                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer philosophy-card" data-philosophy="galactic">
-                        <h3 class="text-2xl font-bold mb-2">Galácticos</h3>
-                        <p class="text-gray-400 mb-4">Orçamento gigante para contratar estrelas. A pressão por títulos é imediata.</p>
-                    </div>
-                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer philosophy-card" data-philosophy="moneyball">
-                        <h3 class="text-2xl font-bold mb-2">Moneyball</h3>
-                        <p class="text-gray-400 mb-4">Gestão inteligente. Foco em contratar jogadores subvalorizados e vender caro.</p>
-                    </div>
-                </div>
-            </div>
-            <div id="manager-hub-screen" class="hidden">
-                <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
-                    <h2 class="text-xl md:text-2xl font-bold">Modo Técnico</h2>
-                    <div id="manager-budget" class="text-sm md:text-lg"></div>
-                    <button class="back-to-menu bg-red-600 hover:bg-red-500 p-2 rounded">Voltar ao Menu</button>
-                </header>
-                <nav id="manager-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
-                    <button data-tab="manager-office" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Escritório</button>
-                    <button data-tab="manager-lockerroom" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Vestiário</button>
-                    <button data-tab="manager-squad" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Elenco</button>
-                    <button data-tab="manager-staff" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Equipe</button>
-                    <button data-tab="manager-youth" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Academia</button>
-                    <button data-tab="manager-transfers" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Mercado</button>
-                    <button data-tab="manager-league" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Liga</button>
-                </nav>
-                <main id="manager-content" class="p-4"></main>
-            </div>
+            <!-- Conteúdo do Modo Técnico -->
         </div>
 
         <!-- MODO JOGADOR (OFFLINE) -->
         <div id="player-mode" class="hidden">
-            <div id="player-creation-screen">
-                 <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Crie seu Craque</h2></header>
-                <div class="p-4 md:p-8 max-w-2xl mx-auto">
-                    <div class="mb-4">
-                        <label for="player-name" class="block mb-2">Nome:</label>
-                        <input type="text" id="player-name" class="w-full p-2 rounded bg-gray-700 border border-gray-600" placeholder="Ex: Léo da Silva">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block mb-2">Posição:</label>
-                        <select id="player-position" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
-                            <option value="ATA">Atacante</option><option value="MEI">Meio-campista</option><option value="DEF">Defensor</option><option value="GOL">Goleiro</option>
-                        </select>
-                    </div>
-                    <div class="mb-6">
-                        <h3 class="font-semibold mb-2">Atributos (Pontos restantes: <span id="attribute-points-left" class="font-bold text-amber-400">15</span>)</h3>
-                        <div id="attribute-inputs" class="space-y-2 mt-2"></div>
-                    </div>
-                    <button id="finalize-player-creation" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Iniciar Carreira</button>
-                    <button class="back-to-menu w-full mt-2 bg-red-600 p-2 rounded">Voltar</button>
-                </div>
-            </div>
-            <div id="player-hub-screen" class="hidden">
-                <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
-                    <h2 id="player-hub-name" class="text-xl md:text-2xl font-bold truncate"></h2>
-                    <div id="player-salary" class="text-sm md:text-lg"></div>
-                    <button class="back-to-menu bg-red-600 p-2 rounded">Voltar ao Menu</button>
-                </header>
-                <nav id="player-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
-                     <button data-tab="player-home" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Início</button>
-                     <button data-tab="player-social" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Rede Social</button>
-                     <button data-tab="player-training" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Treino</button>
-                     <button data-tab="player-brand" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Marca</button>
-                     <button data-tab="player-lifestyle" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Lifestyle</button>
-                </nav>
-                <main id="player-content" class="p-4"></main>
-            </div>
+            <!-- Conteúdo do Modo Jogador -->
         </div>
     </div>
 
@@ -181,102 +112,55 @@
         <div id="modal-content" class="bg-gray-800 p-6 md:p-8 rounded-lg text-center max-w-lg w-full shadow-2xl"></div>
     </div>
 
-    <!-- TEMPLATE DO SIMULADOR DE PARTIDA -->
-    <template id="match-simulator-template">
-        <div class="bg-gray-900 p-4 rounded-lg w-full max-w-3xl mx-auto">
-            <div class="flex justify-between items-center mb-4">
-                <div id="sim-home-team" class="text-lg md:text-xl font-bold text-center w-2/5">Time Casa</div>
-                <div id="sim-score" class="text-2xl md:text-3xl font-extrabold w-1/5 text-center">0 - 0</div>
-                <div id="sim-away-team" class="text-lg md:text-xl font-bold text-center w-2/5">Time Fora</div>
+    <!-- TEMPLATE DO SIMULADOR DE PARTIDA INTERATIVO -->
+    <template id="interactive-match-template">
+        <header class="bg-gray-800 p-4 flex justify-between items-center">
+            <h2 id="match-header-title" class="text-2xl font-bold">Partida Online</h2>
+            <button id="leave-match-btn" class="bg-red-600 hover:bg-red-500 p-2 rounded">Desistir</button>
+        </header>
+        <main class="p-4 max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-4 text-center">
+                <div id="sim-home-team" class="text-lg md:text-xl font-bold w-2/5"></div>
+                <div id="sim-score" class="text-2xl md:text-4xl font-extrabold w-1/5">0 - 0</div>
+                <div id="sim-away-team" class="text-lg md:text-xl font-bold w-2/5"></div>
             </div>
-            <div id="match-commentary" class="bg-black p-4 rounded-md overflow-y-scroll h-64 border border-gray-700"></div>
-            <button id="close-sim-btn" class="w-full mt-4 bg-teal-600 p-2 rounded btn-action">Fechar</button>
-        </div>
+            <div id="round-info" class="text-center text-amber-400 font-semibold text-xl mb-4"></div>
+            <div id="match-commentary" class="bg-black p-4 rounded-md overflow-y-scroll h-64 border border-gray-700 mb-4"></div>
+            <div id="action-panel">
+                <h3 class="text-center text-lg font-semibold mb-2">Escolha a sua ação:</h3>
+                <div class="flex justify-center gap-4">
+                    <button data-action="attack" class="action-btn w-1/3 bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-2 rounded-lg text-lg btn-action">Atacar</button>
+                    <button data-action="balance" class="action-btn w-1/3 bg-yellow-500 hover:bg-yellow-400 text-white font-bold py-4 px-2 rounded-lg text-lg btn-action">Equilibrar</button>
+                    <button data-action="defend" class="action-btn w-1/3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-2 rounded-lg text-lg btn-action">Defender</button>
+                </div>
+            </div>
+        </main>
     </template>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         window.Game = (() => {
             let state = {};
-            let isCancelling = false;
+            let matchmakingTimer = null;
 
             // --- CONFIGURAÇÃO DO SUPABASE ---
             const SUPABASE_URL = 'https://fwwwpdzvnptcbcoarejm.supabase.co'; 
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3d3dwZHp2bnB0Y2Jjb2FyZWptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NjM2MTQsImV4cCI6MjA2NzEzOTYxNH0.uozT2nfKs4EINeF6Suyp6AbmkrQ4V8W1sG9SWiokU1o';
-
             let supabaseClient;
-            try {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            } catch (e) {
-                console.error("Erro ao inicializar o Supabase.", e);
-            }
+            try { supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { console.error("Erro ao inicializar o Supabase.", e); }
 
-            // --- CONFIGURAÇÃO DO SISTEMA DE RANKING ---
+            // --- CONFIGURAÇÃO DO JOGO ---
             const RANKS = [
-                { name: 'Bronze III', starsToPromote: 3, color: '#a97142' },
-                { name: 'Bronze II',  starsToPromote: 3, color: '#a97142' },
-                { name: 'Bronze I',   starsToPromote: 4, color: '#a97142' },
-                { name: 'Prata III',  starsToPromote: 4, color: '#a8a8a8' },
-                { name: 'Prata II',   starsToPromote: 4, color: '#a8a8a8' },
-                { name: 'Prata I',    starsToPromote: 5, color: '#a8a8a8' },
-                { name: 'Ouro III',   starsToPromote: 5, color: '#f5d742' },
-                { name: 'Ouro II',    starsToPromote: 5, color: '#f5d742' },
-                { name: 'Ouro I',     starsToPromote: 5, color: '#f5d742' },
-                { name: 'Platina III', starsToPromote: 5, color: '#4E9C81' },
-                { name: 'Platina II',  starsToPromote: 5, color: '#4E9C81' },
-                { name: 'Platina I',   starsToPromote: 5, color: '#4E9C81' },
-                { name: 'Diamante III', starsToPromote: 5, color: '#4d82d1' },
-                { name: 'Diamante II',  starsToPromote: 5, color: '#4d82d1' },
-                { name: 'Diamante I',   starsToPromote: 5, color: '#4d82d1' },
-                { name: 'Lendário I',   starsToPromote: 3, color: '#8a2be2' },
-                { name: 'Lendário II',  starsToPromote: 3, color: '#8a2be2' },
-                { name: 'Lendário III', starsToPromote: 3, color: '#8a2be2' },
+                { name: 'Bronze III', starsToPromote: 3, color: '#a97142' }, { name: 'Bronze II',  starsToPromote: 3, color: '#a97142' }, { name: 'Bronze I',   starsToPromote: 4, color: '#a97142' },
+                { name: 'Prata III',  starsToPromote: 4, color: '#a8a8a8' }, { name: 'Prata II',   starsToPromote: 4, color: '#a8a8a8' }, { name: 'Prata I',    starsToPromote: 5, color: '#a8a8a8' },
+                { name: 'Ouro III',   starsToPromote: 5, color: '#f5d742' }, { name: 'Ouro II',    starsToPromote: 5, color: '#f5d742' }, { name: 'Ouro I',     starsToPromote: 5, color: '#f5d742' },
+                { name: 'Platina III', starsToPromote: 5, color: '#4E9C81' }, { name: 'Platina II',  starsToPromote: 5, color: '#4E9C81' }, { name: 'Platina I',   starsToPromote: 5, color: '#4E9C81' },
+                { name: 'Diamante III', starsToPromote: 5, color: '#4d82d1' }, { name: 'Diamante II',  starsToPromote: 5, color: '#4d82d1' }, { name: 'Diamante I',   starsToPromote: 5, color: '#4d82d1' },
+                { name: 'Lendário I',   starsToPromote: 3, color: '#8a2be2' }, { name: 'Lendário II',  starsToPromote: 3, color: '#8a2be2' }, { name: 'Lendário III', starsToPromote: 3, color: '#8a2be2' },
                 { name: 'Global',       starsToPromote: 0, color: '#ff4500' }
             ];
             
-            // --- DADOS PARA MODOS OFFLINE ---
-            const DB = {
-                ATTRIBUTES_MAP: {
-                    ATA: { Chute: 8, Drible: 7, Velocidade: 6, Passe: 4, Força: 5 },
-                    MEI: { Passe: 8, Drible: 7, Chute: 5, Defesa: 5, Visão: 6 },
-                    DEF: { Defesa: 8, Força: 7, Passe: 5, Velocidade: 5, Marcação: 6 },
-                    GOL: { Reflexos: 8, Posicionamento: 7, 'Um-pra-um': 6, Passe: 4, Agilidade: 5 }
-                },
-                TEAMS: [
-                    { nome: "Titans da Capital", forca: 910 },
-                    { nome: "Corsários da Costa", forca: 880 },
-                    { nome: "Lobos da Montanha", forca: 850 },
-                ],
-                PLAYERS: [
-                    { id: 1, nome: 'G. Arantes', forcaBase: 82, posicao: 'GOL', valor: 1200000, personality: 'loyal' },
-                    { id: 2, nome: 'L. Veloso', forcaBase: 78, posicao: 'DEF', valor: 900000, personality: 'neutral' },
-                    { id: 3, nome: 'B. Xerife', forcaBase: 85, posicao: 'DEF', valor: 1500000, personality: 'leader' },
-                    { id: 4, nome: 'M. Rocha', forcaBase: 84, posicao: 'DEF', valor: 1400000, personality: 'neutral' },
-                    { id: 5, nome: 'E. Cansado', forcaBase: 75, posicao: 'DEF', valor: 750000, personality: 'neutral' },
-                    { id: 6, nome: 'V. Marcador', forcaBase: 88, posicao: 'MEI', valor: 1800000, personality: 'loyal' },
-                    { id: 7, nome: 'M. Clássico', forcaBase: 90, posicao: 'MEI', valor: 2500000, personality: 'ambitious' },
-                    { id: 8, nome: 'A. Meia', forcaBase: 86, posicao: 'MEI', valor: 1600000, personality: 'neutral' },
-                    { id: 9, nome: 'P. Habilidoso', forcaBase: 89, posicao: 'ATA', valor: 2200000, personality: 'maverick' },
-                    { id: 10, nome: 'C. Matador', forcaBase: 92, posicao: 'ATA', valor: 3000000, personality: 'leader' },
-                    { id: 11, nome: 'P. Corredor', forcaBase: 87, posicao: 'ATA', valor: 1900000, personality: 'neutral' },
-                ],
-                 TRANSFER_PLAYERS: [
-                    { id: 16, nome: 'A. Furtado', forcaBase: 85, posicao: 'ATA', valor: 1700000, personality: 'mercenary' },
-                    { id: 17, nome: 'B. Campos', forcaBase: 82, posicao: 'MEI', valor: 1100000, personality: 'loyal' },
-                    { id: 18, nome: 'C. Diniz', forcaBase: 84, posicao: 'DEF', valor: 1300000, personality: 'leader' },
-                ],
-                LIFESTYLE_ITEMS: [
-                    { id: 'car1', name: 'Carro Popular', cost: 20000, reputation: { maverick: 2 } },
-                    { id: 'house1', name: 'Apartamento Simples', cost: 100000, reputation: { professional: 2 } },
-                ],
-                STAFF: {
-                    assistant: [{ name: "J. Cruz", quality: 75, salary: 50000 }, { name: "M. Roca", quality: 85, salary: 90000 }],
-                    scout: [{ name: "P. Neto", quality: 78, salary: 40000 }, { name: "R. Lemos", quality: 88, salary: 80000 }],
-                    medic: [{ name: "Dra. Alves", quality: 80, salary: 60000 }, { name: "Dr. Borges", quality: 90, salary: 100000 }],
-                }
-            };
-
-            // --- UI ELEMENTS CACHE ---
+            // --- CACHE DE ELEMENTOS UI ---
             const UI = {
                 authScreen: document.getElementById('auth-screen'),
                 mainMenu: document.getElementById('main-menu'),
@@ -293,34 +177,10 @@
                     container: document.getElementById('online-mode'),
                     pvpLobbyScreen: document.getElementById('online-pvp-lobby-screen'),
                     matchScreen: document.getElementById('online-match-screen'),
-                    content: document.getElementById('online-match-content'),
                     findMatchBtn: document.getElementById('find-match-btn'),
                     cancelSearchBtn: document.getElementById('cancel-search-btn'),
                     pvpStatusText: document.getElementById('pvp-status-text'),
                     pvpLoader: document.getElementById('pvp-loader'),
-                    leaveMatchBtn: document.getElementById('leave-match-btn'),
-                },
-                managerMode: {
-                    container: document.getElementById('manager-mode'),
-                    philosophyScreen: document.getElementById('manager-philosophy-screen'),
-                    hubScreen: document.getElementById('manager-hub-screen'),
-                    content: document.getElementById('manager-content'),
-                    nav: document.getElementById('manager-nav'),
-                    budget: document.getElementById('manager-budget'),
-                },
-                playerMode: {
-                    container: document.getElementById('player-mode'),
-                    creationScreen: document.getElementById('player-creation-screen'),
-                    hubScreen: document.getElementById('player-hub-screen'),
-                    content: document.getElementById('player-content'),
-                    nav: document.getElementById('player-nav'),
-                    attributePointsLeft: document.getElementById('attribute-points-left'),
-                    attributeInputs: document.getElementById('attribute-inputs'),
-                    finalizeCreationBtn: document.getElementById('finalize-player-creation'),
-                    playerNameInput: document.getElementById('player-name'),
-                    playerPositionSelect: document.getElementById('player-position'),
-                    playerHubName: document.getElementById('player-hub-name'),
-                    playerSalary: document.getElementById('player-salary'),
                 },
                 startOnlineModeBtn: document.getElementById('start-online-mode'),
                 startManagerBtn: document.getElementById('start-manager-mode'),
@@ -328,7 +188,6 @@
                 backToMenuBtns: document.querySelectorAll('.back-to-menu'),
                 modal: document.getElementById('modal'),
                 modalContent: document.getElementById('modal-content'),
-                matchSimTemplate: document.getElementById('match-simulator-template'),
                 playerRankDisplay: document.getElementById('player-rank-display'),
                 lobbyRankDisplay: document.getElementById('lobby-rank-display'),
             };
@@ -347,24 +206,19 @@
             }
             function showSubScreen(modeContainer, screenToShow) {
                 showScreen('game-container');
-                [UI.onlineMode.container, UI.managerMode.container, UI.playerMode.container].forEach(c => c.classList.add('hidden'));
+                [UI.onlineMode.container, document.getElementById('manager-mode'), document.getElementById('player-mode')].forEach(c => c.classList.add('hidden'));
                 Array.from(modeContainer.children).forEach(child => child.classList.add('hidden'));
                 screenToShow.classList.remove('hidden');
                 modeContainer.classList.remove('hidden');
             }
-            function getForcaEfetiva(jogador) { return Math.max(jogador.forcaBase - (jogador.cansaco || 0) + Math.floor(((jogador.moral || 100) - 100) / 5), 20); }
 
             // --- LÓGICA DE RANKING ---
             async function updateRankDisplay() {
                 if (!state.profile) return;
-
                 let { rank_id, rank_stars } = state.profile;
-                
                 rank_id = parseInt(rank_id, 10) || 0;
                 rank_stars = parseInt(rank_stars, 10) || 0;
-
                 let currentRank = RANKS[rank_id];
-
                 if (currentRank.starsToPromote > 0 && rank_stars >= currentRank.starsToPromote) {
                     rank_id = Math.min(rank_id + 1, RANKS.length - 1);
                     rank_stars = 1; 
@@ -372,9 +226,7 @@
                     state.profile.rank_id = rank_id;
                     state.profile.rank_stars = rank_stars;
                     await supabaseClient.from('profiles').update({ rank_id, rank_stars }).eq('id', state.user.id);
-                }
-                
-                else if (rank_stars < 0) {
+                } else if (rank_stars < 0) {
                     if (rank_id > 0) {
                         rank_id--;
                         const previousRank = RANKS[rank_id];
@@ -388,14 +240,7 @@
                         state.profile.rank_stars = rank_stars;
                     }
                 }
-
-                const rankHTML = `
-                    <h3 class="text-lg font-semibold text-gray-400">RANK ATUAL</h3>
-                    <div class="text-3xl font-extrabold" style="color: ${currentRank.color};">${currentRank.name}</div>
-                    <div class="rank-star mt-2 text-yellow-400">
-                        ${'★'.repeat(rank_stars)}${'☆'.repeat(currentRank.starsToPromote > 0 ? Math.max(0, currentRank.starsToPromote - rank_stars) : 0)}
-                    </div>`;
-
+                const rankHTML = `<h3 class="text-lg font-semibold text-gray-400">RANK ATUAL</h3><div class="text-3xl font-extrabold" style="color: ${currentRank.color};">${currentRank.name}</div><div class="rank-star mt-2 text-yellow-400">${'★'.repeat(rank_stars)}${'☆'.repeat(currentRank.starsToPromote > 0 ? Math.max(0, currentRank.starsToPromote - rank_stars) : 0)}</div>`;
                 UI.playerRankDisplay.innerHTML = rankHTML;
                 UI.lobbyRankDisplay.innerHTML = rankHTML;
             }
@@ -404,9 +249,8 @@
             async function handleLogin() {
                 toggleAuthLoading(true);
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email: UI.emailInput.value, password: UI.passwordInput.value });
-                if (error) {
-                    UI.authError.textContent = error.message;
-                } else {
+                if (error) { UI.authError.textContent = error.message; }
+                else {
                     state.user = data.user;
                     const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', state.user.id).single();
                     state.profile = profile;
@@ -419,9 +263,8 @@
             async function handleSignup() {
                 toggleAuthLoading(true);
                 const { data: authData, error } = await supabaseClient.auth.signUp({ email: UI.emailInput.value, password: UI.passwordInput.value });
-                if (error) {
-                    UI.authError.textContent = error.message;
-                } else {
+                if (error) { UI.authError.textContent = error.message; }
+                else {
                     await supabaseClient.from('profiles').insert({ id: authData.user.id, email: authData.user.email, rank_id: 0, rank_stars: 0 });
                     alert('Cadastro realizado! Verifique seu e-mail para confirmação e depois faça o login.');
                 }
@@ -429,19 +272,14 @@
             }
 
             async function handleLogout() {
-                if (state.realtimeChannel) {
-                    await supabaseClient.removeChannel(state.realtimeChannel);
-                    state.realtimeChannel = null;
-                }
+                if (state.realtimeChannel) { await supabaseClient.removeChannel(state.realtimeChannel); state.realtimeChannel = null; }
                 await supabaseClient.auth.signOut();
                 state = {};
                 showScreen('auth-screen');
             }
 
             function showMainMenu() {
-                if (state.realtimeChannel) {
-                    cancelMatchmaking(false);
-                }
+                if (state.realtimeChannel) { cancelMatchmaking(false); }
                 state.onlineMatch = null;
                 showScreen('main-menu');
             }
@@ -451,17 +289,14 @@
                 showSubScreen(UI.onlineMode.container, UI.onlineMode.pvpLobbyScreen);
                 UI.onlineMode.findMatchBtn.onclick = findOnlineMatch;
                 UI.onlineMode.cancelSearchBtn.onclick = () => cancelMatchmaking(true);
-                UI.onlineMode.leaveMatchBtn.onclick = () => {
-                    alert("Você desistiu da partida.");
-                    cancelMatchmaking(true);
-                    showMainMenu();
-                };
             }
 
             async function findOnlineMatch() {
                 togglePvpUi(true);
+                matchmakingTimer = setTimeout(startBotMatch, 30000); // 30 segundos de espera
                 const { data: match, error } = await supabaseClient.rpc('find_or_create_match');
                 if (error) {
+                    clearTimeout(matchmakingTimer);
                     console.error('Erro no matchmaking:', error);
                     alert('Não foi possível encontrar uma partida. Tente novamente.');
                     togglePvpUi(false);
@@ -470,6 +305,7 @@
                 if (match) {
                     state.onlineMatch = match;
                     if (match.status === 'in_progress') {
+                        clearTimeout(matchmakingTimer);
                         startOnlineMatch(match);
                     } else {
                         togglePvpUi(true, 'Aguardando oponente...');
@@ -479,18 +315,13 @@
             }
             
             async function cancelMatchmaking(showUiUpdate = true) {
-                if (isCancelling) return;
-                isCancelling = true;
+                clearTimeout(matchmakingTimer);
                 if (showUiUpdate) togglePvpUi(false);
-                if (state.realtimeChannel) {
-                    await supabaseClient.removeChannel(state.realtimeChannel);
-                    state.realtimeChannel = null;
-                }
+                if (state.realtimeChannel) { await supabaseClient.removeChannel(state.realtimeChannel); state.realtimeChannel = null; }
                 if (state.onlineMatch) {
                     await supabaseClient.from('online_matches').delete().eq('id', state.onlineMatch.id).eq('status', 'searching');
                     state.onlineMatch = null;
                 }
-                isCancelling = false;
             }
 
             function togglePvpUi(isSearching, text = 'Procurando oponente...') {
@@ -505,176 +336,197 @@
                 state.realtimeChannel = supabaseClient.channel(`online-match-${matchId}`);
                 state.realtimeChannel
                     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'online_matches', filter: `id=eq.${matchId}`}, payload => {
+                        clearTimeout(matchmakingTimer);
                         const updatedMatch = payload.new;
                         if (updatedMatch.status === 'in_progress' && updatedMatch.player2_id) {
                             state.onlineMatch = updatedMatch;
                             startOnlineMatch(updatedMatch);
                         }
                     })
+                    .on('broadcast', { event: 'player_action' }, ({ payload }) => {
+                        if (payload.senderId !== state.user.id) {
+                            state.matchState.opponentAction = payload.action;
+                            if (state.matchState.playerAction) {
+                                resolveRound();
+                            }
+                        }
+                    })
                     .subscribe();
             }
 
-            async function startOnlineMatch(match) {
-                if (state.realtimeChannel) {
-                    await supabaseClient.removeChannel(state.realtimeChannel);
-                    state.realtimeChannel = null;
-                }
-                showSubScreen(UI.onlineMode.container, UI.onlineMode.matchScreen);
-                const matchContainer = UI.onlineMode.content;
-                const template = UI.matchSimTemplate.content.cloneNode(true);
-                matchContainer.innerHTML = '';
-                matchContainer.appendChild(template);
-                const commentary = document.getElementById('match-commentary');
-                commentary.innerHTML = `<p>Partida encontrada! A preparar o campo...</p>`;
-
-                setTimeout(async () => {
-                    const weArePlayer1 = match.player1_id === state.user.id;
-                    const result = Math.random();
-                    let winnerId, loserId;
-                    if (result > 0.5) {
-                        winnerId = state.user.id;
-                        loserId = weArePlayer1 ? match.player2_id : match.player1_id;
-                    } else {
-                        loserId = state.user.id;
-                        winnerId = weArePlayer1 ? match.player2_id : match.player1_id;
-                    }
-                    await supabaseClient.rpc('handle_match_result', { winner_id: winnerId, loser_id: loserId });
-                    const didWin = winnerId === state.user.id;
-                    state.profile.rank_stars += didWin ? 1 : -1;
-                    await updateRankDisplay();
-                    showResultModal(didWin);
-                }, 3000);
-            }
-
-            function showResultModal(didWin) {
-                const title = didWin ? "VITÓRIA!" : "DERROTA";
-                const starChange = didWin ? "+1 ★" : "-1 ★";
-                const color = didWin ? "text-green-400" : "text-red-500";
-                const modalHTML = `
-                    <h2 class="text-4xl font-extrabold ${color} mb-4">${title}</h2>
-                    <p class="text-xl text-gray-300">O seu rank foi atualizado.</p>
-                    <p class="text-3xl font-bold ${color} my-6">${starChange}</p>
-                    <button onclick="Game.closeAndGoToMenu()" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Voltar ao Menu</button>
-                `;
-                showModal(modalHTML);
-            }
-
-            // --- MODOS DE CARREIRA OFFLINE ---
-            async function loadOrCreateCareer(careerType) {
-                showModal('<div class="loader mx-auto"></div><p class="mt-4">Carregando sua carreira...</p>');
-                const { data } = await supabaseClient.from(`${careerType}_careers`).select('*').eq('user_id', state.user.id).single();
-                closeModal();
-                const modeUI = UI[`${careerType}Mode`];
-                if (data) {
-                    state[careerType] = data.game_state;
-                    state[careerType].id = data.id;
-                    showSubScreen(modeUI.container, modeUI.hubScreen);
-                    if (careerType === 'manager') { setupManagerNav(); switchManagerTab('manager-office'); }
-                    if (careerType === 'player') { setupPlayerNav(); switchPlayerTab('player-home'); }
-                } else {
-                    showSubScreen(modeUI.container, modeUI.creationScreen || modeUI.philosophyScreen);
-                    if (careerType === 'manager') {
-                        document.querySelectorAll('.philosophy-card').forEach(card => {
-                            card.onclick = (e) => setupManagerMode(e.currentTarget.dataset.philosophy);
-                        });
-                    } else {
-                        setupPlayerCreation();
-                    }
-                }
-            }
-            
-            // --- MODO TÉCNICO ---
-            async function setupManagerMode(philosophy) {
-                const philosophies = { cantera: { budget: 2000000 }, galactic: { budget: 15000000 }, moneyball: { budget: 7000000 } };
-                const initialState = {
-                    orcamento: philosophies[philosophy].budget,
-                    jogadores: JSON.parse(JSON.stringify(DB.PLAYERS)),
-                    escalacao: [],
+            function startBotMatch() {
+                cancelMatchmaking(false);
+                const botRank = RANKS[state.profile.rank_id];
+                state.matchState = {
+                    isBotMatch: true,
+                    opponentName: `Bot ${botRank.name}`,
+                    score: [0, 0],
+                    round: 1,
+                    playerAction: null,
+                    opponentAction: null,
                 };
-                const { data } = await supabaseClient.from('manager_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
-                state.manager = data.game_state;
-                state.manager.id = data.id;
-                showSubScreen(UI.managerMode.container, UI.managerMode.hubScreen);
-                setupManagerNav();
-                switchManagerTab('manager-office');
+                setupMatchUI();
+                playNextRound();
             }
-            function setupManagerNav() { UI.managerMode.nav.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') switchManagerTab(e.target.dataset.tab); }); }
-            function switchManagerTab(tabId) {
-                UI.managerMode.nav.querySelector('.active').classList.remove('active');
-                UI.managerMode.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-                renderManagerContent(tabId);
+
+            async function startOnlineMatch(match) {
+                if (state.realtimeChannel) { await supabaseClient.removeChannel(state.realtimeChannel); state.realtimeChannel = null; }
+                setupRealtimeForMatch(match.id);
+
+                const opponentId = match.player1_id === state.user.id ? match.player2_id : match.player1_id;
+                const { data: opponentProfile } = await supabaseClient.from('profiles').select('email').eq('id', opponentId).single();
+
+                state.matchState = {
+                    isBotMatch: false,
+                    opponentName: opponentProfile.email.split('@')[0],
+                    opponentId: opponentId,
+                    score: [0, 0],
+                    round: 1,
+                    playerAction: null,
+                    opponentAction: null,
+                };
+                setupMatchUI();
+                playNextRound();
             }
-            function renderManagerContent(tabId) {
-                UI.managerMode.budget.textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
-                const content = UI.managerMode.content;
-                if (tabId === 'manager-squad') {
-                    content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Gerenciar Elenco</h3>
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div><h4 class="text-xl font-semibold mb-2">Jogadores</h4><div id="squad-list" class="space-y-2"></div></div>
-                        <div><h4 class="text-xl font-semibold mb-2">Time Titular</h4><div id="lineup-list" class="space-y-2"></div></div>
-                    </div>`;
-                    renderManagerSquadLists();
-                } else {
-                    content.innerHTML = `<h3 class="text-2xl font-bold">${tabId.replace('manager-', '')}</h3><p>Conteúdo em desenvolvimento.</p>`;
-                }
+
+            function setupMatchUI() {
+                showSubScreen(UI.onlineMode.container, UI.onlineMode.matchScreen);
+                const template = document.getElementById('interactive-match-template').content.cloneNode(true);
+                UI.onlineMode.matchScreen.innerHTML = '';
+                UI.onlineMode.matchScreen.appendChild(template);
+                document.getElementById('sim-home-team').textContent = state.profile.email.split('@')[0];
+                document.getElementById('sim-away-team').textContent = state.matchState.opponentName;
+                document.querySelectorAll('.action-btn').forEach(btn => btn.onclick = (e) => handlePlayerAction(e.target.dataset.action));
+                document.getElementById('leave-match-btn').onclick = () => {
+                    alert("Você desistiu da partida.");
+                    cancelMatchmaking(true);
+                    showMainMenu();
+                };
             }
-            function renderManagerSquadLists() {
-                const squadListEl = document.getElementById('squad-list');
-                const lineupListEl = document.getElementById('lineup-list');
-                squadListEl.innerHTML = '';
-                lineupListEl.innerHTML = '';
-                state.manager.jogadores.forEach(p => {
-                    const playerEl = document.createElement('div');
-                    playerEl.className = 'p-2 bg-gray-700 rounded cursor-pointer';
-                    playerEl.innerHTML = `${p.nome} (${p.posicao}) - F: ${getForcaEfetiva(p)}`;
-                    squadListEl.appendChild(playerEl);
+
+            function playNextRound() {
+                state.matchState.playerAction = null;
+                state.matchState.opponentAction = null;
+                updateMatchUI(`Ronda ${state.matchState.round} de 5. Escolha a sua jogada!`);
+                document.querySelectorAll('.action-btn').forEach(btn => {
+                    btn.disabled = false;
+                    btn.classList.remove('selected');
                 });
             }
 
-            // --- MODO JOGADOR ---
-            function setupPlayerCreation() {
-                UI.playerMode.playerPositionSelect.onchange = renderAttributeInputs;
-                UI.playerMode.finalizeCreationBtn.onclick = finalizePlayerCreation;
-                renderAttributeInputs();
-            }
-            function renderAttributeInputs() {
-                const position = UI.playerMode.playerPositionSelect.value;
-                const attributes = DB.ATTRIBUTES_MAP[position];
-                UI.playerMode.attributeInputs.innerHTML = '';
-                for (const attr in attributes) {
-                    UI.playerMode.attributeInputs.innerHTML += `<div><label>${attr}: ${attributes[attr]}</label></div>`;
+            async function handlePlayerAction(action) {
+                state.matchState.playerAction = action;
+                document.querySelectorAll('.action-btn').forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.dataset.action === action) btn.classList.add('selected');
+                });
+                updateMatchUI("Aguardando oponente...");
+
+                if (state.matchState.isBotMatch) {
+                    const botActions = ['attack', 'balance', 'defend'];
+                    state.matchState.opponentAction = botActions[Math.floor(Math.random() * botActions.length)];
+                    setTimeout(resolveRound, 1000);
+                } else {
+                    await state.realtimeChannel.send({
+                        type: 'broadcast',
+                        event: 'player_action',
+                        payload: { action: action, senderId: state.user.id },
+                    });
+                    if (state.matchState.opponentAction) {
+                        resolveRound();
+                    }
                 }
             }
-            async function finalizePlayerCreation() {
-                const initialState = {
-                    name: UI.playerMode.playerNameInput.value,
-                    position: UI.playerMode.playerPositionSelect.value,
-                };
-                const { data } = await supabaseClient.from('player_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
-                state.player = data.game_state;
-                state.player.id = data.id;
-                showSubScreen(UI.playerMode.container, UI.playerMode.hubScreen);
-                setupPlayerNav();
-                switchPlayerTab('player-home');
+
+            function resolveRound() {
+                const pAction = state.matchState.playerAction;
+                const oAction = state.matchState.opponentAction;
+                let commentaryText = `Você escolheu ${pAction}, oponente escolheu ${oAction}. `;
+                
+                // Lógica Rock-Paper-Scissors
+                if (pAction === oAction) {
+                    commentaryText += "Jogada anulada!";
+                } else if (
+                    (pAction === 'attack' && oAction === 'balance') ||
+                    (pAction === 'balance' && oAction === 'defend') ||
+                    (pAction === 'defend' && oAction === 'attack')
+                ) {
+                    commentaryText += "GOLO! Você marcou!";
+                    state.matchState.score[0]++;
+                } else {
+                    commentaryText += "GOLO do oponente!";
+                    state.matchState.score[1]++;
+                }
+
+                updateMatchUI(commentaryText);
+
+                state.matchState.round++;
+                if (state.matchState.round > 5) {
+                    setTimeout(endMatch, 2000);
+                } else {
+                    setTimeout(playNextRound, 2000);
+                }
             }
-            function setupPlayerNav() { UI.playerMode.nav.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') switchPlayerTab(e.target.dataset.tab); }); }
-            function switchPlayerTab(tabId) {
-                UI.playerMode.nav.querySelector('.active').classList.remove('active');
-                UI.playerMode.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-                renderPlayerContent(tabId);
+
+            function updateMatchUI(commentary) {
+                document.getElementById('sim-score').textContent = `${state.matchState.score[0]} - ${state.matchState.score[1]}`;
+                document.getElementById('round-info').textContent = `Ronda ${state.matchState.round}`;
+                const commentaryEl = document.getElementById('match-commentary');
+                commentaryEl.innerHTML = `<p>${commentary}</p>` + commentaryEl.innerHTML;
             }
-            function renderPlayerContent(tabId) {
-                UI.playerMode.playerHubName.textContent = state.player.name;
-                UI.playerMode.content.innerHTML = `<h3 class="text-2xl font-bold">${tabId.replace('player-', '')}</h3><p>Conteúdo em desenvolvimento.</p>`;
+
+            async function endMatch() {
+                const [playerScore, opponentScore] = state.matchState.score;
+                let didWin;
+                if (playerScore > opponentScore) didWin = true;
+                else if (playerScore < opponentScore) didWin = false;
+                else didWin = null; // Empate
+
+                if (didWin !== null) {
+                    if (state.matchState.isBotMatch) {
+                        if (didWin) state.profile.rank_stars++;
+                        // Não perde estrelas contra bot
+                    } else {
+                        state.profile.rank_stars += didWin ? 1 : -1;
+                        await supabaseClient.rpc('handle_match_result', { 
+                            winner_id: didWin ? state.user.id : state.matchState.opponentId, 
+                            loser_id: didWin ? state.matchState.opponentId : state.user.id 
+                        });
+                    }
+                }
+                
+                await updateRankDisplay();
+                showResultModal(didWin);
             }
+
+            function showResultModal(didWin) {
+                let title, starChange, color;
+                if (didWin === null) {
+                    title = "EMPATE";
+                    starChange = "Nenhuma alteração de estrelas";
+                    color = "text-gray-400";
+                } else {
+                    title = didWin ? "VITÓRIA!" : "DERROTA";
+                    if (state.matchState.isBotMatch && !didWin) {
+                        starChange = "0 ★ (Derrota para Bot)";
+                        color = "text-red-500";
+                    } else {
+                        starChange = didWin ? "+1 ★" : "-1 ★";
+                        color = didWin ? "text-green-400" : "text-red-500";
+                    }
+                }
+                
+                const modalHTML = `<h2 class="text-4xl font-extrabold ${color} mb-4">${title}</h2><p class="text-xl text-gray-300">O seu rank foi atualizado.</p><p class="text-3xl font-bold ${color} my-6">${starChange}</p><button onclick="Game.closeAndGoToMenu()" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Voltar ao Menu</button>`;
+                showModal(modalHTML);
+            }
+
+            // --- MODOS DE CARREIRA OFFLINE (Funções vazias para manter a estrutura) ---
+            function loadOrCreateCareer(type) { alert(`Modo Carreira (${type}) em desenvolvimento.`); }
 
             // --- OBJETO PÚBLICO ---
             return {
                 init: async function() {
-                    if (!supabaseClient) {
-                        UI.authError.textContent = "Supabase não configurado.";
-                        return;
-                    }
+                    if (!supabaseClient) { UI.authError.textContent = "Supabase não configurado."; return; }
                     UI.loginBtn.addEventListener('click', handleLogin);
                     UI.signupBtn.addEventListener('click', handleSignup);
                     UI.logoutBtn.addEventListener('click', handleLogout);
@@ -682,7 +534,6 @@
                     UI.startPlayerBtn.addEventListener('click', () => loadOrCreateCareer('player'));
                     UI.startOnlineModeBtn.addEventListener('click', initPvpMode);
                     UI.backToMenuBtns.forEach(btn => btn.addEventListener('click', showMainMenu));
-                    
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (session) {
                         state.user = session.user;
