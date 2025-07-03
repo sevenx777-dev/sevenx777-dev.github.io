@@ -165,6 +165,34 @@
                     DEF: { Defesa: 8, Força: 7, Passe: 5, Velocidade: 5, Marcação: 6 },
                     GOL: { Reflexos: 8, Posicionamento: 7, 'Um-pra-um': 6, Passe: 4, Agilidade: 5 }
                 },
+                TEAMS: [
+                    { nome: "Titans da Capital", forca: 910 },
+                    { nome: "Corsários da Costa", forca: 880 },
+                    { nome: "Lobos da Montanha", forca: 850 },
+                ],
+                PLAYERS: [
+                    { id: 1, nome: 'Goleiro Genérico', forcaBase: 82, posicao: 'GOL', valor: 1200000 },
+                    { id: 2, nome: 'Lateral D. Veloz', forcaBase: 78, posicao: 'DEF', valor: 900000 },
+                    { id: 3, nome: 'Zagueiro Xerife', forcaBase: 85, posicao: 'DEF', valor: 1500000 },
+                    { id: 4, nome: 'Zagueiro Murilo', forcaBase: 84, posicao: 'DEF', valor: 1400000 },
+                    { id: 5, nome: 'Lateral E. Cansado', forcaBase: 75, posicao: 'DEF', valor: 750000 },
+                    { id: 6, nome: 'Volante Marcador', forcaBase: 88, posicao: 'MEI', valor: 1800000 },
+                    { id: 7, nome: 'Meia Clássico', forcaBase: 90, posicao: 'MEI', valor: 2500000 },
+                    { id: 8, nome: 'Meia Atacante', forcaBase: 86, posicao: 'MEI', valor: 1600000 },
+                    { id: 9, nome: 'Ponta Habilidoso', forcaBase: 89, posicao: 'ATA', valor: 2200000 },
+                    { id: 10, nome: 'Centroavante Matador', forcaBase: 92, posicao: 'ATA', valor: 3000000 },
+                    { id: 11, nome: 'Ponta Corredor', forcaBase: 87, posicao: 'ATA', valor: 1900000 },
+                    { id: 12, nome: 'Goleiro Reserva', forcaBase: 70, posicao: 'GOL', valor: 500000 },
+                    { id: 13, nome: 'Zagueiro Jovem', forcaBase: 72, posicao: 'DEF', valor: 600000 },
+                    { id: 14, nome: 'Volante C. Guarda', forcaBase: 80, posicao: 'MEI', valor: 1000000 },
+                    { id: 15, nome: 'Atacante Promessa', forcaBase: 77, posicao: 'ATA', valor: 850000 }
+                ],
+                 TRANSFER_PLAYERS: [
+                    { id: 16, nome: 'A. Furtado', forcaBase: 85, posicao: 'ATA', valor: 1700000 },
+                    { id: 17, nome: 'B. Campos', forcaBase: 82, posicao: 'MEI', valor: 1100000 },
+                    { id: 18, nome: 'C. Diniz', forcaBase: 84, posicao: 'DEF', valor: 1300000 },
+                    { id: 19, nome: 'D. Esteves', forcaBase: 79, posicao: 'GOL', valor: 950000 },
+                ],
                 LIFESTYLE_ITEMS: [
                     { id: 'car1', name: 'Carro Popular', cost: 20000, reputation: { maverick: 2 } },
                     { id: 'car2', name: 'Carro Esportivo', cost: 150000, reputation: { maverick: 5 } },
@@ -217,8 +245,14 @@
                 state.manager = {
                     philosophy: philosophy,
                     orcamento: philosophies[philosophy].budget,
+                    jogadores: JSON.parse(JSON.stringify(DB.PLAYERS)).map(p => ({...p, cansaco: 0, moral: 100})),
+                    escalacao: [],
+                    transferList: JSON.parse(JSON.stringify(DB.TRANSFER_PLAYERS)),
                     youthAcademy: generateYouthPlayers(philosophies[philosophy].youthQuality),
                     staff: { assistant: null, scout: null, medic: null },
+                    rodadaAtual: 0,
+                    campeonatoFinalizado: false,
+                    campeonato: { times: [], calendario: [] },
                     dilemmaQueue: [{
                         title: "Coletiva de Imprensa",
                         text: "O próximo jogo é um clássico contra nosso maior rival. O que você dirá à imprensa?",
@@ -229,9 +263,30 @@
                         ]
                     }]
                 };
+                setupManagerChampionship();
                 showScreen(UI.managerMode.container, UI.managerMode.hubScreen);
                 setupManagerNav();
                 switchManagerTab('manager-office');
+            }
+            
+            function setupManagerChampionship() {
+                const meuClube = { nome: "Meu Clube FC", isPlayer: true, forca: () => state.manager.escalacao.reduce((acc, p) => acc + getForcaEfetiva(p), 0) };
+                const todosOsTimes = [meuClube, ...DB.TEAMS].map(t => ({...t, P: 0, J: 0, V: 0, E: 0, D: 0, GP: 0, GC: 0, SG: 0}));
+                state.manager.campeonato.times = todosOsTimes;
+                const nomesTimes = todosOsTimes.map(t => t.nome);
+                const calendario = [];
+                for (let i = 0; i < nomesTimes.length; i++) {
+                    for (let j = i + 1; j < nomesTimes.length; j++) {
+                        calendario.push({ casa: nomesTimes[i], fora: nomesTimes[j] });
+                        calendario.push({ casa: nomesTimes[j], fora: nomesTimes[i] });
+                    }
+                }
+                calendario.sort(() => Math.random() - 0.5);
+                const jogosPorRodada = nomesTimes.length / 2;
+                state.manager.campeonato.calendario = [];
+                for(let i = 0; i < calendario.length; i += jogosPorRodada) {
+                    state.manager.campeonato.calendario.push(calendario.slice(i, i + jogosPorRodada));
+                }
             }
 
             function generateYouthPlayers(quality) {
@@ -262,7 +317,15 @@
                  switch(tabId) {
                     case 'manager-office':
                         const dilemma = state.manager.dilemmaQueue[0];
+                        const proximaRodada = state.manager.campeonato.calendario[state.manager.rodadaAtual];
+                        const nossoJogo = proximaRodada ? proximaRodada.find(j => j.casa === "Meu Clube FC" || j.fora === "Meu Clube FC") : null;
+                        
                         content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Escritório</h3>
+                        <div class="bg-gray-800 p-4 rounded-lg mb-4">
+                            <h4 class="text-xl font-semibold mb-2">Próxima Partida ${nossoJogo ? `(Rodada ${state.manager.rodadaAtual + 1})` : ''}</h4>
+                            ${nossoJogo ? `<p class="text-2xl text-center p-4">${nossoJogo.casa} vs ${nossoJogo.fora}</p>
+                            <p class="text-gray-400 mt-2 text-center">Vá para a aba 'Elenco' para escalar seu time e jogar a partida.</p>` : `<p class="text-2xl text-center p-4 text-green-400">Fim de Temporada!</p>`}
+                        </div>
                         <div class="bg-gray-800 p-4 rounded-lg">
                             <h4 class="text-xl font-semibold">Caixa de Entrada</h4>
                             ${dilemma ? `<div class="mt-2 p-3 bg-gray-700 rounded">
@@ -272,6 +335,23 @@
                             </div>` : `<p class="text-gray-400 mt-2">Nenhuma mensagem nova.</p>`}
                         </div>`;
                         if(dilemma) document.getElementById('handle-dilemma').addEventListener('click', () => handleDilemma(dilemma));
+                        break;
+                    case 'manager-squad':
+                        content.innerHTML = `
+                            <h3 class="text-2xl font-bold mb-4">Gerenciar Elenco</h3>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <h4 class="text-xl font-semibold mb-2">Jogadores Disponíveis</h4>
+                                    <div id="squad-list" class="space-y-2 max-h-96 overflow-y-auto p-2 bg-gray-800 rounded"></div>
+                                </div>
+                                <div>
+                                    <h4 class="text-xl font-semibold mb-2">Time Titular (Força: <span id="squad-strength">0</span>)</h4>
+                                    <div id="lineup-list" class="space-y-2 min-h-96 p-2 bg-gray-800 rounded"></div>
+                                    <button id="play-round-btn" class="w-full mt-2 bg-amber-500 hover:bg-amber-400 text-white font-bold py-3 rounded-lg btn-action">Jogar Rodada</button>
+                                </div>
+                            </div>`;
+                        renderManagerSquadLists();
+                        document.getElementById('play-round-btn').addEventListener('click', playManagerRound);
                         break;
                     case 'manager-staff':
                         content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Equipe Técnica</h3>
@@ -286,8 +366,198 @@
                         </div>`;
                         document.querySelectorAll('.hire-staff-btn').forEach(btn => btn.addEventListener('click', (e) => showHireStaffModal(e.target.dataset.role)));
                         break;
-                    // ... other cases from v2.0
+                    case 'manager-youth':
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Academia de Jovens</h3>
+                        <div class="space-y-3">
+                        ${state.manager.youthAcademy.map(p => `
+                            <div class="card bg-gray-800 p-3 rounded flex justify-between items-center">
+                                <div>
+                                    <p class="font-bold">${p.nome} (${p.idade} anos)</p>
+                                    <p class="text-sm text-gray-400">Posição: ${p.posicao} | Potencial: ${p.potencial}</p>
+                                </div>
+                                <button class="bg-teal-600 p-2 rounded btn-action">Promover</button>
+                            </div>
+                        `).join('')}
+                        </div>`;
+                        break;
+                    case 'manager-transfers':
+                        content.innerHTML = `
+                            <h3 class="text-2xl font-bold mb-4">Mercado de Transferências</h3>
+                            <div id="transfer-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>`;
+                        renderTransferList();
+                        break;
+                    case 'manager-league':
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Tabela do Campeonato</h3>
+                            <div class="overflow-x-auto"><table class="w-full text-left">
+                                <thead class="bg-gray-800"><tr>
+                                    <th class="p-2">#</th><th class="p-2">Time</th><th class="p-2">P</th><th class="p-2">J</th><th class="p-2">V</th><th class="p-2">E</th><th class="p-2">D</th><th class="p-2">SG</th>
+                                </tr></thead>
+                                <tbody id="league-table"></tbody>
+                            </table></div>`;
+                        renderLeagueTable();
+                        break;
                  }
+            }
+
+            function renderManagerSquadLists() {
+                const squadListEl = document.getElementById('squad-list');
+                const lineupListEl = document.getElementById('lineup-list');
+                if (!squadListEl || !lineupListEl) return;
+
+                squadListEl.innerHTML = '';
+                lineupListEl.innerHTML = '';
+
+                state.manager.jogadores.forEach(p => {
+                    const isSelected = state.manager.escalacao.some(pl => pl.id === p.id);
+                    const playerEl = document.createElement('div');
+                    playerEl.className = `player-card p-2 rounded flex justify-between items-center cursor-pointer ${isSelected ? 'bg-teal-700' : 'bg-gray-700'}`;
+                    playerEl.innerHTML = `<span>${p.nome} (${p.posicao}) - F: ${getForcaEfetiva(p)}</span>`;
+                    playerEl.addEventListener('click', () => togglePlayerSelection(p));
+                    squadListEl.appendChild(playerEl);
+                });
+                
+                state.manager.escalacao.forEach(p => {
+                    const playerEl = document.createElement('div');
+                    playerEl.className = 'p-2 rounded bg-blue-900 flex justify-between items-center';
+                    playerEl.innerHTML = `<span>${p.nome}</span> <span>${getForcaEfetiva(p)}</span>`;
+                    lineupListEl.appendChild(playerEl);
+                });
+                
+                const totalStrength = state.manager.escalacao.reduce((acc, p) => acc + getForcaEfetiva(p), 0);
+                document.getElementById('squad-strength').textContent = totalStrength;
+            }
+
+            function togglePlayerSelection(player) {
+                const index = state.manager.escalacao.findIndex(p => p.id === player.id);
+                if (index > -1) {
+                    state.manager.escalacao.splice(index, 1);
+                } else if (state.manager.escalacao.length < 11) {
+                    state.manager.escalacao.push(player);
+                } else {
+                    alert('Time completo! Remova um jogador para adicionar outro.');
+                }
+                renderManagerSquadLists();
+            }
+
+            function renderTransferList() {
+                const transferListEl = document.getElementById('transfer-list');
+                if (!transferListEl) return;
+                transferListEl.innerHTML = '';
+                state.manager.transferList.forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = 'card bg-gray-800 p-4 rounded-lg text-center';
+                    card.innerHTML = `<h4 class="text-lg font-bold">${p.nome}</h4>
+                        <p>Posição: ${p.posicao} | Força: ${p.forcaBase}</p>
+                        <p class="text-xl font-semibold text-green-400 my-2">$${p.valor.toLocaleString()}</p>
+                        <button data-player-id="${p.id}" class="buy-btn w-full bg-green-600 hover:bg-green-500 p-2 rounded btn-action">Comprar</button>`;
+                    transferListEl.appendChild(card);
+                });
+                document.querySelectorAll('.buy-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                    const player = state.manager.transferList.find(p => p.id === parseInt(e.target.dataset.playerId));
+                    buyPlayer(player);
+                }));
+            }
+
+            function buyPlayer(player) {
+                if (state.manager.orcamento >= player.valor) {
+                    state.manager.orcamento -= player.valor;
+                    state.manager.jogadores.push({...player, cansaco: 0, moral: 100});
+                    state.manager.transferList = state.manager.transferList.filter(p => p.id !== player.id);
+                    renderTransferList();
+                    alert(`${player.nome} contratado com sucesso!`);
+                } else {
+                    alert('Orçamento insuficiente!');
+                }
+                UI.managerMode.budget.textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
+            }
+
+            function renderLeagueTable() {
+                const tableBody = document.getElementById('league-table');
+                if (!tableBody) return;
+                state.manager.campeonato.times.sort((a,b) => b.P - a.P || b.SG - a.SG || b.GP - a.GP);
+                tableBody.innerHTML = state.manager.campeonato.times.map((t, i) => `
+                    <tr class="${t.isPlayer ? 'bg-teal-900 font-bold' : ''}">
+                        <td class="p-2">${i+1}</td><td class="p-2 truncate" style="max-width: 120px;">${t.nome}</td><td class="p-2">${t.P}</td><td class="p-2">${t.J}</td>
+                        <td class="p-2">${t.V}</td><td class="p-2">${t.E}</td><td class="p-2">${t.D}</td><td class="p-2">${t.SG}</td>
+                    </tr>`).join('');
+            }
+
+            function playManagerRound() {
+                if (state.manager.campeonatoFinalizado) {
+                    alert("A temporada já terminou!");
+                    return;
+                }
+                if (state.manager.escalacao.length < 11) {
+                    alert("Você precisa escalar 11 jogadores!");
+                    return;
+                }
+
+                const rodada = state.manager.campeonato.calendario[state.manager.rodadaAtual];
+                let roundResults = '';
+
+                rodada.forEach(jogo => {
+                    const timeCasa = state.manager.campeonato.times.find(t => t.nome === jogo.casa);
+                    const timeFora = state.manager.campeonato.times.find(t => t.nome === jogo.fora);
+                    
+                    const forcaCasa = typeof timeCasa.forca === 'function' ? timeCasa.forca() : timeCasa.forca;
+                    const forcaFora = typeof timeFora.forca === 'function' ? timeFora.forca() : timeFora.forca;
+
+                    const poderCasa = forcaCasa + Math.random() * 100;
+                    const poderFora = forcaFora + Math.random() * 100;
+
+                    const golsCasa = Math.floor(Math.pow(poderCasa / poderFora, 1.5));
+                    const golsFora = Math.floor(Math.pow(poderFora / poderCasa, 1.5));
+
+                    updateTeamStats(timeCasa, timeFora, golsCasa, golsFora);
+                    
+                    if (timeCasa.isPlayer || timeFora.isPlayer) {
+                        updatePlayerStatsAndBudget(golsCasa, golsFora, timeCasa.isPlayer);
+                    }
+                    roundResults += `<p>${jogo.casa} ${golsCasa} x ${golsFora} ${jogo.fora}</p>`;
+                });
+
+                state.manager.rodadaAtual++;
+                state.manager.escalacao = []; // Limpa escalação
+                
+                showModal(`<h3 class="text-2xl font-bold mb-4">Resultados da Rodada ${state.manager.rodadaAtual}</h3><div class="text-left">${roundResults}</div><button id="close-modal-btn" class="mt-4 bg-teal-600 p-2 rounded w-full">OK</button>`);
+                document.getElementById('close-modal-btn').addEventListener('click', () => {
+                    closeModal();
+                    if (state.manager.rodadaAtual >= state.manager.campeonato.calendario.length) {
+                        state.manager.campeonatoFinalizado = true;
+                        alert("Fim da temporada!");
+                    }
+                    switchManagerTab('manager-league');
+                });
+            }
+
+            function updateTeamStats(timeCasa, timeFora, golsCasa, golsFora) {
+                timeCasa.J++; timeFora.J++;
+                timeCasa.GP += golsCasa; timeCasa.GC += golsFora;
+                timeFora.GP += golsFora; timeFora.GC += golsCasa;
+                timeCasa.SG = timeCasa.GP - timeCasa.GC;
+                timeFora.SG = timeFora.GP - timeFora.GC;
+
+                if (golsCasa > golsFora) {
+                    timeCasa.V++; timeFora.D++; timeCasa.P += 3;
+                } else if (golsFora > golsCasa) {
+                    timeFora.V++; timeCasa.D++; timeFora.P += 3;
+                } else {
+                    timeCasa.E++; timeFora.E++; timeCasa.P++; timeFora.P++;
+                }
+            }
+
+            function updatePlayerStatsAndBudget(golsNosso, golsAdv, jogamosEmCasa) {
+                const resultado = (jogamosEmCasa && golsNosso > golsAdv) || (!jogamosEmCasa && golsAdv > golsNosso) ? 'vitoria' : (golsNosso === golsAdv ? 'empate' : 'derrota');
+
+                state.manager.escalacao.forEach(j => {
+                    const jogador = state.manager.jogadores.find(p => p.id === j.id);
+                    jogador.cansaco = Math.min(15, jogador.cansaco + 5);
+                    if (resultado === 'vitoria') jogador.moral = Math.min(120, jogador.moral + 10);
+                    if (resultado === 'derrota') jogador.moral = Math.max(50, jogador.moral - 10);
+                });
+
+                if (resultado === 'vitoria') state.manager.orcamento += 100000;
+                if (resultado === 'empate') state.manager.orcamento += 30000;
             }
             
             function handleDilemma(dilemma) {
@@ -299,7 +569,11 @@
                     </div>
                 `);
                 UI.modalContent.querySelectorAll('button').forEach(btn => btn.addEventListener('click', (e) => {
-                    // Apply effect here later
+                    const choice = dilemma.options[parseInt(e.target.dataset.index)];
+                    if (choice.effect.morale) {
+                        state.manager.jogadores.forEach(p => p.moral = Math.max(0, Math.min(150, p.moral + choice.effect.morale)));
+                        alert(`A moral do time foi afetada!`);
+                    }
                     state.manager.dilemmaQueue.shift();
                     closeModal();
                     renderManagerContent('manager-office');
@@ -418,7 +692,7 @@
                             <p class="text-3xl text-center p-4">${state.player.team} vs Titans da Cidade</p>
                             <button id="play-match-btn" class="w-full mt-4 bg-amber-500 p-3 rounded btn-action">Jogar</button>
                         </div>`;
-                        document.getElementById('play-match-btn').addEventListener('click', () => alert('Simulação de partida em breve!'));
+                        document.getElementById('play-match-btn').addEventListener('click', playPlayerMatch);
                         break;
                     case 'player-training':
                         content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Treinamento Interativo</h3>
@@ -455,7 +729,7 @@
                             <div class="card bg-gray-800 p-4 rounded-lg text-center">
                                 <h4 class="text-lg font-bold">${item.name}</h4>
                                 <p class="text-green-400 font-semibold my-2">$${item.cost.toLocaleString()}</p>
-                                <button data-item-id="${item.id}" class="buy-lifestyle-btn w-full p-2 rounded ${state.player.ownedItems.includes(item.id) ? 'bg-gray-600' : 'bg-green-600 btn-action'}">
+                                <button data-item-id="${item.id}" class="buy-lifestyle-btn w-full p-2 rounded ${state.player.ownedItems.includes(item.id) ? 'bg-gray-600' : 'bg-green-600 btn-action'}" ${state.player.ownedItems.includes(item.id) ? 'disabled' : ''}>
                                     ${state.player.ownedItems.includes(item.id) ? 'Comprado' : 'Comprar'}
                                 </button>
                             </div>
@@ -468,6 +742,65 @@
                         });
                         break;
                 }
+            }
+            
+            async function playPlayerMatch() {
+                let matchState = { score: [0, 0], events: 5, currentEvent: 0, successfulActions: 0 };
+                const playMatchBtn = document.getElementById('play-match-btn');
+                playMatchBtn.disabled = true;
+
+                while (matchState.currentEvent < matchState.events) {
+                    matchState.currentEvent++;
+                    const event = generatePlayerMatchEvent();
+                    const success = await showPlayerMatchEvent(event, matchState);
+                    if (success) matchState.successfulActions++;
+                }
+
+                const ourGoals = matchState.score[0] + (Math.random() < (matchState.successfulActions / matchState.events) ? 1 : 0);
+                const theirGoals = Math.floor(Math.random() * 3);
+                const xpGained = matchState.successfulActions * 10 + (ourGoals > theirGoals ? 20 : (ourGoals === theirGoals ? 10 : 0));
+                state.player.xp += xpGained;
+
+                showModal(`
+                    <h3 class="text-2xl font-bold mb-4">Fim de Jogo!</h3>
+                    <p class="text-4xl mb-4">${state.player.team} ${Math.floor(ourGoals)} x ${theirGoals} Titans da Cidade</p>
+                    <p class="text-lg">Você teve ${matchState.successfulActions} ações de sucesso.</p>
+                    <p class="text-xl text-amber-400 font-bold mt-2">Você ganhou ${xpGained} XP!</p>
+                    <button id="close-modal-btn" class="w-full mt-6 bg-teal-600 p-2 rounded">OK</button>
+                `);
+                document.getElementById('close-modal-btn').onclick = () => {
+                    closeModal();
+                    switchPlayerTab('player-home');
+                };
+            }
+
+            function generatePlayerMatchEvent() {
+                const p = state.player;
+                const events = {
+                    ATA: [{ d: "Bola na área. O que fazer?", o: ["Chutar", "Driblar", "Passar"], a: "Chute" }],
+                    MEI: [{ d: "Espaço no meio-campo.", o: ["Lançamento", "Passe curto", "Conduzir"], a: "Passe" }],
+                    DEF: [{ d: "Atacante vindo pra cima.", o: ["Dar o bote", "Cercar", "Fazer falta"], a: "Defesa" }],
+                    GOL: [{ d: "Chute forte de longe!", o: ["Espalmar", "Encaixar", "Socar"], a: "Reflexos" }],
+                };
+                return events[p.position][0];
+            }
+
+            function showPlayerMatchEvent(event, matchState) {
+                return new Promise(resolve => {
+                    showModal(`
+                        <p class="text-sm text-gray-400">Placar: ${matchState.score[0]} x ${matchState.score[1]} | Evento ${matchState.currentEvent}/${matchState.events}</p>
+                        <p class="text-xl my-4">${event.d}</p>
+                        <div class="space-y-3">
+                            ${event.o.map((opt, i) => `<button class="event-option w-full p-3 bg-teal-700 hover:bg-teal-600 rounded" data-index="${i}">${opt}</button>`).join('')}
+                        </div>
+                    `);
+                    document.querySelectorAll('.event-option').forEach(btn => btn.onclick = (e) => {
+                        const success = Math.random() < (state.player.attributes[event.a] / 20);
+                        if (success) matchState.score[0]++;
+                        else matchState.score[1]++;
+                        resolve(success);
+                    });
+                });
             }
             
             function startTraining(attribute) {
