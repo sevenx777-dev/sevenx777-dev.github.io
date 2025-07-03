@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SevenxFoot v4.0</title>
+    <title>SevenxFoot v6.0 - Online</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- IMPORTANTE: Adiciona a biblioteca do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .hidden { display: none; }
@@ -18,22 +20,40 @@
         .card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
         .modal-overlay { background-color: rgba(0,0,0,0.8); }
-        /* Mobile scrollbar for nav */
         .mobile-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .mobile-scroll::-webkit-scrollbar { display: none; }
+        .harmony-bar { background: linear-gradient(to right, #ef4444, #f97316, #eab308, #84cc16, #22c55e); }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
 
+    <!-- TELA DE AUTENTICAÇÃO -->
+    <div id="auth-screen" class="main-menu-bg min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="bg-black bg-opacity-70 p-8 rounded-lg text-center shadow-2xl w-full max-w-md">
+            <h1 class="text-4xl font-extrabold text-white mb-6">SevenxFoot Online</h1>
+            <div id="auth-form">
+                <input type="email" id="email-input" class="w-full p-3 rounded bg-gray-700 border border-gray-600 mb-4" placeholder="seu@email.com">
+                <input type="password" id="password-input" class="w-full p-3 rounded bg-gray-700 border border-gray-600 mb-6" placeholder="senha">
+                <button id="login-btn" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-6 rounded-lg text-xl btn-action">Entrar</button>
+                <button id="signup-btn" class="w-full mt-2 bg-amber-500 hover:bg-amber-400 text-white font-bold py-3 px-6 rounded-lg text-xl btn-action">Cadastrar</button>
+            </div>
+            <div id="auth-loading" class="hidden"><div class="loader mx-auto"></div></div>
+            <p id="auth-error" class="text-red-500 mt-4"></p>
+        </div>
+    </div>
+
     <!-- TELA DE MENU PRINCIPAL -->
-    <div id="main-menu" class="main-menu-bg min-h-screen flex flex-col items-center justify-center p-4">
+    <div id="main-menu" class="hidden main-menu-bg min-h-screen flex flex-col items-center justify-center p-4">
         <div class="bg-black bg-opacity-70 p-10 rounded-lg text-center shadow-2xl">
             <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-2">SevenxFoot</h1>
-            <p class="text-teal-400 font-bold text-2xl mb-8">Versão 4.0</p>
+            <p class="text-teal-400 font-bold text-2xl mb-8">v6.0 - Online</p>
             <div class="space-y-4">
                 <button id="start-manager-mode" class="w-full md:w-96 bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira: Técnico</button>
                 <button id="start-player-mode" class="w-full md:w-96 bg-amber-500 hover:bg-amber-400 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira: Jogador</button>
             </div>
+             <button id="logout-btn" class="mt-8 text-gray-400 hover:text-white">Sair</button>
         </div>
     </div>
 
@@ -62,10 +82,11 @@
                 <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
                     <h2 class="text-xl md:text-2xl font-bold">Modo Técnico</h2>
                     <div id="manager-budget" class="text-sm md:text-lg"></div>
-                    <button class="back-to-menu bg-red-600 hover:bg-red-500 p-2 rounded">Sair</button>
+                    <button class="back-to-menu bg-red-600 hover:bg-red-500 p-2 rounded">Voltar ao Menu</button>
                 </header>
                 <nav id="manager-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
                     <button data-tab="manager-office" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Escritório</button>
+                    <button data-tab="manager-lockerroom" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Vestiário</button>
                     <button data-tab="manager-squad" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Elenco</button>
                     <button data-tab="manager-staff" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Equipe</button>
                     <button data-tab="manager-youth" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Academia</button>
@@ -103,10 +124,11 @@
                 <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
                     <h2 id="player-hub-name" class="text-xl md:text-2xl font-bold truncate"></h2>
                     <div id="player-salary" class="text-sm md:text-lg"></div>
-                    <button class="back-to-menu bg-red-600 p-2 rounded">Sair</button>
+                    <button class="back-to-menu bg-red-600 p-2 rounded">Voltar ao Menu</button>
                 </header>
                 <nav id="player-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
                      <button data-tab="player-home" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Início</button>
+                     <button data-tab="player-social" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Rede Social</button>
                      <button data-tab="player-training" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Treino</button>
                      <button data-tab="player-brand" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Marca</button>
                      <button data-tab="player-lifestyle" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Lifestyle</button>
@@ -126,7 +148,29 @@
         const Game = (() => {
             let state = {};
 
+            // --- CONFIGURAÇÃO DO SUPABASE ---
+            // IMPORTANTE: Substitua com suas chaves do Supabase!
+            const SUPABASE_URL = 'https://fwwwpdzvnptcbcoarejm.supabase.co'; 
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3d3dwZHp2bnB0Y2Jjb2FyZWptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NjM2MTQsImV4cCI6MjA2NzEzOTYxNH0.uozT2nfKs4EINeF6Suyp6AbmkrQ4V8W1sG9SWiokU1o';
+
+            let supabaseClient;
+            try {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } catch (e) {
+                console.error("Erro ao inicializar o Supabase. Verifique suas chaves.", e);
+            }
+
+            // --- UI ELEMENTS CACHE ---
             const UI = {
+                authScreen: document.getElementById('auth-screen'),
+                authForm: document.getElementById('auth-form'),
+                authLoading: document.getElementById('auth-loading'),
+                authError: document.getElementById('auth-error'),
+                emailInput: document.getElementById('email-input'),
+                passwordInput: document.getElementById('password-input'),
+                loginBtn: document.getElementById('login-btn'),
+                signupBtn: document.getElementById('signup-btn'),
+                logoutBtn: document.getElementById('logout-btn'),
                 mainMenu: document.getElementById('main-menu'),
                 gameContainer: document.getElementById('game-container'),
                 managerMode: {
@@ -171,27 +215,27 @@
                     { nome: "Lobos da Montanha", forca: 850 },
                 ],
                 PLAYERS: [
-                    { id: 1, nome: 'Goleiro Genérico', forcaBase: 82, posicao: 'GOL', valor: 1200000 },
-                    { id: 2, nome: 'Lateral D. Veloz', forcaBase: 78, posicao: 'DEF', valor: 900000 },
-                    { id: 3, nome: 'Zagueiro Xerife', forcaBase: 85, posicao: 'DEF', valor: 1500000 },
-                    { id: 4, nome: 'Zagueiro Murilo', forcaBase: 84, posicao: 'DEF', valor: 1400000 },
-                    { id: 5, nome: 'Lateral E. Cansado', forcaBase: 75, posicao: 'DEF', valor: 750000 },
-                    { id: 6, nome: 'Volante Marcador', forcaBase: 88, posicao: 'MEI', valor: 1800000 },
-                    { id: 7, nome: 'Meia Clássico', forcaBase: 90, posicao: 'MEI', valor: 2500000 },
-                    { id: 8, nome: 'Meia Atacante', forcaBase: 86, posicao: 'MEI', valor: 1600000 },
-                    { id: 9, nome: 'Ponta Habilidoso', forcaBase: 89, posicao: 'ATA', valor: 2200000 },
-                    { id: 10, nome: 'Centroavante Matador', forcaBase: 92, posicao: 'ATA', valor: 3000000 },
-                    { id: 11, nome: 'Ponta Corredor', forcaBase: 87, posicao: 'ATA', valor: 1900000 },
-                    { id: 12, nome: 'Goleiro Reserva', forcaBase: 70, posicao: 'GOL', valor: 500000 },
-                    { id: 13, nome: 'Zagueiro Jovem', forcaBase: 72, posicao: 'DEF', valor: 600000 },
-                    { id: 14, nome: 'Volante C. Guarda', forcaBase: 80, posicao: 'MEI', valor: 1000000 },
-                    { id: 15, nome: 'Atacante Promessa', forcaBase: 77, posicao: 'ATA', valor: 850000 }
+                    { id: 1, nome: 'G. Arantes', forcaBase: 82, posicao: 'GOL', valor: 1200000, personality: 'loyal' },
+                    { id: 2, nome: 'L. Veloso', forcaBase: 78, posicao: 'DEF', valor: 900000, personality: 'neutral' },
+                    { id: 3, nome: 'B. Xerife', forcaBase: 85, posicao: 'DEF', valor: 1500000, personality: 'leader' },
+                    { id: 4, nome: 'M. Rocha', forcaBase: 84, posicao: 'DEF', valor: 1400000, personality: 'neutral' },
+                    { id: 5, nome: 'E. Cansado', forcaBase: 75, posicao: 'DEF', valor: 750000, personality: 'neutral' },
+                    { id: 6, nome: 'V. Marcador', forcaBase: 88, posicao: 'MEI', valor: 1800000, personality: 'loyal' },
+                    { id: 7, nome: 'M. Clássico', forcaBase: 90, posicao: 'MEI', valor: 2500000, personality: 'ambitious' },
+                    { id: 8, nome: 'A. Meia', forcaBase: 86, posicao: 'MEI', valor: 1600000, personality: 'neutral' },
+                    { id: 9, nome: 'P. Habilidoso', forcaBase: 89, posicao: 'ATA', valor: 2200000, personality: 'maverick' },
+                    { id: 10, nome: 'C. Matador', forcaBase: 92, posicao: 'ATA', valor: 3000000, personality: 'leader' },
+                    { id: 11, nome: 'P. Corredor', forcaBase: 87, posicao: 'ATA', valor: 1900000, personality: 'neutral' },
+                    { id: 12, nome: 'G. Reserva', forcaBase: 70, posicao: 'GOL', valor: 500000, personality: 'neutral' },
+                    { id: 13, nome: 'Z. Jovem', forcaBase: 72, posicao: 'DEF', valor: 600000, personality: 'ambitious' },
+                    { id: 14, nome: 'V. Guarda', forcaBase: 80, posicao: 'MEI', valor: 1000000, personality: 'loyal' },
+                    { id: 15, nome: 'A. Promessa', forcaBase: 77, posicao: 'ATA', valor: 850000, personality: 'maverick' }
                 ],
                  TRANSFER_PLAYERS: [
-                    { id: 16, nome: 'A. Furtado', forcaBase: 85, posicao: 'ATA', valor: 1700000 },
-                    { id: 17, nome: 'B. Campos', forcaBase: 82, posicao: 'MEI', valor: 1100000 },
-                    { id: 18, nome: 'C. Diniz', forcaBase: 84, posicao: 'DEF', valor: 1300000 },
-                    { id: 19, nome: 'D. Esteves', forcaBase: 79, posicao: 'GOL', valor: 950000 },
+                    { id: 16, nome: 'A. Furtado', forcaBase: 85, posicao: 'ATA', valor: 1700000, personality: 'mercenary' },
+                    { id: 17, nome: 'B. Campos', forcaBase: 82, posicao: 'MEI', valor: 1100000, personality: 'loyal' },
+                    { id: 18, nome: 'C. Diniz', forcaBase: 84, posicao: 'DEF', valor: 1300000, personality: 'leader' },
+                    { id: 19, nome: 'D. Esteves', forcaBase: 79, posicao: 'GOL', valor: 950000, personality: 'neutral' },
                 ],
                 LIFESTYLE_ITEMS: [
                     { id: 'car1', name: 'Carro Popular', cost: 20000, reputation: { maverick: 2 } },
@@ -207,42 +251,94 @@
                 }
             };
             
-            function init() {
-                UI.startManagerBtn.addEventListener('click', () => showScreen(UI.managerMode.container, UI.managerMode.philosophyScreen));
-                UI.startPlayerBtn.addEventListener('click', () => {
-                    showScreen(UI.playerMode.container, UI.playerMode.creationScreen);
-                    setupPlayerCreation();
-                });
-                UI.backToMenuBtns.forEach(btn => btn.addEventListener('click', showMainMenu));
-                document.querySelectorAll('.philosophy-card').forEach(card => {
-                    card.addEventListener('click', (e) => setupManagerMode(e.currentTarget.dataset.philosophy));
-                });
-            }
-
-            function showScreen(modeContainer, screenToShow) {
-                UI.mainMenu.classList.add('hidden');
-                UI.gameContainer.classList.remove('hidden');
-                UI.managerMode.container.classList.add('hidden');
-                UI.playerMode.container.classList.add('hidden');
-                if (modeContainer) {
-                    modeContainer.classList.remove('hidden');
-                    Array.from(modeContainer.children).forEach(child => child.classList.add('hidden'));
-                    if(screenToShow) screenToShow.classList.remove('hidden');
+            async function init() {
+                if (!supabaseClient) {
+                    UI.authError.textContent = "Supabase não configurado. Edite o script e adicione suas chaves.";
+                    return;
+                }
+                UI.loginBtn.addEventListener('click', handleLogin);
+                UI.signupBtn.addEventListener('click', handleSignup);
+                UI.logoutBtn.addEventListener('click', handleLogout);
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    state.user = session.user;
+                    showScreen(null, UI.mainMenu);
+                } else {
+                    showScreen(null, UI.authScreen);
                 }
             }
 
-            function showMainMenu() { state = {}; showScreen(null, UI.mainMenu); }
-            function showModal(html) { UI.modalContent.innerHTML = html; UI.modal.classList.remove('hidden'); }
-            function closeModal() { UI.modal.classList.add('hidden'); }
+            function showScreen(modeContainer, screenToShow) {
+                UI.authScreen.classList.add('hidden');
+                UI.mainMenu.classList.add('hidden');
+                UI.gameContainer.classList.add('hidden');
+                UI.managerMode.container.classList.add('hidden');
+                UI.playerMode.container.classList.add('hidden');
+                if (screenToShow) screenToShow.classList.remove('hidden');
+                if (modeContainer) modeContainer.classList.remove('hidden');
+            }
+            
+            async function handleLogin() {
+                toggleAuthLoading(true);
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email: UI.emailInput.value, password: UI.passwordInput.value });
+                if (error) UI.authError.textContent = error.message;
+                else { state.user = data.user; showScreen(null, UI.mainMenu); }
+                toggleAuthLoading(false);
+            }
 
-            // --- MANAGER MODE ---
-            function setupManagerMode(philosophy) {
-                const philosophies = {
-                    cantera: { budget: 2000000, youthQuality: 8 },
-                    galactic: { budget: 15000000, youthQuality: 4 },
-                    moneyball: { budget: 7000000, youthQuality: 6 }
-                };
-                state.manager = {
+            async function handleSignup() {
+                toggleAuthLoading(true);
+                const { data, error } = await supabaseClient.auth.signUp({ email: UI.emailInput.value, password: UI.passwordInput.value });
+                if (error) UI.authError.textContent = error.message;
+                else alert('Cadastro realizado! Verifique seu e-mail para confirmação e depois faça o login.');
+                toggleAuthLoading(false);
+            }
+
+            async function handleLogout() {
+                await supabaseClient.auth.signOut();
+                state = {};
+                showScreen(null, UI.authScreen);
+            }
+
+            function toggleAuthLoading(isLoading) {
+                UI.authForm.classList.toggle('hidden', isLoading);
+                UI.authLoading.classList.toggle('hidden', !isLoading);
+                UI.authError.textContent = '';
+            }
+
+            async function saveGameState(careerType) {
+                if (!state[careerType] || !state[careerType].id) return;
+                const { error } = await supabaseClient.from(`${careerType}_careers`).update({ game_state: state[careerType] }).eq('id', state[careerType].id);
+                if (error) console.error(`Erro ao salvar ${careerType}:`, error);
+            }
+
+            async function loadOrCreateCareer(careerType) {
+                showModal('<div class="loader mx-auto"></div><p class="mt-4">Carregando sua carreira...</p>');
+                const { data, error } = await supabaseClient.from(`${careerType}_careers`).select('*').eq('user_id', state.user.id).single();
+                closeModal();
+                if (data) {
+                    state[careerType] = data.game_state;
+                    state[careerType].id = data.id;
+                    const hub = UI[`${careerType}Mode`].hubScreen;
+                    showScreen(UI[`${careerType}Mode`].container, hub);
+                    if (careerType === 'manager') { setupManagerNav(); switchManagerTab('manager-office'); }
+                    if (careerType === 'player') { setupPlayerNav(); switchPlayerTab('player-home'); }
+                } else {
+                    const creationScreen = UI[`${careerType}Mode`][`${careerType === 'manager' ? 'philosophy' : 'creation'}Screen`];
+                    showScreen(UI[`${careerType}Mode`].container, creationScreen);
+                }
+            }
+            
+            function showMainMenu() {
+                state.manager = null;
+                state.player = null;
+                showScreen(null, UI.mainMenu);
+            }
+
+            // --- MODO TÉCNICO ---
+            async function setupManagerMode(philosophy) {
+                const philosophies = { cantera: { budget: 2000000, youthQuality: 8 }, galactic: { budget: 15000000, youthQuality: 4 }, moneyball: { budget: 7000000, youthQuality: 6 } };
+                const initialState = {
                     philosophy: philosophy,
                     orcamento: philosophies[philosophy].budget,
                     jogadores: JSON.parse(JSON.stringify(DB.PLAYERS)).map(p => ({...p, cansaco: 0, moral: 100})),
@@ -253,26 +349,24 @@
                     rodadaAtual: 0,
                     campeonatoFinalizado: false,
                     campeonato: { times: [], calendario: [] },
-                    dilemmaQueue: [{
-                        title: "Coletiva de Imprensa",
-                        text: "O próximo jogo é um clássico contra nosso maior rival. O que você dirá à imprensa?",
-                        options: [
-                            { text: '"Respeitamos eles, mas viemos para vencer."', effect: { morale: 5 } },
-                            { text: '"Somos favoritos e vamos provar em campo."', effect: { morale: 10, rivalMorale: -5 } },
-                            { text: '"É apenas mais um jogo. Três pontos em jogo."', effect: { morale: 0 } },
-                        ]
-                    }]
+                    dilemmaQueue: [{ title: "Coletiva de Imprensa", text: "O próximo jogo é um clássico contra nosso maior rival. O que você dirá à imprensa?", options: [{ text: '"Respeitamos eles, mas viemos para vencer."', effect: { morale: 5 } },{ text: '"Somos favoritos e vamos provar em campo."', effect: { morale: 10, rivalMorale: -5 } },{ text: '"É apenas mais um jogo. Três pontos em jogo."', effect: { morale: 0 } }]}]
                 };
-                setupManagerChampionship();
+                setupManagerChampionship(initialState);
+                
+                const { data, error } = await supabaseClient.from('manager_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
+                if (error) { alert("Erro ao criar nova carreira."); console.error(error); return; }
+                
+                state.manager = data.game_state;
+                state.manager.id = data.id;
                 showScreen(UI.managerMode.container, UI.managerMode.hubScreen);
                 setupManagerNav();
                 switchManagerTab('manager-office');
             }
             
-            function setupManagerChampionship() {
-                const meuClube = { nome: "Meu Clube FC", isPlayer: true, forca: () => state.manager.escalacao.reduce((acc, p) => acc + getForcaEfetiva(p), 0) };
+            function setupManagerChampionship(targetState) {
+                const meuClube = { nome: "Meu Clube FC", isPlayer: true, forca: () => targetState.escalacao.reduce((acc, p) => acc + getForcaEfetiva(p), 0) };
                 const todosOsTimes = [meuClube, ...DB.TEAMS].map(t => ({...t, P: 0, J: 0, V: 0, E: 0, D: 0, GP: 0, GC: 0, SG: 0}));
-                state.manager.campeonato.times = todosOsTimes;
+                targetState.campeonato.times = todosOsTimes;
                 const nomesTimes = todosOsTimes.map(t => t.nome);
                 const calendario = [];
                 for (let i = 0; i < nomesTimes.length; i++) {
@@ -283,25 +377,18 @@
                 }
                 calendario.sort(() => Math.random() - 0.5);
                 const jogosPorRodada = nomesTimes.length / 2;
-                state.manager.campeonato.calendario = [];
+                targetState.campeonato.calendario = [];
                 for(let i = 0; i < calendario.length; i += jogosPorRodada) {
-                    state.manager.campeonato.calendario.push(calendario.slice(i, i + jogosPorRodada));
+                    targetState.campeonato.calendario.push(calendario.slice(i, i + jogosPorRodada));
                 }
             }
 
             function generateYouthPlayers(quality) {
-                return Array(5).fill(0).map((_, i) => ({
-                    nome: `Jovem Talento ${i+1}`,
-                    idade: 16 + Math.floor(Math.random() * 3),
-                    posicao: ['ATA', 'MEI', 'DEF'][Math.floor(Math.random() * 3)],
-                    potencial: 70 + Math.floor(Math.random() * (quality * 3))
-                }));
+                return Array(5).fill(0).map((_, i) => ({ nome: `Jovem Talento ${i+1}`, idade: 16 + Math.floor(Math.random() * 3), posicao: ['ATA', 'MEI', 'DEF'][Math.floor(Math.random() * 3)], potencial: 70 + Math.floor(Math.random() * (quality * 3)) }));
             }
 
             function setupManagerNav() {
-                 UI.managerMode.nav.addEventListener('click', (e) => {
-                    if (e.target.tagName === 'BUTTON') switchManagerTab(e.target.dataset.tab);
-                });
+                 UI.managerMode.nav.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') switchManagerTab(e.target.dataset.tab); });
             }
 
             function switchManagerTab(tabId) {
@@ -310,10 +397,11 @@
                 renderManagerContent(tabId);
             }
             
+            function getForcaEfetiva(jogador) { return Math.max(jogador.forcaBase - jogador.cansaco + Math.floor((jogador.moral - 100) / 5), 20); }
+
             function renderManagerContent(tabId) {
                  UI.managerMode.budget.textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
                  const content = UI.managerMode.content;
-
                  switch(tabId) {
                     case 'manager-office':
                         const dilemma = state.manager.dilemmaQueue[0];
@@ -323,90 +411,66 @@
                         content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Escritório</h3>
                         <div class="bg-gray-800 p-4 rounded-lg mb-4">
                             <h4 class="text-xl font-semibold mb-2">Próxima Partida ${nossoJogo ? `(Rodada ${state.manager.rodadaAtual + 1})` : ''}</h4>
-                            ${nossoJogo ? `<p class="text-2xl text-center p-4">${nossoJogo.casa} vs ${nossoJogo.fora}</p>
-                            <p class="text-gray-400 mt-2 text-center">Vá para a aba 'Elenco' para escalar seu time e jogar a partida.</p>` : `<p class="text-2xl text-center p-4 text-green-400">Fim de Temporada!</p>`}
+                            ${nossoJogo ? `<p class="text-2xl text-center p-4">${nossoJogo.casa} vs ${nossoJogo.fora}</p><p class="text-gray-400 mt-2 text-center">Vá para a aba 'Elenco' para escalar seu time e jogar a partida.</p>` : `<p class="text-2xl text-center p-4 text-green-400">Fim de Temporada!</p>`}
                         </div>
                         <div class="bg-gray-800 p-4 rounded-lg">
                             <h4 class="text-xl font-semibold">Caixa de Entrada</h4>
-                            ${dilemma ? `<div class="mt-2 p-3 bg-gray-700 rounded">
-                                <p class="font-bold">${dilemma.title}</p>
-                                <p>${dilemma.text}</p>
-                                <button id="handle-dilemma" class="mt-2 bg-amber-500 p-2 rounded btn-action">Responder</button>
-                            </div>` : `<p class="text-gray-400 mt-2">Nenhuma mensagem nova.</p>`}
+                            ${dilemma ? `<div class="mt-2 p-3 bg-gray-700 rounded"><p class="font-bold">${dilemma.title}</p><p>${dilemma.text}</p><button id="handle-dilemma" class="mt-2 bg-amber-500 p-2 rounded btn-action">Responder</button></div>` : `<p class="text-gray-400 mt-2">Nenhuma mensagem nova.</p>`}
                         </div>`;
                         if(dilemma) document.getElementById('handle-dilemma').addEventListener('click', () => handleDilemma(dilemma));
                         break;
+                    case 'manager-lockerroom':
+                        const totalMorale = state.manager.jogadores.reduce((acc, p) => acc + p.moral, 0);
+                        const teamHarmony = Math.floor(totalMorale / state.manager.jogadores.length);
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Vestiário</h3>
+                        <div class="bg-gray-800 p-4 rounded-lg mb-4">
+                            <h4 class="text-xl font-semibold mb-2">Harmonia do Time</h4>
+                            <div class="w-full bg-gray-700 rounded-full h-6"><div class="harmony-bar h-6 rounded-full" style="width: ${teamHarmony}%"></div></div>
+                            <p class="text-center mt-1">${teamHarmony}%</p>
+                        </div>
+                        <div class="space-y-2">
+                        ${state.manager.jogadores.map(p => `<div class="p-3 bg-gray-800 rounded flex justify-between items-center"><span>${p.nome} <span class="text-xs capitalize text-gray-400">(${p.personality})</span></span><span>Moral: ${p.moral}</span></div>`).join('')}
+                        </div>`;
+                        break;
                     case 'manager-squad':
-                        content.innerHTML = `
-                            <h3 class="text-2xl font-bold mb-4">Gerenciar Elenco</h3>
-                            <div class="grid md:grid-cols-2 gap-4">
-                                <div>
-                                    <h4 class="text-xl font-semibold mb-2">Jogadores Disponíveis</h4>
-                                    <div id="squad-list" class="space-y-2 max-h-96 overflow-y-auto p-2 bg-gray-800 rounded"></div>
-                                </div>
-                                <div>
-                                    <h4 class="text-xl font-semibold mb-2">Time Titular (Força: <span id="squad-strength">0</span>)</h4>
-                                    <div id="lineup-list" class="space-y-2 min-h-96 p-2 bg-gray-800 rounded"></div>
-                                    <button id="play-round-btn" class="w-full mt-2 bg-amber-500 hover:bg-amber-400 text-white font-bold py-3 rounded-lg btn-action">Jogar Rodada</button>
-                                </div>
-                            </div>`;
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Gerenciar Elenco</h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div><h4 class="text-xl font-semibold mb-2">Jogadores Disponíveis</h4><div id="squad-list" class="space-y-2 max-h-96 overflow-y-auto p-2 bg-gray-800 rounded"></div></div>
+                            <div><h4 class="text-xl font-semibold mb-2">Time Titular (Força: <span id="squad-strength">0</span>)</h4><div id="lineup-list" class="space-y-2 min-h-96 p-2 bg-gray-800 rounded"></div><button id="play-round-btn" class="w-full mt-2 bg-amber-500 hover:bg-amber-400 text-white font-bold py-3 rounded-lg btn-action">Jogar Rodada</button></div>
+                        </div>`;
                         renderManagerSquadLists();
                         document.getElementById('play-round-btn').addEventListener('click', playManagerRound);
                         break;
                     case 'manager-staff':
                         content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Equipe Técnica</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            ${Object.keys(state.manager.staff).map(role => `
-                                <div class="bg-gray-800 p-4 rounded-lg">
-                                    <h4 class="text-xl font-semibold capitalize">${role}</h4>
-                                    ${state.manager.staff[role] ? `<p>${state.manager.staff[role].name} (Qualidade: ${state.manager.staff[role].quality})</p>` : `<p class="text-gray-400">Ninguém contratado.</p>
-                                    <button data-role="${role}" class="hire-staff-btn mt-2 bg-green-600 p-2 rounded w-full btn-action">Contratar</button>`}
-                                </div>
-                            `).join('')}
+                            ${Object.keys(state.manager.staff).map(role => `<div class="bg-gray-800 p-4 rounded-lg"><h4 class="text-xl font-semibold capitalize">${role}</h4>${state.manager.staff[role] ? `<p>${state.manager.staff[role].name} (Qualidade: ${state.manager.staff[role].quality})</p>` : `<p class="text-gray-400">Ninguém contratado.</p><button data-role="${role}" class="hire-staff-btn mt-2 bg-green-600 p-2 rounded w-full btn-action">Contratar</button>`}</div>`).join('')}
                         </div>`;
                         document.querySelectorAll('.hire-staff-btn').forEach(btn => btn.addEventListener('click', (e) => showHireStaffModal(e.target.dataset.role)));
                         break;
                     case 'manager-youth':
                         content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Academia de Jovens</h3>
                         <div class="space-y-3">
-                        ${state.manager.youthAcademy.map(p => `
-                            <div class="card bg-gray-800 p-3 rounded flex justify-between items-center">
-                                <div>
-                                    <p class="font-bold">${p.nome} (${p.idade} anos)</p>
-                                    <p class="text-sm text-gray-400">Posição: ${p.posicao} | Potencial: ${p.potencial}</p>
-                                </div>
-                                <button class="bg-teal-600 p-2 rounded btn-action">Promover</button>
-                            </div>
-                        `).join('')}
+                        ${state.manager.youthAcademy.map(p => `<div class="card bg-gray-800 p-3 rounded flex justify-between items-center"><div><p class="font-bold">${p.nome} (${p.idade} anos)</p><p class="text-sm text-gray-400">Posição: ${p.posicao} | Potencial: ${p.potencial}</p></div><button class="bg-teal-600 p-2 rounded btn-action">Promover</button></div>`).join('')}
                         </div>`;
                         break;
                     case 'manager-transfers':
-                        content.innerHTML = `
-                            <h3 class="text-2xl font-bold mb-4">Mercado de Transferências</h3>
-                            <div id="transfer-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>`;
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Mercado de Transferências</h3><div id="transfer-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>`;
                         renderTransferList();
                         break;
                     case 'manager-league':
-                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Tabela do Campeonato</h3>
-                            <div class="overflow-x-auto"><table class="w-full text-left">
-                                <thead class="bg-gray-800"><tr>
-                                    <th class="p-2">#</th><th class="p-2">Time</th><th class="p-2">P</th><th class="p-2">J</th><th class="p-2">V</th><th class="p-2">E</th><th class="p-2">D</th><th class="p-2">SG</th>
-                                </tr></thead>
-                                <tbody id="league-table"></tbody>
-                            </table></div>`;
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Tabela do Campeonato</h3><div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-gray-800"><tr><th class="p-2">#</th><th class="p-2">Time</th><th class="p-2">P</th><th class="p-2">J</th><th class="p-2">V</th><th class="p-2">E</th><th class="p-2">D</th><th class="p-2">SG</th></tr></thead><tbody id="league-table"></tbody></table></div>`;
                         renderLeagueTable();
                         break;
                  }
             }
-
+            
             function renderManagerSquadLists() {
                 const squadListEl = document.getElementById('squad-list');
                 const lineupListEl = document.getElementById('lineup-list');
                 if (!squadListEl || !lineupListEl) return;
-
                 squadListEl.innerHTML = '';
                 lineupListEl.innerHTML = '';
-
                 state.manager.jogadores.forEach(p => {
                     const isSelected = state.manager.escalacao.some(pl => pl.id === p.id);
                     const playerEl = document.createElement('div');
@@ -415,27 +479,20 @@
                     playerEl.addEventListener('click', () => togglePlayerSelection(p));
                     squadListEl.appendChild(playerEl);
                 });
-                
                 state.manager.escalacao.forEach(p => {
                     const playerEl = document.createElement('div');
                     playerEl.className = 'p-2 rounded bg-blue-900 flex justify-between items-center';
                     playerEl.innerHTML = `<span>${p.nome}</span> <span>${getForcaEfetiva(p)}</span>`;
                     lineupListEl.appendChild(playerEl);
                 });
-                
-                const totalStrength = state.manager.escalacao.reduce((acc, p) => acc + getForcaEfetiva(p), 0);
-                document.getElementById('squad-strength').textContent = totalStrength;
+                document.getElementById('squad-strength').textContent = state.manager.escalacao.reduce((acc, p) => acc + getForcaEfetiva(p), 0);
             }
 
             function togglePlayerSelection(player) {
                 const index = state.manager.escalacao.findIndex(p => p.id === player.id);
-                if (index > -1) {
-                    state.manager.escalacao.splice(index, 1);
-                } else if (state.manager.escalacao.length < 11) {
-                    state.manager.escalacao.push(player);
-                } else {
-                    alert('Time completo! Remova um jogador para adicionar outro.');
-                }
+                if (index > -1) state.manager.escalacao.splice(index, 1);
+                else if (state.manager.escalacao.length < 11) state.manager.escalacao.push(player);
+                else alert('Time completo! Remova um jogador para adicionar outro.');
                 renderManagerSquadLists();
             }
 
@@ -446,16 +503,10 @@
                 state.manager.transferList.forEach(p => {
                     const card = document.createElement('div');
                     card.className = 'card bg-gray-800 p-4 rounded-lg text-center';
-                    card.innerHTML = `<h4 class="text-lg font-bold">${p.nome}</h4>
-                        <p>Posição: ${p.posicao} | Força: ${p.forcaBase}</p>
-                        <p class="text-xl font-semibold text-green-400 my-2">$${p.valor.toLocaleString()}</p>
-                        <button data-player-id="${p.id}" class="buy-btn w-full bg-green-600 hover:bg-green-500 p-2 rounded btn-action">Comprar</button>`;
+                    card.innerHTML = `<h4 class="text-lg font-bold">${p.nome}</h4><p>Posição: ${p.posicao} | Força: ${p.forcaBase}</p><p class="text-xl font-semibold text-green-400 my-2">$${p.valor.toLocaleString()}</p><button data-player-id="${p.id}" class="buy-btn w-full bg-green-600 hover:bg-green-500 p-2 rounded btn-action">Comprar</button>`;
                     transferListEl.appendChild(card);
                 });
-                document.querySelectorAll('.buy-btn').forEach(btn => btn.addEventListener('click', (e) => {
-                    const player = state.manager.transferList.find(p => p.id === parseInt(e.target.dataset.playerId));
-                    buyPlayer(player);
-                }));
+                document.querySelectorAll('.buy-btn').forEach(btn => btn.addEventListener('click', (e) => buyPlayer(state.manager.transferList.find(p => p.id === parseInt(e.target.dataset.playerId)))));
             }
 
             function buyPlayer(player) {
@@ -465,6 +516,7 @@
                     state.manager.transferList = state.manager.transferList.filter(p => p.id !== player.id);
                     renderTransferList();
                     alert(`${player.nome} contratado com sucesso!`);
+                    saveGameState('manager');
                 } else {
                     alert('Orçamento insuficiente!');
                 }
@@ -475,57 +527,37 @@
                 const tableBody = document.getElementById('league-table');
                 if (!tableBody) return;
                 state.manager.campeonato.times.sort((a,b) => b.P - a.P || b.SG - a.SG || b.GP - a.GP);
-                tableBody.innerHTML = state.manager.campeonato.times.map((t, i) => `
-                    <tr class="${t.isPlayer ? 'bg-teal-900 font-bold' : ''}">
-                        <td class="p-2">${i+1}</td><td class="p-2 truncate" style="max-width: 120px;">${t.nome}</td><td class="p-2">${t.P}</td><td class="p-2">${t.J}</td>
-                        <td class="p-2">${t.V}</td><td class="p-2">${t.E}</td><td class="p-2">${t.D}</td><td class="p-2">${t.SG}</td>
-                    </tr>`).join('');
+                tableBody.innerHTML = state.manager.campeonato.times.map((t, i) => `<tr class="${t.isPlayer ? 'bg-teal-900 font-bold' : ''}"><td class="p-2">${i+1}</td><td class="p-2 truncate" style="max-width: 120px;">${t.nome}</td><td class="p-2">${t.P}</td><td class="p-2">${t.J}</td><td class="p-2">${t.V}</td><td class="p-2">${t.E}</td><td class="p-2">${t.D}</td><td class="p-2">${t.SG}</td></tr>`).join('');
             }
 
             function playManagerRound() {
-                if (state.manager.campeonatoFinalizado) {
-                    alert("A temporada já terminou!");
-                    return;
-                }
-                if (state.manager.escalacao.length < 11) {
-                    alert("Você precisa escalar 11 jogadores!");
-                    return;
-                }
-
+                if (state.manager.campeonatoFinalizado) { alert("A temporada já terminou!"); return; }
+                if (state.manager.escalacao.length < 11) { alert("Você precisa escalar 11 jogadores!"); return; }
                 const rodada = state.manager.campeonato.calendario[state.manager.rodadaAtual];
                 let roundResults = '';
-
                 rodada.forEach(jogo => {
                     const timeCasa = state.manager.campeonato.times.find(t => t.nome === jogo.casa);
                     const timeFora = state.manager.campeonato.times.find(t => t.nome === jogo.fora);
-                    
                     const forcaCasa = typeof timeCasa.forca === 'function' ? timeCasa.forca() : timeCasa.forca;
                     const forcaFora = typeof timeFora.forca === 'function' ? timeFora.forca() : timeFora.forca;
-
                     const poderCasa = forcaCasa + Math.random() * 100;
                     const poderFora = forcaFora + Math.random() * 100;
-
-                    const golsCasa = Math.floor(Math.pow(poderCasa / poderFora, 1.5));
-                    const golsFora = Math.floor(Math.pow(poderFora / poderCasa, 1.5));
-
+                    let golsCasa = Math.min(7, Math.floor(Math.pow(poderCasa / poderFora, 1.5)));
+                    let golsFora = Math.min(7, Math.floor(Math.pow(poderFora / poderCasa, 1.5)));
                     updateTeamStats(timeCasa, timeFora, golsCasa, golsFora);
-                    
-                    if (timeCasa.isPlayer || timeFora.isPlayer) {
-                        updatePlayerStatsAndBudget(golsCasa, golsFora, timeCasa.isPlayer);
-                    }
+                    if (timeCasa.isPlayer || timeFora.isPlayer) updatePlayerStatsAndBudget(golsCasa, golsFora, timeCasa.isPlayer);
                     roundResults += `<p>${jogo.casa} ${golsCasa} x ${golsFora} ${jogo.fora}</p>`;
                 });
-
                 state.manager.rodadaAtual++;
-                state.manager.escalacao = []; // Limpa escalação
-                
+                state.manager.escalacao = [];
                 showModal(`<h3 class="text-2xl font-bold mb-4">Resultados da Rodada ${state.manager.rodadaAtual}</h3><div class="text-left">${roundResults}</div><button id="close-modal-btn" class="mt-4 bg-teal-600 p-2 rounded w-full">OK</button>`);
-                document.getElementById('close-modal-btn').addEventListener('click', () => {
+                document.getElementById('close-modal-btn').addEventListener('click', async () => {
                     closeModal();
                     if (state.manager.rodadaAtual >= state.manager.campeonato.calendario.length) {
                         state.manager.campeonatoFinalizado = true;
                         alert("Fim da temporada!");
                     }
+                    await saveGameState('manager');
                     switchManagerTab('manager-league');
                 });
             }
@@ -536,39 +568,26 @@
                 timeFora.GP += golsFora; timeFora.GC += golsCasa;
                 timeCasa.SG = timeCasa.GP - timeCasa.GC;
                 timeFora.SG = timeFora.GP - timeFora.GC;
-
-                if (golsCasa > golsFora) {
-                    timeCasa.V++; timeFora.D++; timeCasa.P += 3;
-                } else if (golsFora > golsCasa) {
-                    timeFora.V++; timeCasa.D++; timeFora.P += 3;
-                } else {
-                    timeCasa.E++; timeFora.E++; timeCasa.P++; timeFora.P++;
-                }
+                if (golsCasa > golsFora) { timeCasa.V++; timeFora.D++; timeCasa.P += 3; }
+                else if (golsFora > golsCasa) { timeFora.V++; timeCasa.D++; timeFora.P += 3; }
+                else { timeCasa.E++; timeFora.E++; timeCasa.P++; timeFora.P++; }
             }
 
             function updatePlayerStatsAndBudget(golsNosso, golsAdv, jogamosEmCasa) {
                 const resultado = (jogamosEmCasa && golsNosso > golsAdv) || (!jogamosEmCasa && golsAdv > golsNosso) ? 'vitoria' : (golsNosso === golsAdv ? 'empate' : 'derrota');
-
                 state.manager.escalacao.forEach(j => {
                     const jogador = state.manager.jogadores.find(p => p.id === j.id);
                     jogador.cansaco = Math.min(15, jogador.cansaco + 5);
                     if (resultado === 'vitoria') jogador.moral = Math.min(120, jogador.moral + 10);
                     if (resultado === 'derrota') jogador.moral = Math.max(50, jogador.moral - 10);
                 });
-
                 if (resultado === 'vitoria') state.manager.orcamento += 100000;
                 if (resultado === 'empate') state.manager.orcamento += 30000;
             }
             
             function handleDilemma(dilemma) {
-                showModal(`
-                    <h3 class="text-2xl font-bold mb-4">${dilemma.title}</h3>
-                    <p class="mb-6">${dilemma.text}</p>
-                    <div class="space-y-3">
-                    ${dilemma.options.map((opt, i) => `<button class="w-full p-3 bg-teal-700 hover:bg-teal-600 rounded btn-action" data-index="${i}">${opt.text}</button>`).join('')}
-                    </div>
-                `);
-                UI.modalContent.querySelectorAll('button').forEach(btn => btn.addEventListener('click', (e) => {
+                showModal(`<h3 class="text-2xl font-bold mb-4">${dilemma.title}</h3><p class="mb-6">${dilemma.text}</p><div class="space-y-3">${dilemma.options.map((opt, i) => `<button class="w-full p-3 bg-teal-700 hover:bg-teal-600 rounded btn-action" data-index="${i}">${opt.text}</button>`).join('')}</div>`);
+                UI.modalContent.querySelectorAll('button').forEach(btn => btn.addEventListener('click', async (e) => {
                     const choice = dilemma.options[parseInt(e.target.dataset.index)];
                     if (choice.effect.morale) {
                         state.manager.jogadores.forEach(p => p.moral = Math.max(0, Math.min(150, p.moral + choice.effect.morale)));
@@ -576,33 +595,21 @@
                     }
                     state.manager.dilemmaQueue.shift();
                     closeModal();
+                    await saveGameState('manager');
                     renderManagerContent('manager-office');
                 }));
             }
             
             function showHireStaffModal(role) {
-                showModal(`
-                    <h3 class="text-2xl font-bold mb-4">Contratar ${role}</h3>
-                    <div class="space-y-3">
-                    ${DB.STAFF[role].map(person => `
-                        <div class="text-left p-3 bg-gray-700 rounded flex justify-between items-center">
-                            <div>
-                                <p class="font-bold">${person.name}</p>
-                                <p class="text-sm">Qualidade: ${person.quality} | Salário: $${person.salary.toLocaleString()}</p>
-                            </div>
-                            <button data-role="${role}" data-name="${person.name}" class="confirm-hire-btn bg-green-600 p-2 rounded btn-action">Contratar</button>
-                        </div>
-                    `).join('')}
-                    </div>
-                    <button id="close-modal-btn" class="mt-4 bg-red-600 p-2 rounded">Cancelar</button>
-                `);
+                showModal(`<h3 class="text-2xl font-bold mb-4">Contratar ${role}</h3><div class="space-y-3">${DB.STAFF[role].map(person => `<div class="text-left p-3 bg-gray-700 rounded flex justify-between items-center"><div><p class="font-bold">${person.name}</p><p class="text-sm">Qualidade: ${person.quality} | Salário: $${person.salary.toLocaleString()}</p></div><button data-role="${role}" data-name="${person.name}" class="confirm-hire-btn bg-green-600 p-2 rounded btn-action">Contratar</button></div>`).join('')}</div><button id="close-modal-btn" class="mt-4 bg-red-600 p-2 rounded">Cancelar</button>`);
                 document.getElementById('close-modal-btn').addEventListener('click', closeModal);
-                document.querySelectorAll('.confirm-hire-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.confirm-hire-btn').forEach(btn => btn.addEventListener('click', async (e) => {
                     const person = DB.STAFF[e.target.dataset.role].find(p => p.name === e.target.dataset.name);
                     if (state.manager.orcamento >= person.salary) {
                         state.manager.staff[e.target.dataset.role] = person;
                         state.manager.orcamento -= person.salary;
                         closeModal();
+                        await saveGameState('manager');
                         renderManagerContent('manager-staff');
                     } else {
                         alert("Orçamento insuficiente para pagar o salário!");
@@ -639,38 +646,34 @@
                 const valueEl = document.getElementById(`attr-${attr}`);
                 let currentValue = parseInt(valueEl.textContent);
                 let pointsLeft = parseInt(UI.playerMode.attributePointsLeft.textContent);
-
-                if (action === 'plus' && pointsLeft > 0) {
-                    valueEl.textContent = currentValue + 1;
-                    UI.playerMode.attributePointsLeft.textContent = pointsLeft - 1;
-                } else if (action === 'minus' && currentValue > parseInt(valueEl.dataset.baseValue)) {
-                    valueEl.textContent = currentValue - 1;
-                    UI.playerMode.attributePointsLeft.textContent = pointsLeft + 1;
-                }
+                if (action === 'plus' && pointsLeft > 0) { valueEl.textContent = currentValue + 1; UI.playerMode.attributePointsLeft.textContent = pointsLeft - 1; }
+                else if (action === 'minus' && currentValue > parseInt(valueEl.dataset.baseValue)) { valueEl.textContent = currentValue - 1; UI.playerMode.attributePointsLeft.textContent = pointsLeft + 1; }
             }
 
-            function finalizePlayerCreation() {
+            async function finalizePlayerCreation() {
                 const name = UI.playerMode.playerNameInput.value.trim();
                 if (!name) { alert("Insira um nome."); return; }
                 if (parseInt(UI.playerMode.attributePointsLeft.textContent) > 0 && !confirm("Ainda há pontos para distribuir. Continuar?")) return;
-                state.player = {
+                const initialState = {
                     name: name, position: UI.playerMode.playerPositionSelect.value, attributes: {},
                     team: "Iniciantes FC", salary: 50000, morale: 80, xp: 0, ownedItems: [],
                     reputation: { professional: 50, maverick: 50 },
                     sponsorships: []
                 };
                 UI.playerMode.attributeInputs.querySelectorAll('span[id^="attr-"]').forEach(el => {
-                    state.player.attributes[el.id.replace('attr-', '')] = parseInt(el.textContent);
+                    initialState.attributes[el.id.replace('attr-', '')] = parseInt(el.textContent);
                 });
+                const { data, error } = await supabaseClient.from('player_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
+                if (error) { alert("Erro ao criar nova carreira."); console.error(error); return; }
+                state.player = data.game_state;
+                state.player.id = data.id;
                 showScreen(UI.playerMode.container, UI.playerMode.hubScreen);
                 setupPlayerNav();
                 switchPlayerTab('player-home');
             }
             
             function setupPlayerNav() {
-                UI.playerMode.nav.addEventListener('click', (e) => {
-                    if (e.target.tagName === 'BUTTON') switchPlayerTab(e.target.dataset.tab);
-                });
+                UI.playerMode.nav.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') switchPlayerTab(e.target.dataset.tab); });
             }
 
             function switchPlayerTab(tabId) {
@@ -683,93 +686,59 @@
                 UI.playerMode.playerHubName.textContent = state.player.name;
                 UI.playerMode.playerSalary.textContent = `Salário: $${state.player.salary.toLocaleString()}`;
                 const content = UI.playerMode.content;
-
                 switch(tabId) {
                     case 'player-home':
-                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Início</h3>
-                        <div class="bg-gray-800 p-4 rounded-lg">
-                            <h4 class="text-xl font-semibold">Próxima Partida</h4>
-                            <p class="text-3xl text-center p-4">${state.player.team} vs Titans da Cidade</p>
-                            <button id="play-match-btn" class="w-full mt-4 bg-amber-500 p-3 rounded btn-action">Jogar</button>
-                        </div>`;
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Início</h3><div class="bg-gray-800 p-4 rounded-lg"><h4 class="text-xl font-semibold">Próxima Partida</h4><p class="text-3xl text-center p-4">${state.player.team} vs Titans da Cidade</p><button id="play-match-btn" class="w-full mt-4 bg-amber-500 p-3 rounded btn-action">Jogar</button></div>`;
                         document.getElementById('play-match-btn').addEventListener('click', playPlayerMatch);
                         break;
+                    case 'player-social':
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Rede Social</h3><div class="bg-gray-800 p-4 rounded-lg"><textarea id="social-post-input" class="w-full p-2 rounded bg-gray-700 border border-gray-600" placeholder="O que está pensando?"></textarea><div class="flex justify-end gap-2 mt-2"><button id="post-pro-btn" class="bg-blue-600 p-2 rounded btn-action">Postar (Profissional)</button><button id="post-mav-btn" class="bg-purple-600 p-2 rounded btn-action">Postar (Marrento)</button></div></div>`;
+                        document.getElementById('post-pro-btn').addEventListener('click', () => makeSocialPost('professional'));
+                        document.getElementById('post-mav-btn').addEventListener('click', () => makeSocialPost('maverick'));
+                        break;
                     case 'player-training':
-                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Treinamento Interativo</h3>
-                        <p class="mb-4">Escolha um atributo para focar no treino desta semana.</p>
-                        <div class="space-y-3">
-                        ${Object.keys(state.player.attributes).map(attr => `
-                            <button data-attr="${attr}" class="training-btn w-full p-3 bg-gray-700 hover:bg-gray-600 rounded btn-action">Treinar ${attr}</button>
-                        `).join('')}
-                        </div>`;
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Treinamento Interativo</h3><p class="mb-4">Escolha um atributo para focar no treino desta semana.</p><div class="space-y-3">${Object.keys(state.player.attributes).map(attr => `<button data-attr="${attr}" class="training-btn w-full p-3 bg-gray-700 hover:bg-gray-600 rounded btn-action">Treinar ${attr}</button>`).join('')}</div>`;
                         document.querySelectorAll('.training-btn').forEach(btn => btn.addEventListener('click', (e) => startTraining(e.target.dataset.attr)));
                         break;
                     case 'player-brand':
                         const { professional, maverick } = state.player.reputation;
                         const total = professional + maverick;
-                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Marca Pessoal</h3>
-                        <div class="bg-gray-800 p-4 rounded-lg">
-                            <h4 class="text-xl font-semibold mb-2">Reputação</h4>
-                            <div class="w-full bg-gray-700 rounded-full h-4 mb-4 flex">
-                                <div class="bg-blue-500 h-4 rounded-l-full" style="width: ${professional/total*100}%"></div>
-                                <div class="bg-purple-500 h-4 rounded-r-full" style="width: ${maverick/total*100}%"></div>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-blue-400">Profissional: ${professional}</span>
-                                <span class="text-purple-400">Marrento: ${maverick}</span>
-                            </div>
-                            <h4 class="text-xl font-semibold mt-6 mb-2">Patrocínios</h4>
-                            ${state.player.sponsorships.length > 0 ? '...' : '<p class="text-gray-400">Nenhum patrocínio ativo. Aumente sua reputação!</p>'}
-                        </div>`;
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Marca Pessoal</h3><div class="bg-gray-800 p-4 rounded-lg"><h4 class="text-xl font-semibold mb-2">Reputação</h4><div class="w-full bg-gray-700 rounded-full h-4 mb-4 flex"><div class="bg-blue-500 h-4 rounded-l-full" style="width: ${professional/total*100}%"></div><div class="bg-purple-500 h-4 rounded-r-full" style="width: ${maverick/total*100}%"></div></div><div class="flex justify-between text-sm"><span class="text-blue-400">Profissional: ${professional}</span><span class="text-purple-400">Marrento: ${maverick}</span></div><h4 class="text-xl font-semibold mt-6 mb-2">Patrocínios</h4>${state.player.sponsorships.length > 0 ? '...' : '<p class="text-gray-400">Nenhum patrocínio ativo. Aumente sua reputação!</p>'}</div>`;
                         break;
                      case 'player-lifestyle':
-                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Lifestyle</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        ${DB.LIFESTYLE_ITEMS.map(item => `
-                            <div class="card bg-gray-800 p-4 rounded-lg text-center">
-                                <h4 class="text-lg font-bold">${item.name}</h4>
-                                <p class="text-green-400 font-semibold my-2">$${item.cost.toLocaleString()}</p>
-                                <button data-item-id="${item.id}" class="buy-lifestyle-btn w-full p-2 rounded ${state.player.ownedItems.includes(item.id) ? 'bg-gray-600' : 'bg-green-600 btn-action'}" ${state.player.ownedItems.includes(item.id) ? 'disabled' : ''}>
-                                    ${state.player.ownedItems.includes(item.id) ? 'Comprado' : 'Comprar'}
-                                </button>
-                            </div>
-                        `).join('')}
-                        </div>`;
-                        document.querySelectorAll('.buy-lifestyle-btn').forEach(btn => {
-                            if (!btn.disabled) {
-                                btn.addEventListener('click', (e) => buyLifestyleItem(e.target.dataset.itemId));
-                            }
-                        });
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Lifestyle</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${DB.LIFESTYLE_ITEMS.map(item => `<div class="card bg-gray-800 p-4 rounded-lg text-center"><h4 class="text-lg font-bold">${item.name}</h4><p class="text-green-400 font-semibold my-2">$${item.cost.toLocaleString()}</p><button data-item-id="${item.id}" class="buy-lifestyle-btn w-full p-2 rounded ${state.player.ownedItems.includes(item.id) ? 'bg-gray-600' : 'bg-green-600 btn-action'}" ${state.player.ownedItems.includes(item.id) ? 'disabled' : ''}>${state.player.ownedItems.includes(item.id) ? 'Comprado' : 'Comprar'}</button></div>`).join('')}</div>`;
+                        document.querySelectorAll('.buy-lifestyle-btn').forEach(btn => { if (!btn.disabled) btn.addEventListener('click', (e) => buyLifestyleItem(e.target.dataset.itemId)); });
                         break;
                 }
+            }
+            
+            async function makeSocialPost(type) {
+                const input = document.getElementById('social-post-input');
+                if (!input.value.trim()) { alert("Escreva algo para postar!"); return; }
+                if (type === 'professional') { state.player.reputation.professional += 5; alert("Postagem profissional feita! Sua reputação como um atleta sério aumentou."); }
+                else { state.player.reputation.maverick += 5; alert("Postagem marrenta feita! Sua fama de estrela aumentou."); }
+                input.value = '';
+                await saveGameState('player');
             }
             
             async function playPlayerMatch() {
                 let matchState = { score: [0, 0], events: 5, currentEvent: 0, successfulActions: 0 };
                 const playMatchBtn = document.getElementById('play-match-btn');
                 playMatchBtn.disabled = true;
-
                 while (matchState.currentEvent < matchState.events) {
                     matchState.currentEvent++;
                     const event = generatePlayerMatchEvent();
                     const success = await showPlayerMatchEvent(event, matchState);
                     if (success) matchState.successfulActions++;
                 }
-
                 const ourGoals = matchState.score[0] + (Math.random() < (matchState.successfulActions / matchState.events) ? 1 : 0);
                 const theirGoals = Math.floor(Math.random() * 3);
                 const xpGained = matchState.successfulActions * 10 + (ourGoals > theirGoals ? 20 : (ourGoals === theirGoals ? 10 : 0));
                 state.player.xp += xpGained;
-
-                showModal(`
-                    <h3 class="text-2xl font-bold mb-4">Fim de Jogo!</h3>
-                    <p class="text-4xl mb-4">${state.player.team} ${Math.floor(ourGoals)} x ${theirGoals} Titans da Cidade</p>
-                    <p class="text-lg">Você teve ${matchState.successfulActions} ações de sucesso.</p>
-                    <p class="text-xl text-amber-400 font-bold mt-2">Você ganhou ${xpGained} XP!</p>
-                    <button id="close-modal-btn" class="w-full mt-6 bg-teal-600 p-2 rounded">OK</button>
-                `);
-                document.getElementById('close-modal-btn').onclick = () => {
+                showModal(`<h3 class="text-2xl font-bold mb-4">Fim de Jogo!</h3><p class="text-4xl mb-4">${state.player.team} ${Math.floor(ourGoals)} x ${theirGoals} Titans da Cidade</p><p class="text-lg">Você teve ${matchState.successfulActions} ações de sucesso.</p><p class="text-xl text-amber-400 font-bold mt-2">Você ganhou ${xpGained} XP!</p><button id="close-modal-btn" class="w-full mt-6 bg-teal-600 p-2 rounded">OK</button>`);
+                document.getElementById('close-modal-btn').onclick = async () => {
                     closeModal();
+                    await saveGameState('player');
                     switchPlayerTab('player-home');
                 };
             }
@@ -787,41 +756,30 @@
 
             function showPlayerMatchEvent(event, matchState) {
                 return new Promise(resolve => {
-                    showModal(`
-                        <p class="text-sm text-gray-400">Placar: ${matchState.score[0]} x ${matchState.score[1]} | Evento ${matchState.currentEvent}/${matchState.events}</p>
-                        <p class="text-xl my-4">${event.d}</p>
-                        <div class="space-y-3">
-                            ${event.o.map((opt, i) => `<button class="event-option w-full p-3 bg-teal-700 hover:bg-teal-600 rounded" data-index="${i}">${opt}</button>`).join('')}
-                        </div>
-                    `);
+                    showModal(`<p class="text-sm text-gray-400">Placar: ${matchState.score[0]} x ${matchState.score[1]} | Evento ${matchState.currentEvent}/${matchState.events}</p><p class="text-xl my-4">${event.d}</p><div class="space-y-3">${event.o.map((opt, i) => `<button class="event-option w-full p-3 bg-teal-700 hover:bg-teal-600 rounded" data-index="${i}">${opt}</button>`).join('')}</div>`);
                     document.querySelectorAll('.event-option').forEach(btn => btn.onclick = (e) => {
                         const success = Math.random() < (state.player.attributes[event.a] / 20);
-                        if (success) matchState.score[0]++;
-                        else matchState.score[1]++;
+                        if (success) matchState.score[0]++; else matchState.score[1]++;
                         resolve(success);
                     });
                 });
             }
             
-            function startTraining(attribute) {
-                showModal(`
-                    <h3 class="text-2xl font-bold mb-4">Treino de ${attribute}</h3>
-                    <p class="mb-6">Você está no campo de treino. O técnico prepara um exercício específico.</p>
-                    <p>"Vamos lá, ${state.player.name}! Mostre o que sabe fazer."</p>
-                    <button id="start-drill" class="mt-4 bg-teal-600 p-2 rounded btn-action">Começar Exercício</button>
-                `);
-                document.getElementById('start-drill').addEventListener('click', () => {
-                    const success = Math.random() < (state.player.attributes[attribute] / 25 + 0.2); // Base chance + attribute bonus
+            async function startTraining(attribute) {
+                showModal(`<h3 class="text-2xl font-bold mb-4">Treino de ${attribute}</h3><p class="mb-6">Você está no campo de treino. O técnico prepara um exercício específico.</p><p>"Vamos lá, ${state.player.name}! Mostre o que sabe fazer."</p><button id="start-drill" class="mt-4 bg-teal-600 p-2 rounded btn-action">Começar Exercício</button>`);
+                document.getElementById('start-drill').addEventListener('click', async () => {
+                    const success = Math.random() < (state.player.attributes[attribute] / 25 + 0.2);
                     const xpGained = success ? 10 + Math.floor(Math.random() * 5) : 2;
                     state.player.xp += xpGained;
                     state.player.reputation.professional += success ? 2 : 1;
                     closeModal();
                     alert(`Treino concluído! Você ganhou ${xpGained} XP em ${attribute}.`);
+                    await saveGameState('player');
                     switchPlayerTab('player-training');
                 });
             }
             
-            function buyLifestyleItem(itemId) {
+            async function buyLifestyleItem(itemId) {
                 const item = DB.LIFESTYLE_ITEMS.find(i => i.id === itemId);
                 if (state.player.salary >= item.cost) {
                     state.player.salary -= item.cost;
@@ -829,6 +787,7 @@
                     if (item.reputation.professional) state.player.reputation.professional += item.reputation.professional;
                     if (item.reputation.maverick) state.player.reputation.maverick += item.reputation.maverick;
                     alert(`Você comprou: ${item.name}!`);
+                    await saveGameState('player');
                     renderPlayerContent('player-lifestyle');
                 } else {
                     alert("Salário insuficiente!");
