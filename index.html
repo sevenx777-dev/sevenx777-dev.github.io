@@ -252,6 +252,7 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // CORREÇÃO: Estrutura do objeto Game corrigida
         const Game = (() => {
             let state = {
                 communityCreations: { players: [], teams: [], leagues: [] }
@@ -769,9 +770,8 @@
                     switchHubTab('hub-patches');
                 }
             }
-            
+
             // --- OBJETO PÚBLICO ---
-            // CORREÇÃO: As funções públicas são retornadas aqui
             return {
                 init: async function() {
                     if (!supabaseClient) { UI.authError.textContent = "Supabase não configurado."; return; }
@@ -800,7 +800,6 @@
             };
         })();
 
-        // CORREÇÃO: A chamada `Game.init()` é feita aqui, depois de o objeto Game estar completamente definido.
         Game.init();
     });
     </script>
