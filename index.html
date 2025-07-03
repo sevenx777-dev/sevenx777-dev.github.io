@@ -98,12 +98,81 @@
         
         <!-- MODO TÉCNICO (OFFLINE) -->
         <div id="manager-mode" class="hidden">
-            <!-- Conteúdo do Modo Técnico -->
+            <div id="manager-philosophy-screen">
+                <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Defina a Filosofia do Clube</h2></header>
+                <div class="p-4 md:p-8 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer philosophy-card" data-philosophy="cantera">
+                        <h3 class="text-2xl font-bold mb-2">Cantera</h3>
+                        <p class="text-gray-400 mb-4">Foco na base. Orçamento menor, academia de elite. Paciência da diretoria com resultados.</p>
+                    </div>
+                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer philosophy-card" data-philosophy="galactic">
+                        <h3 class="text-2xl font-bold mb-2">Galácticos</h3>
+                        <p class="text-gray-400 mb-4">Orçamento gigante para contratar estrelas. A pressão por títulos é imediata.</p>
+                    </div>
+                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer philosophy-card" data-philosophy="moneyball">
+                        <h3 class="text-2xl font-bold mb-2">Moneyball</h3>
+                        <p class="text-gray-400 mb-4">Gestão inteligente. Foco em contratar jogadores subvalorizados e vender caro.</p>
+                    </div>
+                </div>
+                 <button class="back-to-menu w-full max-w-xs mx-auto mt-8 bg-gray-600 p-2 rounded block">Voltar</button>
+            </div>
+            <div id="manager-hub-screen" class="hidden">
+                <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
+                    <h2 class="text-xl md:text-2xl font-bold">Modo Técnico</h2>
+                    <div id="manager-budget" class="text-sm md:text-lg"></div>
+                    <button class="back-to-menu bg-red-600 hover:bg-red-500 p-2 rounded">Voltar ao Menu</button>
+                </header>
+                <nav id="manager-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
+                    <button data-tab="manager-office" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Escritório</button>
+                    <button data-tab="manager-lockerroom" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Vestiário</button>
+                    <button data-tab="manager-squad" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Elenco</button>
+                    <button data-tab="manager-staff" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Equipe</button>
+                    <button data-tab="manager-youth" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Academia</button>
+                    <button data-tab="manager-transfers" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Mercado</button>
+                    <button data-tab="manager-league" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Liga</button>
+                </nav>
+                <main id="manager-content" class="p-4"></main>
+            </div>
         </div>
 
         <!-- MODO JOGADOR (OFFLINE) -->
         <div id="player-mode" class="hidden">
-            <!-- Conteúdo do Modo Jogador -->
+            <div id="player-creation-screen">
+                 <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Crie seu Craque</h2></header>
+                <div class="p-4 md:p-8 max-w-2xl mx-auto">
+                    <div class="mb-4">
+                        <label for="player-name" class="block mb-2">Nome:</label>
+                        <input type="text" id="player-name" class="w-full p-2 rounded bg-gray-700 border border-gray-600" placeholder="Ex: Léo da Silva">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block mb-2">Posição:</label>
+                        <select id="player-position" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                            <option value="ATA">Atacante</option><option value="MEI">Meio-campista</option><option value="DEF">Defensor</option><option value="GOL">Goleiro</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-2">Atributos (Pontos restantes: <span id="attribute-points-left" class="font-bold text-amber-400">15</span>)</h3>
+                        <div id="attribute-inputs" class="space-y-2 mt-2"></div>
+                    </div>
+                    <button id="finalize-player-creation" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Iniciar Carreira</button>
+                    <button class="back-to-menu w-full mt-2 bg-red-600 p-2 rounded">Voltar</button>
+                </div>
+            </div>
+            <div id="player-hub-screen" class="hidden">
+                <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
+                    <h2 id="player-hub-name" class="text-xl md:text-2xl font-bold truncate"></h2>
+                    <div id="player-salary" class="text-sm md:text-lg"></div>
+                    <button class="back-to-menu bg-red-600 p-2 rounded">Voltar ao Menu</button>
+                </header>
+                <nav id="player-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
+                     <button data-tab="player-home" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Início</button>
+                     <button data-tab="player-social" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Rede Social</button>
+                     <button data-tab="player-training" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Treino</button>
+                     <button data-tab="player-brand" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Marca</button>
+                     <button data-tab="player-lifestyle" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Lifestyle</button>
+                </nav>
+                <main id="player-content" class="p-4"></main>
+            </div>
         </div>
     </div>
 
@@ -160,57 +229,83 @@
                 { name: 'Global',       starsToPromote: 0, color: '#ff4500' }
             ];
             
+            // --- DADOS PARA MODOS OFFLINE ---
+            const DB = {
+                ATTRIBUTES_MAP: {
+                    ATA: { Chute: 8, Drible: 7, Velocidade: 6, Passe: 4, Força: 5 },
+                    MEI: { Passe: 8, Drible: 7, Chute: 5, Defesa: 5, Visão: 6 },
+                    DEF: { Defesa: 8, Força: 7, Passe: 5, Velocidade: 5, Marcação: 6 },
+                    GOL: { Reflexos: 8, Posicionamento: 7, 'Um-pra-um': 6, Passe: 4, Agilidade: 5 }
+                },
+                TEAMS: [
+                    { nome: "Titans da Capital", forca: 910 }, { nome: "Corsários da Costa", forca: 880 }, { nome: "Lobos da Montanha", forca: 850 },
+                ],
+                PLAYERS: [
+                    { id: 1, nome: 'G. Arantes', forcaBase: 82, posicao: 'GOL', valor: 1200000, personality: 'loyal' }, { id: 2, nome: 'L. Veloso', forcaBase: 78, posicao: 'DEF', valor: 900000, personality: 'neutral' },
+                    { id: 3, nome: 'B. Xerife', forcaBase: 85, posicao: 'DEF', valor: 1500000, personality: 'leader' }, { id: 4, nome: 'M. Rocha', forcaBase: 84, posicao: 'DEF', valor: 1400000, personality: 'neutral' },
+                    { id: 5, nome: 'E. Cansado', forcaBase: 75, posicao: 'DEF', valor: 750000, personality: 'neutral' }, { id: 6, nome: 'V. Marcador', forcaBase: 88, posicao: 'MEI', valor: 1800000, personality: 'loyal' },
+                    { id: 7, nome: 'M. Clássico', forcaBase: 90, posicao: 'MEI', valor: 2500000, personality: 'ambitious' }, { id: 8, nome: 'A. Meia', forcaBase: 86, posicao: 'MEI', valor: 1600000, personality: 'neutral' },
+                    { id: 9, nome: 'P. Habilidoso', forcaBase: 89, posicao: 'ATA', valor: 2200000, personality: 'maverick' }, { id: 10, nome: 'C. Matador', forcaBase: 92, posicao: 'ATA', valor: 3000000, personality: 'leader' },
+                    { id: 11, nome: 'P. Corredor', forcaBase: 87, posicao: 'ATA', valor: 1900000, personality: 'neutral' },
+                ],
+                 TRANSFER_PLAYERS: [
+                    { id: 16, nome: 'A. Furtado', forcaBase: 85, posicao: 'ATA', valor: 1700000, personality: 'mercenary' }, { id: 17, nome: 'B. Campos', forcaBase: 82, posicao: 'MEI', valor: 1100000, personality: 'loyal' },
+                    { id: 18, nome: 'C. Diniz', forcaBase: 84, posicao: 'DEF', valor: 1300000, personality: 'leader' },
+                ],
+                LIFESTYLE_ITEMS: [
+                    { id: 'car1', name: 'Carro Popular', cost: 20000, reputation: { maverick: 2 } }, { id: 'house1', name: 'Apartamento Simples', cost: 100000, reputation: { professional: 2 } },
+                ],
+                STAFF: {
+                    assistant: [{ name: "J. Cruz", quality: 75, salary: 50000 }, { name: "M. Roca", quality: 85, salary: 90000 }],
+                    scout: [{ name: "P. Neto", quality: 78, salary: 40000 }, { name: "R. Lemos", quality: 88, salary: 80000 }],
+                    medic: [{ name: "Dra. Alves", quality: 80, salary: 60000 }, { name: "Dr. Borges", quality: 90, salary: 100000 }],
+                }
+            };
+
             // --- CACHE DE ELEMENTOS UI ---
             const UI = {
-                authScreen: document.getElementById('auth-screen'),
-                mainMenu: document.getElementById('main-menu'),
-                gameContainer: document.getElementById('game-container'),
-                authForm: document.getElementById('auth-form'),
-                authLoading: document.getElementById('auth-loading'),
-                authError: document.getElementById('auth-error'),
-                emailInput: document.getElementById('email-input'),
-                passwordInput: document.getElementById('password-input'),
-                loginBtn: document.getElementById('login-btn'),
-                signupBtn: document.getElementById('signup-btn'),
-                logoutBtn: document.getElementById('logout-btn'),
+                authScreen: document.getElementById('auth-screen'), mainMenu: document.getElementById('main-menu'), gameContainer: document.getElementById('game-container'),
+                authForm: document.getElementById('auth-form'), authLoading: document.getElementById('auth-loading'), authError: document.getElementById('auth-error'),
+                emailInput: document.getElementById('email-input'), passwordInput: document.getElementById('password-input'),
+                loginBtn: document.getElementById('login-btn'), signupBtn: document.getElementById('signup-btn'), logoutBtn: document.getElementById('logout-btn'),
                 onlineMode: {
-                    container: document.getElementById('online-mode'),
-                    pvpLobbyScreen: document.getElementById('online-pvp-lobby-screen'),
-                    matchScreen: document.getElementById('online-match-screen'),
-                    findMatchBtn: document.getElementById('find-match-btn'),
-                    cancelSearchBtn: document.getElementById('cancel-search-btn'),
-                    pvpStatusText: document.getElementById('pvp-status-text'),
+                    container: document.getElementById('online-mode'), pvpLobbyScreen: document.getElementById('online-pvp-lobby-screen'),
+                    matchScreen: document.getElementById('online-match-screen'), findMatchBtn: document.getElementById('find-match-btn'),
+                    cancelSearchBtn: document.getElementById('cancel-search-btn'), pvpStatusText: document.getElementById('pvp-status-text'),
                     pvpLoader: document.getElementById('pvp-loader'),
                 },
-                startOnlineModeBtn: document.getElementById('start-online-mode'),
-                startManagerBtn: document.getElementById('start-manager-mode'),
-                startPlayerBtn: document.getElementById('start-player-mode'),
-                backToMenuBtns: document.querySelectorAll('.back-to-menu'),
-                modal: document.getElementById('modal'),
-                modalContent: document.getElementById('modal-content'),
-                playerRankDisplay: document.getElementById('player-rank-display'),
-                lobbyRankDisplay: document.getElementById('lobby-rank-display'),
+                managerMode: {
+                    container: document.getElementById('manager-mode'), philosophyScreen: document.getElementById('manager-philosophy-screen'),
+                    hubScreen: document.getElementById('manager-hub-screen'), content: document.getElementById('manager-content'),
+                    nav: document.getElementById('manager-nav'), budget: document.getElementById('manager-budget'),
+                },
+                playerMode: {
+                    container: document.getElementById('player-mode'), creationScreen: document.getElementById('player-creation-screen'),
+                    hubScreen: document.getElementById('player-hub-screen'), content: document.getElementById('player-content'),
+                    nav: document.getElementById('player-nav'), attributePointsLeft: document.getElementById('attribute-points-left'),
+                    attributeInputs: document.getElementById('attribute-inputs'), finalizeCreationBtn: document.getElementById('finalize-player-creation'),
+                    playerNameInput: document.getElementById('player-name'), playerPositionSelect: document.getElementById('player-position'),
+                    playerHubName: document.getElementById('player-hub-name'), playerSalary: document.getElementById('player-salary'),
+                },
+                startOnlineModeBtn: document.getElementById('start-online-mode'), startManagerBtn: document.getElementById('start-manager-mode'),
+                startPlayerBtn: document.getElementById('start-player-mode'), backToMenuBtns: document.querySelectorAll('.back-to-menu'),
+                modal: document.getElementById('modal'), modalContent: document.getElementById('modal-content'),
+                playerRankDisplay: document.getElementById('player-rank-display'), lobbyRankDisplay: document.getElementById('lobby-rank-display'),
             };
 
             // --- FUNÇÕES UTILITÁRIAS ---
             function showModal(html) { UI.modalContent.innerHTML = html; UI.modal.classList.remove('hidden'); }
             function closeModal() { UI.modal.classList.add('hidden'); }
-            function toggleAuthLoading(isLoading) {
-                UI.authForm.classList.toggle('hidden', isLoading);
-                UI.authLoading.classList.toggle('hidden', !isLoading);
-                UI.authError.textContent = '';
-            }
-            function showScreen(screenId) {
-                [UI.authScreen, UI.mainMenu, UI.gameContainer].forEach(s => s.classList.add('hidden'));
-                document.getElementById(screenId).classList.remove('hidden');
-            }
+            function toggleAuthLoading(isLoading) { UI.authForm.classList.toggle('hidden', isLoading); UI.authLoading.classList.toggle('hidden', !isLoading); UI.authError.textContent = ''; }
+            function showScreen(screenId) { [UI.authScreen, UI.mainMenu, UI.gameContainer].forEach(s => s.classList.add('hidden')); document.getElementById(screenId).classList.remove('hidden'); }
             function showSubScreen(modeContainer, screenToShow) {
                 showScreen('game-container');
-                [UI.onlineMode.container, document.getElementById('manager-mode'), document.getElementById('player-mode')].forEach(c => c.classList.add('hidden'));
+                [UI.onlineMode.container, UI.managerMode.container, UI.playerMode.container].forEach(c => c.classList.add('hidden'));
                 Array.from(modeContainer.children).forEach(child => child.classList.add('hidden'));
                 screenToShow.classList.remove('hidden');
                 modeContainer.classList.remove('hidden');
             }
+            function getForcaEfetiva(jogador) { return Math.max(jogador.forcaBase - (jogador.cansaco || 0) + Math.floor(((jogador.moral || 100) - 100) / 5), 20); }
 
             // --- LÓGICA DE RANKING ---
             async function updateRankDisplay() {
@@ -293,7 +388,7 @@
 
             async function findOnlineMatch() {
                 togglePvpUi(true);
-                matchmakingTimer = setTimeout(startBotMatch, 30000); // 30 segundos de espera
+                matchmakingTimer = setTimeout(startBotMatch, 30000);
                 const { data: match, error } = await supabaseClient.rpc('find_or_create_match');
                 if (error) {
                     clearTimeout(matchmakingTimer);
@@ -358,12 +453,7 @@
                 cancelMatchmaking(false);
                 const botRank = RANKS[state.profile.rank_id];
                 state.matchState = {
-                    isBotMatch: true,
-                    opponentName: `Bot ${botRank.name}`,
-                    score: [0, 0],
-                    round: 1,
-                    playerAction: null,
-                    opponentAction: null,
+                    isBotMatch: true, opponentName: `Bot ${botRank.name}`, score: [0, 0], round: 1, playerAction: null, opponentAction: null,
                 };
                 setupMatchUI();
                 playNextRound();
@@ -372,18 +462,10 @@
             async function startOnlineMatch(match) {
                 if (state.realtimeChannel) { await supabaseClient.removeChannel(state.realtimeChannel); state.realtimeChannel = null; }
                 setupRealtimeForMatch(match.id);
-
                 const opponentId = match.player1_id === state.user.id ? match.player2_id : match.player1_id;
                 const { data: opponentProfile } = await supabaseClient.from('profiles').select('email').eq('id', opponentId).single();
-
                 state.matchState = {
-                    isBotMatch: false,
-                    opponentName: opponentProfile.email.split('@')[0],
-                    opponentId: opponentId,
-                    score: [0, 0],
-                    round: 1,
-                    playerAction: null,
-                    opponentAction: null,
+                    isBotMatch: false, opponentName: opponentProfile.email.split('@')[0], opponentId: opponentId, score: [0, 0], round: 1, playerAction: null, opponentAction: null,
                 };
                 setupMatchUI();
                 playNextRound();
@@ -408,10 +490,7 @@
                 state.matchState.playerAction = null;
                 state.matchState.opponentAction = null;
                 updateMatchUI(`Ronda ${state.matchState.round} de 5. Escolha a sua jogada!`);
-                document.querySelectorAll('.action-btn').forEach(btn => {
-                    btn.disabled = false;
-                    btn.classList.remove('selected');
-                });
+                document.querySelectorAll('.action-btn').forEach(btn => { btn.disabled = false; btn.classList.remove('selected'); });
             }
 
             async function handlePlayerAction(action) {
@@ -421,51 +500,27 @@
                     if (btn.dataset.action === action) btn.classList.add('selected');
                 });
                 updateMatchUI("Aguardando oponente...");
-
                 if (state.matchState.isBotMatch) {
                     const botActions = ['attack', 'balance', 'defend'];
                     state.matchState.opponentAction = botActions[Math.floor(Math.random() * botActions.length)];
                     setTimeout(resolveRound, 1000);
                 } else {
-                    await state.realtimeChannel.send({
-                        type: 'broadcast',
-                        event: 'player_action',
-                        payload: { action: action, senderId: state.user.id },
-                    });
-                    if (state.matchState.opponentAction) {
-                        resolveRound();
-                    }
+                    await state.realtimeChannel.send({ type: 'broadcast', event: 'player_action', payload: { action: action, senderId: state.user.id }, });
+                    if (state.matchState.opponentAction) { resolveRound(); }
                 }
             }
 
             function resolveRound() {
                 const pAction = state.matchState.playerAction;
                 const oAction = state.matchState.opponentAction;
-                let commentaryText = `Você escolheu ${pAction}, oponente escolheu ${oAction}. `;
-                
-                // Lógica Rock-Paper-Scissors
-                if (pAction === oAction) {
-                    commentaryText += "Jogada anulada!";
-                } else if (
-                    (pAction === 'attack' && oAction === 'balance') ||
-                    (pAction === 'balance' && oAction === 'defend') ||
-                    (pAction === 'defend' && oAction === 'attack')
-                ) {
-                    commentaryText += "GOLO! Você marcou!";
-                    state.matchState.score[0]++;
-                } else {
-                    commentaryText += "GOLO do oponente!";
-                    state.matchState.score[1]++;
-                }
-
+                let commentaryText = `Você: ${pAction} | Oponente: ${oAction}. `;
+                if (pAction === oAction) { commentaryText += "Jogada anulada!"; }
+                else if ((pAction === 'attack' && oAction === 'balance') || (pAction === 'balance' && oAction === 'defend') || (pAction === 'defend' && oAction === 'attack')) {
+                    commentaryText += "GOLO! Você marcou!"; state.matchState.score[0]++;
+                } else { commentaryText += "GOLO do oponente!"; state.matchState.score[1]++; }
                 updateMatchUI(commentaryText);
-
                 state.matchState.round++;
-                if (state.matchState.round > 5) {
-                    setTimeout(endMatch, 2000);
-                } else {
-                    setTimeout(playNextRound, 2000);
-                }
+                if (state.matchState.round > 5) { setTimeout(endMatch, 2000); } else { setTimeout(playNextRound, 2000); }
             }
 
             function updateMatchUI(commentary) {
@@ -477,51 +532,116 @@
 
             async function endMatch() {
                 const [playerScore, opponentScore] = state.matchState.score;
-                let didWin;
-                if (playerScore > opponentScore) didWin = true;
-                else if (playerScore < opponentScore) didWin = false;
-                else didWin = null; // Empate
-
+                let didWin = (playerScore > opponentScore) ? true : ((playerScore < opponentScore) ? false : null);
                 if (didWin !== null) {
-                    if (state.matchState.isBotMatch) {
-                        if (didWin) state.profile.rank_stars++;
-                        // Não perde estrelas contra bot
-                    } else {
+                    if (state.matchState.isBotMatch) { if (didWin) state.profile.rank_stars++; }
+                    else {
                         state.profile.rank_stars += didWin ? 1 : -1;
-                        await supabaseClient.rpc('handle_match_result', { 
-                            winner_id: didWin ? state.user.id : state.matchState.opponentId, 
-                            loser_id: didWin ? state.matchState.opponentId : state.user.id 
-                        });
+                        await supabaseClient.rpc('handle_match_result', { winner_id: didWin ? state.user.id : state.matchState.opponentId, loser_id: didWin ? state.matchState.opponentId : state.user.id });
                     }
                 }
-                
                 await updateRankDisplay();
                 showResultModal(didWin);
             }
 
             function showResultModal(didWin) {
                 let title, starChange, color;
-                if (didWin === null) {
-                    title = "EMPATE";
-                    starChange = "Nenhuma alteração de estrelas";
-                    color = "text-gray-400";
-                } else {
+                if (didWin === null) { title = "EMPATE"; starChange = "Nenhuma alteração de estrelas"; color = "text-gray-400"; }
+                else {
                     title = didWin ? "VITÓRIA!" : "DERROTA";
-                    if (state.matchState.isBotMatch && !didWin) {
-                        starChange = "0 ★ (Derrota para Bot)";
-                        color = "text-red-500";
-                    } else {
-                        starChange = didWin ? "+1 ★" : "-1 ★";
-                        color = didWin ? "text-green-400" : "text-red-500";
-                    }
+                    if (state.matchState.isBotMatch && !didWin) { starChange = "0 ★ (Derrota para Bot)"; color = "text-red-500"; }
+                    else { starChange = didWin ? "+1 ★" : "-1 ★"; color = didWin ? "text-green-400" : "text-red-500"; }
                 }
-                
                 const modalHTML = `<h2 class="text-4xl font-extrabold ${color} mb-4">${title}</h2><p class="text-xl text-gray-300">O seu rank foi atualizado.</p><p class="text-3xl font-bold ${color} my-6">${starChange}</p><button onclick="Game.closeAndGoToMenu()" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Voltar ao Menu</button>`;
                 showModal(modalHTML);
             }
 
-            // --- MODOS DE CARREIRA OFFLINE (Funções vazias para manter a estrutura) ---
-            function loadOrCreateCareer(type) { alert(`Modo Carreira (${type}) em desenvolvimento.`); }
+            // --- MODOS DE CARREIRA OFFLINE ---
+            async function loadOrCreateCareer(careerType) {
+                showModal('<div class="loader mx-auto"></div><p class="mt-4">A carregar carreira...</p>');
+                const { data } = await supabaseClient.from(`${careerType}_careers`).select('*').eq('user_id', state.user.id).single();
+                closeModal();
+                const modeUI = UI[`${careerType}Mode`];
+                if (data) {
+                    state[careerType] = data.game_state;
+                    state[careerType].id = data.id;
+                    showSubScreen(modeUI.container, modeUI.hubScreen);
+                    if (careerType === 'manager') { setupManagerNav(); switchManagerTab('manager-office'); }
+                    if (careerType === 'player') { setupPlayerNav(); switchPlayerTab('player-home'); }
+                } else {
+                    showSubScreen(modeUI.container, modeUI.creationScreen || modeUI.philosophyScreen);
+                    if (careerType === 'manager') {
+                        document.querySelectorAll('.philosophy-card').forEach(card => { card.onclick = (e) => setupManagerMode(e.currentTarget.dataset.philosophy); });
+                    } else { setupPlayerCreation(); }
+                }
+            }
+            
+            // --- MODO TÉCNICO ---
+            async function setupManagerMode(philosophy) {
+                const philosophies = { cantera: { budget: 2000000 }, galactic: { budget: 15000000 }, moneyball: { budget: 7000000 } };
+                const initialState = {
+                    orcamento: philosophies[philosophy].budget, jogadores: JSON.parse(JSON.stringify(DB.PLAYERS)), escalacao: [],
+                };
+                const { data } = await supabaseClient.from('manager_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
+                state.manager = data.game_state; state.manager.id = data.id;
+                showSubScreen(UI.managerMode.container, UI.managerMode.hubScreen);
+                setupManagerNav(); switchManagerTab('manager-office');
+            }
+            function setupManagerNav() { UI.managerMode.nav.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') switchManagerTab(e.target.dataset.tab); }); }
+            function switchManagerTab(tabId) {
+                UI.managerMode.nav.querySelector('.active').classList.remove('active');
+                UI.managerMode.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+                renderManagerContent(tabId);
+            }
+            function renderManagerContent(tabId) {
+                UI.managerMode.budget.textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
+                const content = UI.managerMode.content;
+                if (tabId === 'manager-squad') {
+                    content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Gerir Elenco</h3><div class="grid md:grid-cols-2 gap-4"><div><h4 class="text-xl font-semibold mb-2">Jogadores</h4><div id="squad-list" class="space-y-2"></div></div><div><h4 class="text-xl font-semibold mb-2">Equipa Titular</h4><div id="lineup-list" class="space-y-2"></div></div></div>`;
+                    renderManagerSquadLists();
+                } else { content.innerHTML = `<h3 class="text-2xl font-bold">${tabId.replace('manager-', '')}</h3><p>Conteúdo em desenvolvimento.</p>`; }
+            }
+            function renderManagerSquadLists() {
+                const squadListEl = document.getElementById('squad-list');
+                const lineupListEl = document.getElementById('lineup-list');
+                squadListEl.innerHTML = ''; lineupListEl.innerHTML = '';
+                state.manager.jogadores.forEach(p => {
+                    const playerEl = document.createElement('div');
+                    playerEl.className = 'p-2 bg-gray-700 rounded cursor-pointer';
+                    playerEl.innerHTML = `${p.nome} (${p.posicao}) - F: ${getForcaEfetiva(p)}`;
+                    squadListEl.appendChild(playerEl);
+                });
+            }
+
+            // --- MODO JOGADOR ---
+            function setupPlayerCreation() {
+                UI.playerMode.playerPositionSelect.onchange = renderAttributeInputs;
+                UI.playerMode.finalizeCreationBtn.onclick = finalizePlayerCreation;
+                renderAttributeInputs();
+            }
+            function renderAttributeInputs() {
+                const position = UI.playerMode.playerPositionSelect.value;
+                const attributes = DB.ATTRIBUTES_MAP[position];
+                UI.playerMode.attributeInputs.innerHTML = '';
+                for (const attr in attributes) { UI.playerMode.attributeInputs.innerHTML += `<div><label>${attr}: ${attributes[attr]}</label></div>`; }
+            }
+            async function finalizePlayerCreation() {
+                const initialState = { name: UI.playerMode.playerNameInput.value, position: UI.playerMode.playerPositionSelect.value, };
+                const { data } = await supabaseClient.from('player_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
+                state.player = data.game_state; state.player.id = data.id;
+                showSubScreen(UI.playerMode.container, UI.playerMode.hubScreen);
+                setupPlayerNav(); switchPlayerTab('player-home');
+            }
+            function setupPlayerNav() { UI.playerMode.nav.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') switchPlayerTab(e.target.dataset.tab); }); }
+            function switchPlayerTab(tabId) {
+                UI.playerMode.nav.querySelector('.active').classList.remove('active');
+                UI.playerMode.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+                renderPlayerContent(tabId);
+            }
+            function renderPlayerContent(tabId) {
+                UI.playerMode.playerHubName.textContent = state.player.name;
+                UI.playerMode.content.innerHTML = `<h3 class="text-2xl font-bold">${tabId.replace('player-', '')}</h3><p>Conteúdo em desenvolvimento.</p>`;
+            }
 
             // --- OBJETO PÚBLICO ---
             return {
@@ -541,14 +661,9 @@
                         state.profile = profile;
                         await updateRankDisplay();
                         showScreen('main-menu');
-                    } else {
-                        showScreen('auth-screen');
-                    }
+                    } else { showScreen('auth-screen'); }
                 },
-                closeAndGoToMenu: () => {
-                    closeModal();
-                    showMainMenu();
-                }
+                closeAndGoToMenu: () => { closeModal(); showMainMenu(); }
             };
         })();
 
