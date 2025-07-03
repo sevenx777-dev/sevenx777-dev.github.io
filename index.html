@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SevenxFoot v7.0</title>
+    <title>SevenxFoot v9.0</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- IMPORTANTE: Adiciona a biblioteca do Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -48,10 +47,11 @@
     <div id="main-menu" class="hidden main-menu-bg min-h-screen flex flex-col items-center justify-center p-4">
         <div class="bg-black bg-opacity-70 p-10 rounded-lg text-center shadow-2xl">
             <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-2">SevenxFoot</h1>
-            <p class="text-teal-400 font-bold text-2xl mb-8">v7.0 - O Jogo Final</p>
+            <p class="text-teal-400 font-bold text-2xl mb-8">v9.0 - Edição Definitiva</p>
             <div class="space-y-4">
-                <button id="start-manager-mode" class="w-full md:w-96 bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira: Técnico</button>
-                <button id="start-player-mode" class="w-full md:w-96 bg-amber-500 hover:bg-amber-400 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira: Jogador</button>
+                <button id="start-online-mode" class="w-full md:w-96 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Ligas Online</button>
+                <button id="start-manager-mode" class="w-full md:w-96 bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira Offline: Técnico</button>
+                <button id="start-player-mode" class="w-full md:w-96 bg-amber-500 hover:bg-amber-400 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira Offline: Jogador</button>
             </div>
              <button id="logout-btn" class="mt-8 text-gray-400 hover:text-white">Sair</button>
         </div>
@@ -59,7 +59,39 @@
 
     <!-- CONTAINER PRINCIPAL DO JOGO -->
     <div id="game-container" class="hidden">
-        <!-- MODO TÉCNICO -->
+        <!-- MODO ONLINE -->
+        <div id="online-mode" class="hidden">
+            <div id="online-lobby-screen">
+                <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Ligas Online</h2></header>
+                <div class="p-4 md:p-8 max-w-2xl mx-auto">
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold mb-4">Criar Nova Liga</h3>
+                        <input type="text" id="league-name-input" class="w-full p-2 rounded bg-gray-700 border border-gray-600 mb-4" placeholder="Nome da Liga">
+                        <button id="create-league-btn" class="w-full bg-green-600 p-3 rounded btn-action">Criar e Entrar</button>
+                    </div>
+                    <div class="my-6 text-center text-gray-400">OU</div>
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold mb-4">Entrar em uma Liga</h3>
+                        <input type="text" id="league-code-input" class="w-full p-2 rounded bg-gray-700 border border-gray-600 mb-4" placeholder="Código da Liga (Ex: ABC-123)">
+                        <button id="join-league-btn" class="w-full bg-blue-600 p-3 rounded btn-action">Entrar com Código</button>
+                    </div>
+                    <button class="back-to-menu w-full mt-8 bg-red-600 p-2 rounded">Voltar</button>
+                </div>
+            </div>
+            <div id="online-league-hub-screen" class="hidden">
+                 <header class="bg-gray-800 p-4 flex justify-between items-center">
+                    <h2 id="league-hub-title" class="text-2xl font-bold"></h2>
+                    <button class="back-to-menu bg-red-600 hover:bg-red-500 p-2 rounded">Sair da Liga</button>
+                </header>
+                <main class="p-4">
+                    <h3 class="text-xl font-bold mb-4">Técnicos na Liga</h3>
+                    <div id="league-managers-list" class="space-y-3"></div>
+                    <p class="mt-4 text-gray-400">Aguardando outros jogadores... O modo carreira compartilhado começará quando o criador da liga iniciar.</p>
+                </main>
+            </div>
+        </div>
+        
+        <!-- MODO TÉCNICO (OFFLINE) -->
         <div id="manager-mode" class="hidden">
             <div id="manager-philosophy-screen">
                 <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Defina a Filosofia do Clube</h2></header>
@@ -97,7 +129,7 @@
             </div>
         </div>
 
-        <!-- MODO JOGADOR -->
+        <!-- MODO JOGADOR (OFFLINE) -->
         <div id="player-mode" class="hidden">
             <div id="player-creation-screen">
                  <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Crie seu Craque</h2></header>
@@ -162,6 +194,8 @@
             // --- UI ELEMENTS CACHE ---
             const UI = {
                 authScreen: document.getElementById('auth-screen'),
+                mainMenu: document.getElementById('main-menu'),
+                gameContainer: document.getElementById('game-container'),
                 authForm: document.getElementById('auth-form'),
                 authLoading: document.getElementById('auth-loading'),
                 authError: document.getElementById('auth-error'),
@@ -170,8 +204,17 @@
                 loginBtn: document.getElementById('login-btn'),
                 signupBtn: document.getElementById('signup-btn'),
                 logoutBtn: document.getElementById('logout-btn'),
-                mainMenu: document.getElementById('main-menu'),
-                gameContainer: document.getElementById('game-container'),
+                onlineMode: {
+                    container: document.getElementById('online-mode'),
+                    lobbyScreen: document.getElementById('online-lobby-screen'),
+                    leagueHubScreen: document.getElementById('online-league-hub-screen'),
+                    createLeagueBtn: document.getElementById('create-league-btn'),
+                    joinLeagueBtn: document.getElementById('join-league-btn'),
+                    leagueNameInput: document.getElementById('league-name-input'),
+                    leagueCodeInput: document.getElementById('league-code-input'),
+                    leagueHubTitle: document.getElementById('league-hub-title'),
+                    leagueManagersList: document.getElementById('league-managers-list'),
+                },
                 managerMode: {
                     container: document.getElementById('manager-mode'),
                     philosophyScreen: document.getElementById('manager-philosophy-screen'),
@@ -194,6 +237,7 @@
                     playerHubName: document.getElementById('player-hub-name'),
                     playerSalary: document.getElementById('player-salary'),
                 },
+                startOnlineModeBtn: document.getElementById('start-online-mode'),
                 startManagerBtn: document.getElementById('start-manager-mode'),
                 startPlayerBtn: document.getElementById('start-player-mode'),
                 backToMenuBtns: document.querySelectorAll('.back-to-menu'),
@@ -251,15 +295,6 @@
             };
             
             // --- UTILITY FUNCTIONS ---
-            function showScreen(modeContainer, screenToShow) {
-                UI.authScreen.classList.add('hidden');
-                UI.mainMenu.classList.add('hidden');
-                UI.gameContainer.classList.add('hidden');
-                UI.managerMode.container.classList.add('hidden');
-                UI.playerMode.container.classList.add('hidden');
-                if (screenToShow) screenToShow.classList.remove('hidden');
-                if (modeContainer) modeContainer.classList.remove('hidden');
-            }
             function showModal(html) { UI.modalContent.innerHTML = html; UI.modal.classList.remove('hidden'); }
             function closeModal() { UI.modal.classList.add('hidden'); }
             function toggleAuthLoading(isLoading) {
@@ -269,6 +304,21 @@
             }
             function getForcaEfetiva(jogador) { return Math.max(jogador.forcaBase - jogador.cansaco + Math.floor((jogador.moral - 100) / 5), 20); }
 
+            function showScreen(screenId) {
+                const allTopLevelScreens = [UI.authScreen, UI.mainMenu, UI.gameContainer];
+                allTopLevelScreens.forEach(s => s.classList.add('hidden'));
+                document.getElementById(screenId).classList.remove('hidden');
+            }
+
+            function showSubScreen(modeContainer, screenToShow) {
+                showScreen('game-container');
+                const allModeContainers = [UI.onlineMode.container, UI.managerMode.container, UI.playerMode.container];
+                allModeContainers.forEach(c => c.classList.add('hidden'));
+                Array.from(modeContainer.children).forEach(child => child.classList.add('hidden'));
+                screenToShow.classList.remove('hidden');
+                modeContainer.classList.remove('hidden');
+            }
+            
             // --- GENERAL INITIALIZATION ---
             async function init() {
                 if (!supabaseClient) {
@@ -280,6 +330,11 @@
                 UI.logoutBtn.addEventListener('click', handleLogout);
                 UI.startManagerBtn.addEventListener('click', () => loadOrCreateCareer('manager'));
                 UI.startPlayerBtn.addEventListener('click', () => loadOrCreateCareer('player'));
+                UI.startOnlineModeBtn.addEventListener('click', () => {
+                    showSubScreen(UI.onlineMode.container, UI.onlineMode.lobbyScreen);
+                });
+                UI.onlineMode.createLeagueBtn.addEventListener('click', createOnlineLeague);
+                UI.onlineMode.joinLeagueBtn.addEventListener('click', joinOnlineLeague);
                 UI.backToMenuBtns.forEach(btn => btn.addEventListener('click', showMainMenu));
                 document.querySelectorAll('.philosophy-card').forEach(card => {
                     card.addEventListener('click', (e) => setupManagerMode(e.currentTarget.dataset.philosophy));
@@ -287,9 +342,9 @@
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
                     state.user = session.user;
-                    showScreen(null, UI.mainMenu);
+                    showScreen('main-menu');
                 } else {
-                    showScreen(null, UI.authScreen);
+                    showScreen('auth-screen');
                 }
             }
             
@@ -298,7 +353,7 @@
                 toggleAuthLoading(true);
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email: UI.emailInput.value, password: UI.passwordInput.value });
                 if (error) UI.authError.textContent = error.message;
-                else { state.user = data.user; showScreen(null, UI.mainMenu); }
+                else { state.user = data.user; showScreen('main-menu'); }
                 toggleAuthLoading(false);
             }
 
@@ -311,9 +366,13 @@
             }
 
             async function handleLogout() {
+                if (state.realtimeChannel) {
+                    supabaseClient.removeChannel(state.realtimeChannel);
+                    state.realtimeChannel = null;
+                }
                 await supabaseClient.auth.signOut();
                 state = {};
-                showScreen(null, UI.authScreen);
+                showScreen('auth-screen');
             }
 
             // --- SAVE/LOAD LOGIC ---
@@ -331,22 +390,128 @@
                     state[careerType] = data.game_state;
                     state[careerType].id = data.id;
                     const hub = UI[`${careerType}Mode`].hubScreen;
-                    showScreen(UI[`${careerType}Mode`].container, hub);
+                    showSubScreen(UI[`${careerType}Mode`].container, hub);
                     if (careerType === 'manager') { setupManagerNav(); switchManagerTab('manager-office'); }
                     if (careerType === 'player') { setupPlayerNav(); switchPlayerTab('player-home'); }
                 } else {
                     const creationScreen = UI[`${careerType}Mode`][`${careerType === 'manager' ? 'philosophy' : 'creation'}Screen`];
-                    showScreen(UI[`${careerType}Mode`].container, creationScreen);
+                    showSubScreen(UI[`${careerType}Mode`].container, creationScreen);
                 }
             }
             
             function showMainMenu() {
+                if (state.realtimeChannel) {
+                    supabaseClient.removeChannel(state.realtimeChannel);
+                    state.realtimeChannel = null;
+                }
                 state.manager = null;
                 state.player = null;
-                showScreen(null, UI.mainMenu);
+                state.onlineLeague = null;
+                showScreen('main-menu');
             }
 
-            // --- MODO TÉCNICO ---
+            // --- ONLINE MODE LOGIC ---
+            function generateLeagueCode() {
+                const chars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ';
+                const nums = '123456789';
+                let code = '';
+                for (let i = 0; i < 3; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+                code += '-';
+                for (let i = 0; i < 3; i++) code += nums.charAt(Math.floor(Math.random() * nums.length));
+                return code;
+            }
+
+            async function createOnlineLeague() {
+                const leagueName = UI.onlineMode.leagueNameInput.value.trim();
+                if (!leagueName) { alert("Dê um nome para sua liga!"); return; }
+
+                showModal('<div class="loader mx-auto"></div><p class="mt-4">Criando liga online...</p>');
+                const leagueCode = generateLeagueCode();
+                const { data, error } = await supabaseClient
+                    .from('online_leagues')
+                    .insert({ name: leagueName, code: leagueCode, owner_id: state.user.id })
+                    .select()
+                    .single();
+                
+                if (error) {
+                    console.error(error);
+                    alert("Erro ao criar a liga. Tente novamente.");
+                    closeModal();
+                    return;
+                }
+                
+                state.onlineLeague = data;
+                await enterLeagueLobby(data.id);
+            }
+            
+            async function joinOnlineLeague() {
+                const leagueCode = UI.onlineMode.leagueCodeInput.value.trim().toUpperCase();
+                if (!leagueCode) { alert("Insira um código de liga!"); return; }
+
+                showModal('<div class="loader mx-auto"></div><p class="mt-4">Entrando na liga...</p>');
+                const { data, error } = await supabaseClient
+                    .from('online_leagues')
+                    .select('*')
+                    .eq('code', leagueCode)
+                    .single();
+
+                if (error || !data) {
+                    console.error(error);
+                    alert("Liga não encontrada. Verifique o código.");
+                    closeModal();
+                    return;
+                }
+                
+                state.onlineLeague = data;
+                await enterLeagueLobby(data.id);
+            }
+
+            async function enterLeagueLobby(leagueId) {
+                const { error } = await supabaseClient
+                    .from('online_managers')
+                    .insert({ league_id: leagueId, user_id: state.user.id, manager_name: state.user.email });
+
+                if (error && error.code !== '23505') {
+                     console.error(error);
+                     alert("Erro ao entrar no lobby.");
+                     closeModal();
+                     return;
+                }
+
+                showSubScreen(UI.onlineMode.container, UI.onlineMode.leagueHubScreen);
+                UI.onlineMode.leagueHubTitle.textContent = `${state.onlineLeague.name} (Código: ${state.onlineLeague.code})`;
+                
+                await fetchAndRenderManagers(leagueId);
+                setupRealtimeForLeague(leagueId);
+                closeModal();
+            }
+
+            async function fetchAndRenderManagers(leagueId) {
+                const { data: managers, error } = await supabaseClient
+                    .from('online_managers')
+                    .select('manager_name')
+                    .eq('league_id', leagueId);
+                
+                if (error) { console.error(error); return; }
+
+                UI.onlineMode.leagueManagersList.innerHTML = managers.map(m => 
+                    `<div class="p-3 bg-gray-700 rounded">${m.manager_name}</div>`
+                ).join('');
+            }
+
+            function setupRealtimeForLeague(leagueId) {
+                if (state.realtimeChannel) {
+                    supabaseClient.removeChannel(state.realtimeChannel);
+                }
+                state.realtimeChannel = supabaseClient.channel(`league-${leagueId}`);
+                state.realtimeChannel
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'online_managers', filter: `league_id=eq.${leagueId}` }, payload => {
+                        fetchAndRenderManagers(leagueId);
+                    })
+                    .subscribe();
+            }
+
+            // --- MODO TÉCNICO (OFFLINE) ---
             async function setupManagerMode(philosophy) {
                 const philosophies = { cantera: { budget: 2000000, youthQuality: 8 }, galactic: { budget: 15000000, youthQuality: 4 }, moneyball: { budget: 7000000, youthQuality: 6 } };
                 const initialState = {
@@ -369,7 +534,7 @@
                 
                 state.manager = data.game_state;
                 state.manager.id = data.id;
-                showScreen(UI.managerMode.container, UI.managerMode.hubScreen);
+                showSubScreen(UI.managerMode.container, UI.managerMode.hubScreen);
                 setupManagerNav();
                 switchManagerTab('manager-office');
             }
@@ -676,7 +841,7 @@
                 if (error) { alert("Erro ao criar nova carreira."); console.error(error); return; }
                 state.player = data.game_state;
                 state.player.id = data.id;
-                showScreen(UI.playerMode.container, UI.playerMode.hubScreen);
+                showSubScreen(UI.playerMode.container, UI.playerMode.hubScreen);
                 setupPlayerNav();
                 switchPlayerTab('player-home');
             }
