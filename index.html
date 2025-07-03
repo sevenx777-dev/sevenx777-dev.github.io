@@ -458,21 +458,29 @@
                 if (!leagueName) { alert("Dê um nome para sua liga!"); return; }
 
                 showModal('<div class="loader mx-auto"></div><p class="mt-4">Criando liga online...</p>');
-                const leagueCode = generateLeagueCode();
-                
-                const { data, error } = await supabaseClient
-                    .from('online_leagues')
-                    .insert({ name: leagueName, code: leagueCode, owner_id: state.user.id, status: 'lobby' })
-                    .select()
-                    .single();
-                
+
+                let leagueCode = '';
+                let data, error;
+                let attempts = 0;
+                const maxAttempts = 5;
+
+                do {
+                    leagueCode = generateLeagueCode();
+                    ({ data, error } = await supabaseClient
+                        .from('online_leagues')
+                        .insert({ name: leagueName, code: leagueCode, owner_id: state.user.id, status: 'lobby' })
+                        .select()
+                        .single());
+                    attempts++;
+                } while (error && error.code === '23505' && attempts < maxAttempts);
+
                 if (error) {
                     console.error(error);
                     alert("Erro ao criar a liga. Tente novamente.");
                     closeModal();
                     return;
                 }
-                
+
                 state.onlineLeague = data;
                 await enterLeagueLobby(data.id);
                 await loadUserLeagues();
