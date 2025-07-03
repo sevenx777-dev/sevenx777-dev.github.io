@@ -16,7 +16,7 @@
         .nav-item.active { background-color: #047857; color: white; border-bottom: 2px solid #34d399; }
         .btn-action { transition: all 0.2s ease-in-out; }
         .btn-action:hover { transform: scale(1.05); }
-        .btn-action:disabled { background-color: #4b5563; cursor: not-allowed; }
+        .btn-action:disabled { background-color: #4b5563; color: #9ca3af; cursor: not-allowed; transform: scale(1); }
         .card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
         .modal-overlay { background-color: rgba(0,0,0,0.8); }
@@ -25,14 +25,19 @@
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #match-commentary { height: 250px; }
-        #match-commentary p { transition: opacity 0.5s; }
         .rank-star { font-size: 1.5rem; letter-spacing: 0.2em; }
-        .action-btn { border: 2px solid transparent; }
-        .action-btn.selected { border-color: #34d399; transform: scale(1.05); }
+        .action-btn.selected { border: 2px solid #34d399; transform: scale(1.05); }
         .image-preview { width: 100px; height: 100px; object-fit: cover; border-radius: 0.5rem; background-color: #374151; }
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+        .toast { background-color: #2d3748; color: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); opacity: 0; transform: translateX(100%); animation: slideIn 0.5s forwards; }
+        .toast.success { background-color: #2f855a; }
+        .toast.error { background-color: #c53030; }
+        @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
+
+    <div id="toast-container"></div>
 
     <!-- TELA DE AUTENTICAÇÃO -->
     <div id="auth-screen" class="main-menu-bg min-h-screen flex flex-col items-center justify-center p-4">
@@ -45,20 +50,18 @@
                 <button id="signup-btn" class="w-full mt-2 bg-amber-500 hover:bg-amber-400 text-white font-bold py-3 px-6 rounded-lg text-xl btn-action">Cadastrar</button>
             </div>
             <div id="auth-loading" class="hidden"><div class="loader mx-auto"></div></div>
-            <p id="auth-error" class="text-red-500 mt-4"></p>
+            <p id="auth-error" class="text-red-500 mt-4 h-6"></p>
         </div>
     </div>
 
     <!-- TELA DE MENU PRINCIPAL -->
     <div id="main-menu" class="hidden main-menu-bg min-h-screen flex flex-col items-center justify-center p-4">
-        <div class="bg-black bg-opacity-70 p-10 rounded-lg text-center shadow-2xl">
+        <div class="bg-black bg-opacity-70 p-10 rounded-lg text-center shadow-2xl w-full max-w-xl">
             <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-2">SevenxFoot</h1>
-            <p class="text-teal-400 font-bold text-2xl mb-4">Release 1.1.0</p>
+            <p id="welcome-message" class="text-teal-400 font-semibold text-lg mb-4"></p>
             
             <div id="player-rank-display" class="mb-8 bg-gray-800 p-4 rounded-lg">
-                <h3 class="text-lg font-semibold text-gray-400">RANK ATUAL</h3>
-                <div id="rank-info" class="text-3xl font-extrabold text-gray-100 mt-1">Carregando...</div>
-                <div id="rank-stars-info" class="rank-star mt-2 text-yellow-400"></div>
+                <!-- Conteúdo gerado pelo JS -->
             </div>
 
             <div class="space-y-4">
@@ -75,184 +78,50 @@
     <div id="game-container" class="hidden">
         <!-- MODO ONLINE 1X1 -->
         <div id="online-mode" class="hidden">
-             <!-- TELA DE MATCHMAKING 1x1 -->
-            <div id="online-pvp-lobby-screen">
-                <header class="bg-gray-800 p-4 text-center">
-                    <h2 class="text-3xl font-bold">Partida Rápida 1x1</h2>
-                </header>
-                <div class="p-4 md:p-8 max-w-lg mx-auto text-center">
-                    <div id="lobby-rank-display" class="mb-6 bg-gray-800 p-4 rounded-lg"></div>
-                    <div id="pvp-status" class="bg-gray-800 p-8 rounded-lg">
-                        <p id="pvp-status-text" class="text-2xl font-semibold text-gray-300 mb-6">Pronto para encontrar um oponente?</p>
-                        <div id="pvp-loader" class="loader mx-auto hidden mb-4"></div>
-                        <button id="find-match-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Procurar Partida</button>
-                        <button id="cancel-search-btn" class="w-full mt-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg btn-action hidden">Cancelar Busca</button>
-                    </div>
-                    <button class="back-to-menu w-full mt-8 bg-gray-600 p-2 rounded">Voltar</button>
-                </div>
-            </div>
-            <!-- TELA DA PARTIDA ONLINE -->
+            <div id="online-pvp-lobby-screen"></div>
             <div id="online-match-screen" class="hidden"></div>
         </div>
         
         <!-- MODO CARREIRA DE TÉCNICO (ONLINE) -->
         <div id="manager-career-mode" class="hidden">
-            <div id="manager-philosophy-screen">
-                <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Defina a Filosofia do Clube</h2></header>
-                <div class="p-4 md:p-8 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer philosophy-card" data-philosophy="cantera">
-                        <h3 class="text-2xl font-bold mb-2">Cantera</h3>
-                        <p class="text-gray-400 mb-4">Foco na base. Orçamento menor, academia de elite. Paciência da diretoria com resultados.</p>
-                    </div>
-                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer philosophy-card" data-philosophy="galactic">
-                        <h3 class="text-2xl font-bold mb-2">Galácticos</h3>
-                        <p class="text-gray-400 mb-4">Orçamento gigante para contratar estrelas. A pressão por títulos é imediata.</p>
-                    </div>
-                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer philosophy-card" data-philosophy="moneyball">
-                        <h3 class="text-2xl font-bold mb-2">Moneyball</h3>
-                        <p class="text-gray-400 mb-4">Gestão inteligente. Foco em contratar jogadores subvalorizados e vender caro.</p>
-                    </div>
-                </div>
-                 <button class="back-to-menu w-full max-w-xs mx-auto mt-8 bg-gray-600 p-2 rounded block">Voltar</button>
-            </div>
-            <div id="manager-hub-screen" class="hidden">
-                <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
-                    <h2 class="text-xl md:text-2xl font-bold">Carreira de Técnico</h2>
-                    <div id="manager-budget" class="text-sm md:text-lg"></div>
-                    <button class="back-to-menu bg-red-600 hover:bg-red-500 p-2 rounded">Voltar ao Menu</button>
-                </header>
-                <nav id="manager-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
-                    <button data-tab="manager-office" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Escritório</button>
-                    <button data-tab="manager-squad" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Elenco</button>
-                    <button data-tab="manager-market" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Mercado</button>
-                    <button data-tab="manager-league" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Liga</button>
-                </nav>
-                <main id="manager-content" class="p-4"></main>
-            </div>
+            <div id="manager-philosophy-screen"></div>
+            <div id="manager-hub-screen" class="hidden"></div>
         </div>
 
         <!-- MODO CARREIRA DE JOGADOR (ONLINE) -->
         <div id="player-career-mode" class="hidden">
-            <div id="player-creation-screen">
-                 <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Crie seu Craque</h2></header>
-                <div class="p-4 md:p-8 max-w-2xl mx-auto">
-                    <div class="mb-4">
-                        <label for="player-name" class="block mb-2">Nome:</label>
-                        <input type="text" id="player-name" class="w-full p-2 rounded bg-gray-700 border border-gray-600" placeholder="Ex: Léo da Silva">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block mb-2">Posição:</label>
-                        <select id="player-position" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
-                            <option value="ATA">Atacante</option><option value="MEI">Meio-campista</option><option value="DEF">Defensor</option><option value="GOL">Goleiro</option>
-                        </select>
-                    </div>
-                    <div class="mb-6">
-                        <h3 class="font-semibold mb-2">Atributos (Pontos restantes: <span id="attribute-points-left" class="font-bold text-amber-400">15</span>)</h3>
-                        <div id="attribute-inputs" class="space-y-2 mt-2"></div>
-                    </div>
-                    <button id="finalize-player-creation" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Iniciar Carreira</button>
-                    <button class="back-to-menu w-full mt-2 bg-red-600 p-2 rounded">Voltar</button>
-                </div>
-            </div>
-            <div id="player-hub-screen" class="hidden">
-                <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
-                    <h2 id="player-hub-name" class="text-xl md:text-2xl font-bold truncate"></h2>
-                    <div id="player-team" class="text-sm md:text-lg"></div>
-                    <button class="back-to-menu bg-red-600 p-2 rounded">Voltar ao Menu</button>
-                </header>
-                <nav id="player-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
-                     <button data-tab="player-home" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Início</button>
-                     <button data-tab="player-training" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Treino</button>
-                     <button data-tab="player-attributes" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Atributos</button>
-                </nav>
-                <main id="player-content" class="p-4"></main>
-            </div>
+            <div id="player-creation-screen"></div>
+            <div id="player-hub-screen" class="hidden"></div>
         </div>
         
         <!-- CENTRO DA COMUNIDADE -->
-        <div id="community-hub" class="hidden">
-            <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
-                <h2 class="text-xl md:text-2xl font-bold">Centro da Comunidade</h2>
-                <button class="back-to-menu bg-red-600 hover:bg-red-500 p-2 rounded">Voltar ao Menu</button>
-            </header>
-            <nav id="hub-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
-                <button data-tab="hub-patches" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Patches da Comunidade</button>
-                <button data-tab="hub-editor" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Editor</button>
-            </nav>
-            <main id="hub-content" class="p-4"></main>
-        </div>
+        <div id="community-hub" class="hidden"></div>
     </div>
 
     <!-- MODAL UNIVERSAL -->
-    <div id="modal" class="hidden fixed inset-0 modal-overlay z-30 flex items-center justify-center p-4">
+    <div id="modal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
         <div id="modal-content" class="bg-gray-800 p-6 md:p-8 rounded-lg text-center max-w-lg w-full shadow-2xl"></div>
     </div>
-
-    <!-- TEMPLATES -->
-    <template id="interactive-match-template">
-        <header class="bg-gray-800 p-4 flex justify-between items-center">
-            <h2 id="match-header-title" class="text-2xl font-bold">Partida Online</h2>
-            <button id="leave-match-btn" class="bg-red-600 hover:bg-red-500 p-2 rounded">Desistir</button>
-        </header>
-        <main class="p-4 max-w-4xl mx-auto">
-            <div class="flex justify-between items-center mb-4 text-center">
-                <div id="sim-home-team" class="text-lg md:text-xl font-bold w-2/5"></div>
-                <div id="sim-score" class="text-2xl md:text-4xl font-extrabold w-1/5">0 - 0</div>
-                <div id="sim-away-team" class="text-lg md:text-xl font-bold w-2/5"></div>
-            </div>
-            <div id="round-info" class="text-center text-amber-400 font-semibold text-xl mb-4"></div>
-            <div id="match-commentary" class="bg-black p-4 rounded-md overflow-y-scroll h-64 border border-gray-700 mb-4"></div>
-            <div id="action-panel">
-                <h3 class="text-center text-lg font-semibold mb-2">Escolha a sua ação:</h3>
-                <div class="flex justify-center gap-4">
-                    <button data-action="attack" class="action-btn w-1/3 bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-2 rounded-lg text-lg btn-action">Atacar</button>
-                    <button data-action="balance" class="action-btn w-1/3 bg-yellow-500 hover:bg-yellow-400 text-white font-bold py-4 px-2 rounded-lg text-lg btn-action">Equilibrar</button>
-                    <button data-action="defend" class="action-btn w-1/3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-2 rounded-lg text-lg btn-action">Defender</button>
-                </div>
-            </div>
-        </main>
-    </template>
-
-    <template id="editor-template">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-                <div id="editor-selection" class="space-y-4">
-                    <button data-editor="player" class="editor-choice-btn w-full bg-teal-600 p-4 rounded-lg text-xl btn-action">Criar Novo Jogador</button>
-                    <button data-editor="team" class="editor-choice-btn w-full bg-teal-600 p-4 rounded-lg text-xl btn-action">Criar Nova Equipa</button>
-                    <button data-editor="league" class="editor-choice-btn w-full bg-teal-600 p-4 rounded-lg text-xl btn-action">Criar Novo Campeonato</button>
-                </div>
-                <div id="editor-form-container" class="hidden mt-4 bg-gray-800 p-6 rounded-lg"></div>
-            </div>
-            <div class="bg-gray-800 p-6 rounded-lg">
-                <h3 class="text-2xl font-bold mb-4">Publicar Patch</h3>
-                <p class="text-gray-400 mb-4">Agrupe as suas criações num patch para partilhar com a comunidade.</p>
-                <div id="patch-summary"></div>
-                <div class="mb-4 mt-4">
-                    <label for="patch-name" class="block mb-2">Nome do Patch:</label>
-                    <input type="text" id="patch-name" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
-                </div>
-                <div class="mb-4">
-                    <label for="patch-description" class="block mb-2">Descrição:</label>
-                    <textarea id="patch-description" class="w-full p-2 rounded bg-gray-700 border border-gray-600" rows="3"></textarea>
-                </div>
-                <button id="publish-patch-btn" class="w-full bg-purple-600 p-3 rounded-lg text-xl btn-action">Publicar</button>
-            </div>
-        </div>
-    </template>
-    
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const Game = (() => {
+            // --- ESTADO GLOBAL E CONFIGURAÇÕES ---
             let state = {
+                user: null,
+                profile: null,
+                manager: null, // Carreira de Técnico
+                player: null,  // Carreira de Jogador
+                onlineMatch: null,
+                realtimeChannel: null,
                 communityCreations: { players: [], teams: [], leagues: [] }
             };
             let matchmakingTimer = null;
 
+            // !! MUITO IMPORTANTE: COLOQUE SUAS CHAVES DO SUPABASE AQUI !!
             const SUPABASE_URL = 'https://fwwwpdzvnptcbcoarejm.supabase.co'; 
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3d3dwZHp2bnB0Y2Jjb2FyZWptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NjM2MTQsImV4cCI6MjA2NzEzOTYxNH0.uozT2nfKs4EINeF6Suyp6AbmkrQ4V8W1sG9SWiokU1o';
-            let supabaseClient;
-            try { supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { console.error("Erro ao inicializar o Supabase.", e); }
+            const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
             const RANKS = [
                 { name: 'Bronze III', starsToPromote: 3, color: '#a97142' }, { name: 'Bronze II',  starsToPromote: 3, color: '#a97142' }, { name: 'Bronze I',   starsToPromote: 4, color: '#a97142' },
@@ -263,20 +132,22 @@
                 { name: 'Lendário I',   starsToPromote: 3, color: '#8a2be2' }, { name: 'Lendário II',  starsToPromote: 3, color: '#8a2be2' }, { name: 'Lendário III', starsToPromote: 3, color: '#8a2be2' },
                 { name: 'Global',       starsToPromote: 0, color: '#ff4500' }
             ];
+
+            const CAREER_RANK_XP_THRESHOLDS = [
+                100, 250, 500, 800, 1200, 1700, 2300, 3000, 4000, 5200, 6500, 8000, 10000, 12500, 15000, 20000, 25000, 30000
+            ];
             
             const DB = {
                 ATTRIBUTES_MAP: {
-                    ATA: { Chute: 8, Drible: 7, Velocidade: 6, Passe: 4, Força: 5 }, MEI: { Passe: 8, Drible: 7, Chute: 5, Defesa: 5, Visão: 6 },
-                    DEF: { Defesa: 8, Força: 7, Passe: 5, Velocidade: 5, Marcação: 6 }, GOL: { Reflexos: 8, Posicionamento: 7, 'Um-pra-um': 6, Passe: 4, Agilidade: 5 }
+                    ATA: { Chute: 8, Drible: 7, Velocidade: 6, Passe: 4, Forca: 5 },
+                    MEI: { Passe: 8, Drible: 7, Chute: 5, Defesa: 5, Visao: 6 },
+                    DEF: { Defesa: 8, Forca: 7, Passe: 5, Velocidade: 5, Marcacao: 6 },
+                    GOL: { Reflexos: 8, Posicionamento: 7, 'Um-pra-um': 6, Passe: 4, Agilidade: 5 }
                 },
-                TEAMS: [ { nome: "Titans da Capital", forca: 910 }, { nome: "Corsários da Costa", forca: 880 }, { nome: "Lobos da Montanha", forca: 850 }, ],
-                PLAYERS: [
-                    { id: 1, nome: 'G. Arantes', forcaBase: 82, posicao: 'GOL', valor: 1200000 }, { id: 2, nome: 'L. Veloso', forcaBase: 78, posicao: 'DEF', valor: 900000 },
-                    { id: 3, nome: 'B. Xerife', forcaBase: 85, posicao: 'DEF', valor: 1500000 }, { id: 4, nome: 'M. Rocha', forcaBase: 84, posicao: 'DEF', valor: 1400000 },
-                    { id: 5, nome: 'E. Cansado', forcaBase: 75, posicao: 'DEF', valor: 750000 }, { id: 6, nome: 'V. Marcador', forcaBase: 88, posicao: 'MEI', valor: 1800000 },
-                    { id: 7, nome: 'M. Clássico', forcaBase: 90, posicao: 'MEI', valor: 2500000 }, { id: 8, nome: 'A. Meia', forcaBase: 86, posicao: 'MEI', valor: 1600000 },
-                    { id: 9, nome: 'P. Habilidoso', forcaBase: 89, posicao: 'ATA', valor: 2200000 }, { id: 10, nome: 'C. Matador', forcaBase: 92, posicao: 'ATA', valor: 3000000 },
-                    { id: 11, nome: 'P. Corredor', forcaBase: 87, posicao: 'ATA', valor: 1900000 },
+                AI_TEAMS: [
+                    { nome: "Titans da Capital", forca: 91 },
+                    { nome: "Corsários da Costa", forca: 88 },
+                    { nome: "Lobos da Montanha", forca: 85 },
                 ]
             };
 
@@ -285,61 +156,41 @@
                 authForm: document.getElementById('auth-form'), authLoading: document.getElementById('auth-loading'), authError: document.getElementById('auth-error'),
                 emailInput: document.getElementById('email-input'), passwordInput: document.getElementById('password-input'),
                 loginBtn: document.getElementById('login-btn'), signupBtn: document.getElementById('signup-btn'), logoutBtn: document.getElementById('logout-btn'),
-                onlineMode: {
-                    container: document.getElementById('online-mode'), pvpLobbyScreen: document.getElementById('online-pvp-lobby-screen'),
-                    matchScreen: document.getElementById('online-match-screen'), findMatchBtn: document.getElementById('find-match-btn'),
-                    cancelSearchBtn: document.getElementById('cancel-search-btn'), pvpStatusText: document.getElementById('pvp-status-text'),
-                    pvpLoader: document.getElementById('pvp-loader'),
-                },
-                managerCareer: {
-                    container: document.getElementById('manager-career-mode'), philosophyScreen: document.getElementById('manager-philosophy-screen'),
-                    hubScreen: document.getElementById('manager-hub-screen'), content: document.getElementById('manager-content'),
-                    nav: document.getElementById('manager-nav'), budget: document.getElementById('manager-budget'),
-                },
-                playerCareer: {
-                    container: document.getElementById('player-career-mode'), creationScreen: document.getElementById('player-creation-screen'),
-                    hubScreen: document.getElementById('player-hub-screen'), content: document.getElementById('player-content'),
-                    nav: document.getElementById('player-nav'), attributePointsLeft: document.getElementById('attribute-points-left'),
-                    attributeInputs: document.getElementById('attribute-inputs'), finalizeCreationBtn: document.getElementById('finalize-player-creation'),
-                    playerNameInput: document.getElementById('player-name'), playerPositionSelect: document.getElementById('player-position'),
-                    playerHubName: document.getElementById('player-hub-name'), playerTeam: document.getElementById('player-team'),
-                },
-                communityHub: {
-                    container: document.getElementById('community-hub'), nav: document.getElementById('hub-nav'), content: document.getElementById('hub-content'),
-                },
+                onlineMode: { container: document.getElementById('online-mode'), pvpLobbyScreen: document.getElementById('online-pvp-lobby-screen'), matchScreen: document.getElementById('online-match-screen'), },
+                managerCareer: { container: document.getElementById('manager-career-mode'), philosophyScreen: document.getElementById('manager-philosophy-screen'), hubScreen: document.getElementById('manager-hub-screen'), },
+                playerCareer: { container: document.getElementById('player-career-mode'), creationScreen: document.getElementById('player-creation-screen'), hubScreen: document.getElementById('player-hub-screen'), },
+                communityHub: { container: document.getElementById('community-hub'), },
                 startOnlineModeBtn: document.getElementById('start-online-mode'), startManagerCareerBtn: document.getElementById('start-manager-career'),
                 startPlayerCareerBtn: document.getElementById('start-player-career'), startCommunityHubBtn: document.getElementById('start-community-hub'),
-                backToMenuBtns: document.querySelectorAll('.back-to-menu'),
                 modal: document.getElementById('modal'), modalContent: document.getElementById('modal-content'),
-                playerRankDisplay: document.getElementById('player-rank-display'), lobbyRankDisplay: document.getElementById('lobby-rank-display'),
+                welcomeMessage: document.getElementById('welcome-message'),
             };
 
-            // --- FUNÇÕES UTILITÁRIAS ---
-            // NOVO: Modal melhorado que aceita título, mensagem e uma lista de botões customizados.
-            function showModal(title, message, buttons = [{ text: 'OK', class: 'bg-teal-600', action: 'close' }]) {
-                let buttonsHTML = buttons.map(btn =>
-                    `<button class="modal-btn w-full md:w-auto px-6 py-2 rounded-lg font-bold text-white ${btn.class}" data-action="${btn.action}">${btn.text}</button>`
-                ).join('');
-
+            // --- FUNÇÕES UTILITÁRIAS E DE UI ---
+            function showToast(message, type = 'info', duration = 3000) {
+                const toastContainer = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                toastContainer.appendChild(toast);
+                setTimeout(() => { toast.remove(); }, duration);
+            }
+            
+            function showModal(title, message, buttons = []) {
+                let buttonsHTML = buttons.map(btn => `<button id="${btn.id}" class="w-full md:w-auto px-6 py-2 rounded-lg font-bold text-white ${btn.class}">${btn.text}</button>`).join('');
                 UI.modalContent.innerHTML = `
                     <h2 class="text-3xl font-bold mb-4">${title}</h2>
-                    <p class="text-gray-300 mb-6">${message}</p>
-                    <div class="flex justify-center gap-4 flex-wrap">${buttonsHTML}</div>
-                `;
+                    <p class="text-gray-300 mb-6 whitespace-pre-wrap">${message}</p>
+                    <div class="flex justify-center gap-4 flex-wrap">${buttonsHTML}</div>`;
                 UI.modal.classList.remove('hidden');
 
-                UI.modalContent.querySelectorAll('.modal-btn').forEach(btn => {
-                    btn.onclick = (e) => {
-                        const action = e.target.dataset.action;
-                        if (action === 'close') {
-                            closeModal();
-                        } else if (typeof window.Game[action] === 'function') {
-                            window.Game[action](); // Executa a função do Game object
-                        }
-                    };
+                buttons.forEach(btnConfig => {
+                    const btnElement = document.getElementById(btnConfig.id);
+                    if (btnElement) btnElement.addEventListener('click', btnConfig.action);
                 });
             }
-            function closeModal() { UI.modal.classList.add('hidden'); }
+
+            function closeModal() { UI.modal.classList.add('hidden'); UI.modalContent.innerHTML = ''; }
             function toggleAuthLoading(isLoading) { UI.authForm.classList.toggle('hidden', isLoading); UI.authLoading.classList.toggle('hidden', !isLoading); UI.authError.textContent = ''; }
             function showScreen(screenId) { [UI.authScreen, UI.mainMenu, UI.gameContainer].forEach(s => s.classList.add('hidden')); document.getElementById(screenId).classList.remove('hidden'); }
             function showSubScreen(modeContainer, screenToShow) {
@@ -349,94 +200,177 @@
                 screenToShow.classList.remove('hidden');
                 modeContainer.classList.remove('hidden');
             }
-            function getForcaEfetiva(jogador) { return Math.max(jogador.forcaBase - (jogador.cansaco || 0) + Math.floor(((jogador.moral || 100) - 100) / 5), 20); }
             
-            // --- LÓGICA DE RANKING ---
-            // ALTERADO: A lógica de cálculo de promoção/despromoção foi movida para o backend (função SQL).
-            // Esta função agora apenas exibe o estado atual vindo do banco de dados.
-            async function updateRankDisplay() {
+            // --- LÓGICA DE RANKING (1X1) ---
+            async function updatePvpRankDisplay() {
                 if (!state.profile) return;
-                const { data: latestProfile, error } = await supabaseClient.from('profiles').select('*').eq('id', state.user.id).single();
-                if(error) { console.error("Erro ao buscar perfil atualizado:", error); return; }
-                
-                state.profile = latestProfile; // Garante que o estado local está sempre atualizado
+                const { data, error } = await supabaseClient.from('profiles').select('rank_id, rank_stars').eq('id', state.user.id).single();
+                if(error) { console.error("Erro ao buscar rank 1x1:", error); return; }
 
-                let { rank_id, rank_stars } = state.profile;
-                let currentRank = RANKS[rank_id];
+                state.profile.rank_id = data.rank_id;
+                state.profile.rank_stars = data.rank_stars;
 
+                const currentRank = RANKS[data.rank_id];
                 const rankHTML = `
-                    <h3 class="text-lg font-semibold text-gray-400">RANK ATUAL</h3>
-                    <div class="text-3xl font-extrabold" style="color: ${currentRank.color};">${currentRank.name}</div>
-                    <div class="rank-star mt-2 text-yellow-400">
-                        ${'★'.repeat(rank_stars)}${'☆'.repeat(currentRank.starsToPromote > 0 ? Math.max(0, currentRank.starsToPromote - rank_stars) : 0)}
+                    <h3 class="text-lg font-semibold text-gray-400">RANK ATUAL 1x1</h3>
+                    <div id="rank-info" class="text-3xl font-extrabold" style="color: ${currentRank.color};">${currentRank.name}</div>
+                    <div id="rank-stars-info" class="rank-star mt-2 text-yellow-400">${'★'.repeat(data.rank_stars)}${'☆'.repeat(currentRank.starsToPromote > 0 ? Math.max(0, currentRank.starsToPromote - data.rank_stars) : 0)}</div>
+                `;
+                document.getElementById('player-rank-display').innerHTML = rankHTML;
+            }
+
+            // --- LÓGICA DE RANKING (CARREIRA) ---
+            function renderCareerRank(mode) {
+                const career = state[mode];
+                if (!career) return;
+
+                const displayElement = document.getElementById(`${mode}-rank-display`);
+                if (!displayElement) return;
+
+                const currentRank = RANKS[career.rank_id];
+                const currentXP = career.rank_xp;
+                
+                const xpForCurrentRank = career.rank_id > 0 ? CAREER_RANK_XP_THRESHOLDS[career.rank_id - 1] : 0;
+                const xpForNextRank = career.rank_id < CAREER_RANK_XP_THRESHOLDS.length ? CAREER_RANK_XP_THRESHOLDS[career.rank_id] : currentXP;
+
+                const xpInCurrentRank = currentXP - xpForCurrentRank;
+                const xpNeededForRankUp = xpForNextRank - xpForCurrentRank;
+                
+                const progressPercentage = (xpNeededForRankUp > 0) ? Math.max(0, Math.min(100, Math.floor((xpInCurrentRank / xpNeededForRankUp) * 100))) : 100;
+                const rankTitle = mode === 'manager' ? 'PATENTE DE TÉCNICO' : 'PATENTE DO JOGADOR';
+
+                displayElement.innerHTML = `
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase">${rankTitle}</h3>
+                    <div class="text-2xl font-extrabold mt-1" style="color: ${currentRank.color};">${currentRank.name}</div>
+                    <div class="mt-2 text-sm text-gray-300">
+                        <span>XP: ${currentXP.toLocaleString()} / ${xpForNextRank.toLocaleString()}</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
+                        <div class="bg-teal-500 h-2.5 rounded-full" style="width: ${progressPercentage}%"></div>
                     </div>
                 `;
-                document.getElementById('rank-info').parentElement.innerHTML = rankHTML;
-                UI.lobbyRankDisplay.innerHTML = rankHTML;
+            }
+
+            async function updateCareerProgress(mode, xpToAdd) {
+                const career = state[mode];
+                if (!career) return;
+
+                career.rank_xp += xpToAdd;
+
+                let rankUp = false;
+                while (
+                    career.rank_id < CAREER_RANK_XP_THRESHOLDS.length &&
+                    career.rank_xp >= CAREER_RANK_XP_THRESHOLDS[career.rank_id]
+                ) {
+                    career.rank_id++;
+                    rankUp = true;
+                }
+
+                if (rankUp) {
+                    const newRank = RANKS[career.rank_id];
+                    showToast(`PATENTE ATINGIDA: ${newRank.name}!`, 'success', 5000);
+                }
+
+                const tableName = `online_${mode}_careers`;
+                const { error } = await supabaseClient.from(tableName).update({ 
+                    game_state: career.game_state,
+                    rank_id: career.rank_id,
+                    rank_xp: career.rank_xp
+                }).eq('user_id', state.user.id);
+
+
+                if (error) {
+                    console.error(`Erro ao salvar carreira de ${mode}:`, error);
+                    showToast('Erro ao salvar progresso.', 'error');
+                }
+                renderCareerRank(mode);
             }
 
             // --- LÓGICA DE AUTENTICAÇÃO E NAVEGAÇÃO ---
             async function handleLogin() {
                 toggleAuthLoading(true);
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email: UI.emailInput.value, password: UI.passwordInput.value });
-                if (error) { UI.authError.textContent = "Email ou senha inválidos."; }
-                else {
-                    state.user = data.user;
-                    const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', state.user.id).single();
-                    state.profile = profile;
-                    await updateRankDisplay();
-                    showScreen('main-menu');
+                if (error) { UI.authError.textContent = error.message; }
+                else if (data.user) {
+                    const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', data.user.id).single();
+                    if(profile) {
+                        state.user = data.user;
+                        state.profile = profile;
+                        UI.welcomeMessage.textContent = `Bem-vindo, ${state.user.email.split('@')[0]}!`;
+                        await updatePvpRankDisplay();
+                        showScreen('main-menu');
+                    } else {
+                        UI.authError.textContent = 'Perfil de jogador não encontrado.';
+                        await supabaseClient.auth.signOut();
+                    }
                 }
                 toggleAuthLoading(false);
             }
 
             async function handleSignup() {
                 toggleAuthLoading(true);
-                const { data: authData, error } = await supabaseClient.auth.signUp({ email: UI.emailInput.value, password: UI.passwordInput.value });
+                const { data, error } = await supabaseClient.auth.signUp({ email: UI.emailInput.value, password: UI.passwordInput.value });
                 if (error) { UI.authError.textContent = error.message; }
-                else {
-                    await supabaseClient.from('profiles').insert({ id: authData.user.id, email: authData.user.email, rank_id: 0, rank_stars: 0 });
-                    showModal('Cadastro Realizado', 'Verifique seu e-mail para confirmação e depois faça o login.');
+                else if(data.user) {
+                    await supabaseClient.from('profiles').insert({ id: data.user.id, email: data.user.email, rank_id: 0, rank_stars: 0 });
+                    showModal('Cadastro Realizado!', 'Verifique seu e-mail para confirmação e depois faça o login.', [{id: 'modal-ok-btn', text: 'OK', class: 'bg-teal-600', action: closeModal}]);
                 }
                 toggleAuthLoading(false);
+            }
+            
+            function confirmLogout() {
+                showModal('Confirmar Saída', 'Você tem certeza que deseja sair?', [
+                    { id: 'modal-cancel-btn', text: 'Cancelar', class: 'bg-gray-600', action: closeModal },
+                    { id: 'modal-logout-btn', text: 'Sair', class: 'bg-red-600', action: handleLogout }
+                ]);
             }
 
             async function handleLogout() {
                 if (state.realtimeChannel) { await supabaseClient.removeChannel(state.realtimeChannel); state.realtimeChannel = null; }
                 await supabaseClient.auth.signOut();
-                state = { communityCreations: { players: [], teams: [], leagues: [] } };
+                // Limpa todo o estado para um logout limpo
+                Object.keys(state).forEach(key => state[key] = null);
+                state.communityCreations = { players: [], teams: [], leagues: [] };
                 closeModal();
                 showScreen('auth-screen');
-            }
-
-            function confirmLogout() {
-                showModal('Confirmar Saída', 'Você tem certeza que deseja sair?', [
-                    { text: 'Cancelar', class: 'bg-gray-600', action: 'closeModal' },
-                    { text: 'Sair', class: 'bg-red-600', action: 'handleLogout' }
-                ]);
             }
 
             function showMainMenu() {
                 if (state.realtimeChannel) { cancelMatchmaking(false); }
                 state.onlineMatch = null;
+                updatePvpRankDisplay();
                 showScreen('main-menu');
             }
 
             // --- MODO ONLINE 1X1 ---
             function initPvpMode() {
                 showSubScreen(UI.onlineMode.container, UI.onlineMode.pvpLobbyScreen);
-                UI.onlineMode.findMatchBtn.onclick = findOnlineMatch;
-                UI.onlineMode.cancelSearchBtn.onclick = () => cancelMatchmaking(true);
+                const pvpLobbyScreen = UI.onlineMode.pvpLobbyScreen;
+                pvpLobbyScreen.innerHTML = `
+                    <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Partida Rápida 1x1</h2></header>
+                    <div class="p-4 md:p-8 max-w-lg mx-auto text-center">
+                        <div id="lobby-rank-display" class="mb-6 bg-gray-800 p-4 rounded-lg">${document.getElementById('player-rank-display').innerHTML}</div>
+                        <div id="pvp-status" class="bg-gray-800 p-8 rounded-lg">
+                            <p id="pvp-status-text" class="text-2xl font-semibold text-gray-300 mb-6">Pronto para encontrar um oponente?</p>
+                            <div id="pvp-loader" class="loader mx-auto hidden mb-4"></div>
+                            <button id="find-match-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Procurar Partida</button>
+                            <button id="cancel-search-btn" class="w-full mt-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg btn-action hidden">Cancelar Busca</button>
+                        </div>
+                        <button id="back-to-menu-pvp" class="w-full mt-8 bg-gray-600 p-2 rounded">Voltar ao Menu Principal</button>
+                    </div>`;
+                document.getElementById('find-match-btn').addEventListener('click', findOnlineMatch);
+                document.getElementById('cancel-search-btn').addEventListener('click', () => cancelMatchmaking(true));
+                document.getElementById('back-to-menu-pvp').addEventListener('click', showMainMenu);
             }
 
             async function findOnlineMatch() {
                 togglePvpUi(true);
-                matchmakingTimer = setTimeout(startBotMatch, 20000); // Reduzido para 20s
+                matchmakingTimer = setTimeout(startBotMatch, 30000);
                 const { data: match, error } = await supabaseClient.rpc('find_or_create_match');
                 if (error) {
                     clearTimeout(matchmakingTimer);
                     console.error('Erro no matchmaking:', error);
-                    showModal('Erro', 'Não foi possível encontrar uma partida. Tente novamente.');
+                    showToast('Não foi possível encontrar uma partida. Tente novamente.', 'error');
                     togglePvpUi(false);
                     return;
                 }
@@ -456,17 +390,17 @@
                 clearTimeout(matchmakingTimer);
                 if (showUiUpdate) togglePvpUi(false);
                 if (state.realtimeChannel) { await supabaseClient.removeChannel(state.realtimeChannel); state.realtimeChannel = null; }
-                if (state.onlineMatch) {
-                    await supabaseClient.from('online_matches').delete().eq('id', state.onlineMatch.id).eq('status', 'searching');
+                if (state.onlineMatch && state.onlineMatch.status === 'searching') {
+                    await supabaseClient.from('online_matches').delete().eq('id', state.onlineMatch.id);
                     state.onlineMatch = null;
                 }
             }
 
             function togglePvpUi(isSearching, text = 'Procurando oponente...') {
-                UI.onlineMode.findMatchBtn.classList.toggle('hidden', isSearching);
-                UI.onlineMode.cancelSearchBtn.classList.toggle('hidden', !isSearching);
-                UI.onlineMode.pvpLoader.classList.toggle('hidden', !isSearching);
-                UI.onlineMode.pvpStatusText.textContent = isSearching ? text : 'Pronto para encontrar um oponente?';
+                document.getElementById('find-match-btn').classList.toggle('hidden', isSearching);
+                document.getElementById('cancel-search-btn').classList.toggle('hidden', !isSearching);
+                document.getElementById('pvp-loader').classList.toggle('hidden', !isSearching);
+                document.getElementById('pvp-status-text').textContent = isSearching ? text : 'Pronto para encontrar um oponente?';
             }
 
             function setupRealtimeForMatch(matchId) {
@@ -484,9 +418,7 @@
                     .on('broadcast', { event: 'player_action' }, ({ payload }) => {
                         if (payload.senderId !== state.user.id) {
                             state.matchState.opponentAction = payload.action;
-                            if (state.matchState.playerAction) {
-                                resolveRound();
-                            }
+                            if (state.matchState.playerAction) { resolveRound(); }
                         }
                     })
                     .subscribe();
@@ -506,10 +438,9 @@
                 if (state.realtimeChannel) { await supabaseClient.removeChannel(state.realtimeChannel); state.realtimeChannel = null; }
                 setupRealtimeForMatch(match.id);
                 const opponentId = match.player1_id === state.user.id ? match.player2_id : match.player1_id;
-                const { data: opponentProfile } = await supabaseClient.from('profiles').select('email, rank_id').eq('id', opponentId).single();
+                const { data: opponentProfile } = await supabaseClient.from('profiles').select('email').eq('id', opponentId).single();
                 state.matchState = {
-                    isBotMatch: false, opponentName: opponentProfile.email.split('@')[0], opponentId: opponentId, opponentRankId: opponentProfile.rank_id,
-                    score: [0, 0], round: 1, playerAction: null, opponentAction: null,
+                    isBotMatch: false, opponentName: opponentProfile.email.split('@')[0], opponentId: opponentId, score: [0, 0], round: 1, playerAction: null, opponentAction: null,
                 };
                 setupMatchUI();
                 playNextRound();
@@ -517,18 +448,38 @@
 
             function setupMatchUI() {
                 showSubScreen(UI.onlineMode.container, UI.onlineMode.matchScreen);
-                const template = document.getElementById('interactive-match-template').content.cloneNode(true);
-                UI.onlineMode.matchScreen.innerHTML = '';
-                UI.onlineMode.matchScreen.appendChild(template);
+                const matchScreen = UI.onlineMode.matchScreen;
+                matchScreen.innerHTML = `
+                    <header class="bg-gray-800 p-4 flex justify-between items-center">
+                        <h2 id="match-header-title" class="text-2xl font-bold">Partida Online</h2>
+                        <button id="leave-match-btn" class="bg-red-600 hover:bg-red-500 p-2 rounded">Desistir</button>
+                    </header>
+                    <main class="p-4 max-w-4xl mx-auto">
+                        <div class="flex justify-between items-center mb-4 text-center">
+                            <div id="sim-home-team" class="text-lg md:text-xl font-bold w-2/5 truncate"></div>
+                            <div id="sim-score" class="text-2xl md:text-4xl font-extrabold w-1/5">0 - 0</div>
+                            <div id="sim-away-team" class="text-lg md:text-xl font-bold w-2/5 truncate"></div>
+                        </div>
+                        <div id="round-info" class="text-center text-amber-400 font-semibold text-xl mb-4"></div>
+                        <div id="match-commentary" class="bg-black p-4 rounded-md overflow-y-scroll h-64 border border-gray-700 mb-4"></div>
+                        <div id="action-panel">
+                            <h3 class="text-center text-lg font-semibold mb-2">Escolha a sua ação:</h3>
+                            <div class="flex justify-center gap-4">
+                                <button data-action="attack" class="action-btn w-1/3 bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-2 rounded-lg text-lg btn-action">Atacar</button>
+                                <button data-action="balance" class="action-btn w-1/3 bg-yellow-500 hover:bg-yellow-400 text-white font-bold py-4 px-2 rounded-lg text-lg btn-action">Equilibrar</button>
+                                <button data-action="defend" class="action-btn w-1/3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-2 rounded-lg text-lg btn-action">Defender</button>
+                            </div>
+                        </div>
+                    </main>`;
+
                 document.getElementById('sim-home-team').textContent = state.profile.email.split('@')[0];
                 document.getElementById('sim-away-team').textContent = state.matchState.opponentName;
-                document.querySelectorAll('.action-btn').forEach(btn => btn.onclick = (e) => handlePlayerAction(e.target.dataset.action));
-                document.getElementById('leave-match-btn').onclick = () => {
-                    showModal("Desistir", "Você tem certeza que quer desistir? Isso contará como uma derrota.", [
-                       { text: 'Cancelar', class: 'bg-gray-600', action: 'closeModal' },
-                       { text: 'Desistir', class: 'bg-red-600', action: 'closeAndGoToMenu' } // Simplesmente volta pro menu
-                    ]);
-                };
+                document.querySelectorAll('.action-btn').forEach(btn => btn.addEventListener('click', (e) => handlePlayerAction(e.target.dataset.action)));
+                document.getElementById('leave-match-btn').addEventListener('click', () => {
+                    showToast("Você desistiu da partida.", "error");
+                    cancelMatchmaking(true);
+                    showMainMenu();
+                });
             }
 
             function playNextRound() {
@@ -548,373 +499,435 @@
                 if (state.matchState.isBotMatch) {
                     const botActions = ['attack', 'balance', 'defend'];
                     state.matchState.opponentAction = botActions[Math.floor(Math.random() * botActions.length)];
-                    setTimeout(resolveRound, 1500);
+                    setTimeout(resolveRound, 1000);
                 } else {
                     await state.realtimeChannel.send({ type: 'broadcast', event: 'player_action', payload: { action: action, senderId: state.user.id }, });
                     if (state.matchState.opponentAction) { resolveRound(); }
                 }
             }
-            
-            // ALTERADO: Lógica da partida mais estratégica.
+
             function resolveRound() {
-                const playerStrength = 800 + (state.profile.rank_id * 10);
-                const opponentStrength = 800 + ((state.matchState.opponentRankId || state.profile.rank_id) * 10);
+                const playerStrength = 85 + (state.profile.rank_id * 1.5);
+                const opponentStrength = state.matchState.isBotMatch ? 85 + (state.profile.rank_id * 1.5) : 90;
 
                 const pAction = state.matchState.playerAction;
                 const oAction = state.matchState.opponentAction;
                 let commentaryText = `Você: ${pAction.toUpperCase()} | Oponente: ${oAction.toUpperCase()}. `;
 
                 const winConditions = { attack: 'balance', balance: 'defend', defend: 'attack' };
-                const playerHasAdvantage = winConditions[pAction] === oAction;
-                const opponentHasAdvantage = winConditions[oAction] === pAction;
 
-                let goalChance = 0.45; // Chance base de gol se houver vantagem
+                let playerHasAdvantage = winConditions[pAction] === oAction;
+                let opponentHasAdvantage = winConditions[oAction] === pAction;
 
+                let goalChance = 0.5;
                 if (playerHasAdvantage) {
-                    goalChance += (playerStrength - opponentStrength) / 1000; // Diferença de força ajusta a chance
-                    if (Math.random() < Math.max(0.1, goalChance)) { // Mínimo de 10% de chance
-                        commentaryText += "GOLAÇO! Você explorou a vantagem e marcou!";
-                        state.matchState.score[0]++;
-                    } else {
-                        commentaryText += "Você venceu a disputa, mas a defesa adversária foi resiliente!";
-                    }
+                    goalChance += (playerStrength - opponentStrength) / 100;
+                    if (Math.random() < goalChance) {
+                        commentaryText += "Bela jogada! Você marcou um GOLO!"; state.matchState.score[0]++;
+                    } else { commentaryText += "Você ganhou a jogada, mas a defesa adversária foi melhor!"; }
                 } else if (opponentHasAdvantage) {
-                    goalChance += (opponentStrength - playerStrength) / 1000;
-                    if (Math.random() < Math.max(0.1, goalChance)) {
-                        commentaryText += "Que pena! O oponente aproveitou seu erro e marcou.";
-                        state.matchState.score[1]++;
-                    } else {
-                        commentaryText += "Ufa! O oponente teve a vantagem, mas você conseguiu se defender!";
-                    }
-                } else {
-                    commentaryText += "Jogada espelhada. Disputa intensa no meio-campo, sem gols.";
-                }
+                    goalChance += (opponentStrength - playerStrength) / 100;
+                    if (Math.random() < goalChance) {
+                        commentaryText += "O oponente explorou a brecha e marcou..."; state.matchState.score[1]++;
+                    } else { commentaryText += "O oponente venceu a disputa, mas você conseguiu evitar o gol!"; }
+                } else { commentaryText += "Jogada espelhada, ninguém levou a melhor."; }
 
                 updateMatchUI(commentaryText);
                 state.matchState.round++;
                 if (state.matchState.round > 5) { setTimeout(endMatch, 2500); } else { setTimeout(playNextRound, 2500); }
             }
-
-
+            
             function updateMatchUI(commentary) {
                 document.getElementById('sim-score').textContent = `${state.matchState.score[0]} - ${state.matchState.score[1]}`;
-                document.getElementById('round-info').textContent = `Ronda ${state.matchState.round > 5 ? 'Final' : state.matchState.round}`;
+                document.getElementById('round-info').textContent = `Ronda ${state.matchState.round}`;
                 const commentaryEl = document.getElementById('match-commentary');
-                const newComment = document.createElement('p');
-                newComment.textContent = commentary;
-                newComment.style.opacity = '0';
-                commentaryEl.prepend(newComment);
-                setTimeout(() => { newComment.style.opacity = '1'; }, 50);
+                const p = document.createElement('p');
+                p.textContent = commentary;
+                commentaryEl.prepend(p);
             }
 
-            // ALTERADO: Simplificado para apenas chamar o backend e mostrar o resultado.
             async function endMatch() {
                 const [playerScore, opponentScore] = state.matchState.score;
-                const didWin = playerScore > opponentScore;
+                let didWin = (playerScore > opponentScore) ? true : ((playerScore < opponentScore) ? false : null);
                 
-                if (playerScore !== opponentScore && !state.matchState.isBotMatch) {
-                    // Apenas partidas contra humanos atualizam o rank no backend
-                    await supabaseClient.rpc('handle_match_result', { 
-                        winner_id: didWin ? state.user.id : state.matchState.opponentId, 
-                        loser_id: didWin ? state.matchState.opponentId : state.user.id 
+                if (!state.matchState.isBotMatch && didWin !== null) {
+                    await supabaseClient.rpc('handle_match_result', {
+                        winner_id: didWin ? state.user.id : state.matchState.opponentId,
+                        loser_id: didWin ? state.matchState.opponentId : state.user.id
                     });
-                } else if (state.matchState.isBotMatch && didWin) {
-                     // Lógica simples para bots: só ganha estrela se vencer, não perde se perder.
-                     await supabaseClient.from('profiles').update({ rank_stars: state.profile.rank_stars + 1 }).eq('id', state.user.id);
+                } else if (state.matchState.isBotMatch && didWin === true) {
+                    await supabaseClient.from('profiles').update({ rank_stars: state.profile.rank_stars + 1 }).eq('id', state.user.id);
                 }
 
-                await updateRankDisplay(); // Busca o rank atualizado do backend.
-                showResultModal(playerScore, opponentScore);
-            }
+                await updatePvpRankDisplay();
 
-            function showResultModal(playerScore, opponentScore) {
-                let title, message, color;
-                if (playerScore > opponentScore) {
-                    title = "VITÓRIA!";
-                    message = "Grande jogo! O seu rank foi atualizado.";
-                    color = "text-green-400";
-                } else if (playerScore < opponentScore) {
-                    title = "DERROTA";
-                    message = "Não foi desta vez. Continue a treinar!";
-                    color = "text-red-500";
-                } else {
-                    title = "EMPATE";
-                    message = "Uma partida equilibrada. Sem alterações no rank.";
-                    color = "text-gray-400";
+                let title = "EMPATE";
+                let message = "Nenhuma alteração de estrelas.";
+                if (didWin !== null) {
+                    title = didWin ? "VITÓRIA!" : "DERROTA";
+                    message = `Resultado final: ${playerScore} a ${opponentScore}.\nSeu rank foi atualizado.`;
                 }
-                const modalHTML = `
-                    <h2 class="text-4xl font-extrabold ${color} mb-4">${title}</h2>
-                    <p class="text-2xl font-bold mb-4">Placar Final: ${playerScore} a ${opponentScore}</p>
-                    <p class="text-xl text-gray-300">${message}</p>
-                    <button onclick="Game.closeAndGoToMenu()" class="w-full mt-6 bg-teal-600 p-3 rounded-lg text-xl btn-action">Voltar ao Menu</button>`;
-                UI.modalContent.innerHTML = modalHTML;
-                UI.modal.classList.remove('hidden');
-            }
 
+                showModal(title, message, [{id: 'modal-back-to-menu-btn', text: 'Voltar ao Menu', class: 'bg-teal-600', action: showMainMenu}]);
+            }
+            
             // --- MODOS DE CARREIRA ONLINE ---
             async function loadOrCreateOnlineCareer(careerType) {
-                showModal('Aguarde...', '<div class="loader mx-auto"></div>', []);
+                showModal('Aguarde', '<div class="loader mx-auto"></div><p class="mt-4">A carregar carreira online...</p>');
                 const tableName = `online_${careerType}_careers`;
                 const { data } = await supabaseClient.from(tableName).select('*').eq('user_id', state.user.id).single();
                 closeModal();
                 
                 const modeUI = UI[`${careerType}Career`];
                 if (data) {
-                    state[careerType] = data.game_state;
-                    state[careerType].id = data.id;
-                    showSubScreen(modeUI.container, modeUI.hubScreen);
-                    if (careerType === 'manager') { setupManagerNav(); switchManagerTab('manager-office'); }
-                    if (careerType === 'player') { setupPlayerNav(); switchPlayerTab('player-home'); }
+                    state[careerType] = data;
+                    if (careerType === 'manager') initManagerHub();
+                    if (careerType === 'player') initPlayerHub();
                 } else {
-                    showSubScreen(modeUI.container, modeUI.creationScreen || modeUI.philosophyScreen);
-                    if (careerType === 'manager') {
-                        document.querySelectorAll('.philosophy-card').forEach(card => { card.onclick = (e) => setupManagerMode(e.currentTarget.dataset.philosophy); });
-                    } else { setupPlayerCreation(); }
+                    if (careerType === 'manager') initManagerCreation();
+                    if (careerType === 'player') initPlayerCreation();
                 }
             }
             
-            // --- MODO TÉCNICO ONLINE ---
+            // --- CARREIRA DE TÉCNICO ---
+            function initManagerCreation() {
+                const screen = UI.managerCareer.philosophyScreen;
+                showSubScreen(UI.managerCareer.container, screen);
+                screen.innerHTML = `
+                    <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Defina a Filosofia do Clube</h2></header>
+                    <div class="p-4 md:p-8 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer" data-philosophy="cantera">
+                            <h3 class="text-2xl font-bold mb-2">Cantera</h3><p class="text-gray-400 mb-4">Foco na base. Orçamento menor, academia de elite. Paciência da diretoria com resultados.</p>
+                        </div>
+                        <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer" data-philosophy="galactic">
+                            <h3 class="text-2xl font-bold mb-2">Galácticos</h3><p class="text-gray-400 mb-4">Orçamento gigante para contratar estrelas. A pressão por títulos é imediata.</p>
+                        </div>
+                        <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer" data-philosophy="moneyball">
+                            <h3 class="text-2xl font-bold mb-2">Moneyball</h3><p class="text-gray-400 mb-4">Gestão inteligente. Foco em contratar jogadores subvalorizados e vender caro.</p>
+                        </div>
+                    </div>
+                    <button id="back-to-menu-manager-create" class="w-full max-w-xs mx-auto mt-8 bg-gray-600 p-2 rounded block">Voltar</button>`;
+                screen.querySelectorAll('.card').forEach(card => card.addEventListener('click', (e) => setupManagerMode(e.currentTarget.dataset.philosophy)));
+                document.getElementById('back-to-menu-manager-create').addEventListener('click', showMainMenu);
+            }
+
             async function setupManagerMode(philosophy) {
                 const philosophies = { cantera: { budget: 2000000 }, galactic: { budget: 15000000 }, moneyball: { budget: 7000000 } };
-                const initialState = {
-                    orcamento: philosophies[philosophy].budget, jogadores: JSON.parse(JSON.stringify(DB.PLAYERS.slice(0,5))), escalacao: [],
-                };
-                const { data } = await supabaseClient.from('online_manager_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
-                state.manager = data.game_state; state.manager.id = data.id;
-                showSubScreen(UI.managerCareer.container, UI.managerCareer.hubScreen);
-                setupManagerNav(); switchManagerTab('manager-office');
-            }
-            function setupManagerNav() { UI.managerCareer.nav.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') switchManagerTab(e.target.dataset.tab); }); }
-            function switchManagerTab(tabId) {
-                UI.managerCareer.nav.querySelector('.active').classList.remove('active');
-                UI.managerCareer.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-                renderManagerContent(tabId);
-            }
-            // ALTERADO: Adicionado o conteúdo da aba "Mercado".
-            function renderManagerContent(tabId) {
-                UI.managerCareer.budget.textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
-                const content = UI.managerCareer.content;
-                content.innerHTML = ''; // Limpa o conteúdo anterior
-
-                if (tabId === 'manager-squad') {
-                    content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Gerir Elenco</h3><div class="grid md:grid-cols-2 gap-4"><div><h4 class="text-xl font-semibold mb-2">Jogadores</h4><div id="squad-list" class="space-y-2"></div></div><div><h4 class="text-xl font-semibold mb-2">Equipa Titular (Em breve)</h4><div id="lineup-list" class="space-y-2"></div></div></div>`;
-                    renderManagerSquadLists();
-                } else if (tabId === 'manager-market') {
-                    content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Mercado de Transferências</h3><div id="market-list" class="space-y-3"></div>`;
-                    const marketListEl = document.getElementById('market-list');
-                    DB.PLAYERS.forEach(p => {
-                        if (!state.manager.jogadores.find(owned => owned.id === p.id)) {
-                            const playerCard = document.createElement('div');
-                            playerCard.className = 'p-3 bg-gray-700 rounded flex justify-between items-center transition hover:bg-gray-600';
-                            playerCard.innerHTML = `
-                                <div>
-                                    <p class="font-bold text-lg">${p.nome} (${p.posicao})</p>
-                                    <p class="text-sm text-gray-300">Força: ${p.forcaBase} | Valor: <span class="text-amber-400">$${p.valor.toLocaleString()}</span></p>
-                                </div>
-                                <button data-player-id="${p.id}" class="buy-player-btn bg-teal-600 hover:bg-teal-500 p-2 rounded font-semibold">Comprar</button>`;
-                            marketListEl.appendChild(playerCard);
-                        }
-                    });
-                     marketListEl.addEventListener('click', e => {
-                        if (e.target.classList.contains('buy-player-btn')) {
-                            showModal('Em breve', 'A funcionalidade de compra será implementada na próxima atualização!');
-                        }
-                    });
-                } else { 
-                    const title = tabId.split('-')[1];
-                    content.innerHTML = `<h3 class="text-2xl font-bold">${title.charAt(0).toUpperCase() + title.slice(1)}</h3><p>Conteúdo em desenvolvimento.</p>`; 
-                }
-            }
-
-            function renderManagerSquadLists() {
-                const squadListEl = document.getElementById('squad-list');
-                squadListEl.innerHTML = ''; 
-                if (state.manager.jogadores.length === 0) {
-                    squadListEl.innerHTML = '<p class="text-gray-400">Você ainda não tem jogadores. Vá ao mercado!</p>';
-                    return;
-                }
-                state.manager.jogadores.forEach(p => {
-                    const playerEl = document.createElement('div');
-                    playerEl.className = 'p-2 bg-gray-700 rounded';
-                    playerEl.innerHTML = `${p.nome} (${p.posicao}) - F: ${getForcaEfetiva(p)}`;
-                    squadListEl.appendChild(playerEl);
+                
+                const userTeamName = `${state.user.email.split('@')[0]} FC`;
+                const userTeam = { nome: userTeamName, forca: 82, isUser: true, pontos: 0, jogos: 0, vitorias: 0, empates: 0, derrotas: 0, golsPro: 0, golsContra: 0, calendario: [] };
+                const liga = [userTeam, ...DB.AI_TEAMS.map(t => ({ ...t, pontos: 0, jogos: 0, vitorias: 0, empates: 0, derrotas: 0, golsPro: 0, golsContra: 0, calendario: [] }))];
+                
+                // Criar calendário
+                const teams = liga.map(t => t.nome);
+                liga.forEach(team => {
+                    const opponents = teams.filter(t => t !== team.nome);
+                    team.calendario = opponents.map(opp => ({ adversario: opp, resultado: null }));
                 });
+
+                const initialState = {
+                    nomeTime: userTeamName,
+                    orcamento: philosophies[philosophy].budget,
+                    rodada_atual: 0,
+                    liga: liga,
+                };
+                
+                const { data, error } = await supabaseClient.from('online_manager_careers').insert([{ user_id: state.user.id, game_state: initialState, rank_id: 0, rank_xp: 0 }]).select().single();
+                if (error) { console.error("Erro ao criar carreira de técnico:", error); return; }
+                
+                state.manager = data;
+                initManagerHub();
             }
 
-            // --- MODO JOGADOR ONLINE ---
-            function setupPlayerCreation() {
-                UI.playerCareer.playerPositionSelect.onchange = renderAttributeInputs;
-                UI.playerCareer.finalizeCreationBtn.onclick = finalizePlayerCreation;
+            function initManagerHub() {
+                const hub = UI.managerCareer.hubScreen;
+                showSubScreen(UI.managerCareer.container, hub);
+                hub.innerHTML = `
+                    <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
+                        <h2 class="text-xl md:text-2xl font-bold">${state.manager.game_state.nomeTime}</h2>
+                        <div id="manager-budget" class="text-sm md:text-lg"></div>
+                        <button id="manager-back-btn" class="bg-red-600 hover:bg-red-500 p-2 rounded">Voltar</button>
+                    </header>
+                    <div id="manager-rank-display" class="p-4 bg-gray-800 rounded-lg m-4 text-center"></div>
+                    <nav id="manager-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
+                        <button data-tab="manager-office" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Escritório</button>
+                        <button data-tab="manager-league" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Liga</button>
+                    </nav>
+                    <main id="manager-content" class="p-4"></main>
+                `;
+                document.getElementById('manager-back-btn').addEventListener('click', showMainMenu);
+                document.getElementById('manager-nav').addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') switchManagerTab(e.target.dataset.tab); });
+                renderCareerRank('manager');
+                switchManagerTab('manager-office');
+            }
+            
+            function switchManagerTab(tabId) {
+                 const nav = document.getElementById('manager-nav');
+                 nav.querySelector('.active').classList.remove('active');
+                 nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+                 renderManagerContent(tabId);
+            }
+
+            function renderManagerContent(tabId) {
+                document.getElementById('manager-budget').textContent = `Orçamento: $${state.manager.game_state.orcamento.toLocaleString()}`;
+                const content = document.getElementById('manager-content');
+                const gameState = state.manager.game_state;
+                
+                if (tabId === 'manager-office') {
+                    const nextMatch = gameState.liga.find(t => t.isUser)?.calendario[gameState.rodada_atual];
+                    content.innerHTML = `
+                        <h3 class="text-2xl font-bold mb-4">Escritório</h3>
+                        <p class="mb-4">Bem-vindo de volta, Mister!</p>
+                        ${nextMatch ? `<p class="mb-4">Próxima partida: vs ${nextMatch.adversario}</p>` : '<p class="mb-4 text-teal-400 font-bold">Fim da temporada! Você pode reiniciar a liga ou continuar gerenciando seu time.</p>'}
+                        <button id="simulate-round-btn" class="w-full bg-green-600 p-4 rounded-lg text-xl btn-action" ${!nextMatch ? 'disabled' : ''}>
+                            Simular Próxima Rodada
+                        </button>
+                    `;
+                    if (nextMatch) document.getElementById('simulate-round-btn').addEventListener('click', simulateRound);
+                } else if (tabId === 'manager-league') {
+                    const sortedLeague = [...gameState.liga].sort((a, b) => b.pontos - a.pontos || (b.golsPro - b.golsContra) - (a.golsPro - a.golsContra));
+                    content.innerHTML = `
+                        <h3 class="text-2xl font-bold mb-4">Classificação da Liga</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-gray-800 text-sm md:text-base">
+                                <thead><tr>
+                                    <th class="p-2">Pos</th><th class="p-2 text-left">Time</th><th class="p-2">Pts</th><th class="p-2">J</th><th class="p-2">V</th><th class="p-2">E</th><th class="p-2">D</th><th class="p-2">GP</th><th class="p-2">GC</th><th class="p-2">SG</th>
+                                </tr></thead>
+                                <tbody>
+                                    ${sortedLeague.map((t, i) => `<tr class="${t.isUser ? 'bg-teal-800' : ''}">
+                                        <td class="p-2 text-center">${i+1}</td>
+                                        <td class="p-2 text-left font-bold">${t.nome}</td>
+                                        <td class="p-2 text-center font-bold">${t.pontos}</td><td class="p-2 text-center">${t.jogos}</td>
+                                        <td class="p-2 text-center">${t.vitorias}</td><td class="p-2 text-center">${t.empates}</td>
+                                        <td class="p-2 text-center">${t.derrotas}</td><td class="p-2 text-center">${t.golsPro}</td>
+                                        <td class="p-2 text-center">${t.golsContra}</td><td class="p-2 text-center">${t.golsPro - t.golsContra}</td>
+                                    </tr>`).join('')}
+                                </tbody>
+                            </table>
+                        </div>`;
+                }
+            }
+
+            async function simulateRound() {
+                const gameState = state.manager.game_state;
+                const userTeam = gameState.liga.find(t => t.isUser);
+                const opponentName = userTeam.calendario[gameState.rodada_atual].adversario;
+                const opponentTeam = gameState.liga.find(t => t.nome === opponentName);
+
+                // Simulação da partida do usuário
+                const homeStrength = userTeam.forca;
+                const awayStrength = opponentTeam.forca;
+                const diff = (homeStrength - awayStrength) / 100.0;
+                const homeGoals = Math.max(0, Math.floor(Math.random() * 4 + diff));
+                const awayGoals = Math.max(0, Math.floor(Math.random() * 3 - diff));
+
+                userTeam.golsPro += homeGoals;
+                userTeam.golsContra += awayGoals;
+                opponentTeam.golsPro += awayGoals;
+                opponentTeam.golsContra += homeGoals;
+                userTeam.jogos++;
+                opponentTeam.jogos++;
+
+                let xpGained = 0;
+                let budgetChange = 0;
+                if(homeGoals > awayGoals) {
+                    userTeam.pontos += 3; userTeam.vitorias++; opponentTeam.derrotas++;
+                    xpGained = 15; budgetChange = 100000;
+                    showToast(`Vitória! ${homeGoals}-${awayGoals}. +$${budgetChange.toLocaleString()}`, 'success');
+                } else if (homeGoals === awayGoals) {
+                    userTeam.pontos += 1; opponentTeam.pontos += 1; userTeam.empates++; opponentTeam.empates++;
+                    xpGained = 5; budgetChange = 25000;
+                    showToast(`Empate. ${homeGoals}-${awayGoals}. +$${budgetChange.toLocaleString()}`);
+                } else {
+                    userTeam.derrotas++; opponentTeam.pontos += 3; opponentTeam.vitorias++;
+                    showToast(`Derrota. ${homeGoals}-${awayGoals}.`, 'error');
+                }
+
+                gameState.orcamento += budgetChange;
+                gameState.rodada_atual++;
+                
+                if (xpGained > 0) {
+                    await updateCareerProgress('manager', xpGained);
+                } else {
+                    // Mesmo sem XP, precisamos salvar o estado do jogo
+                    await supabaseClient.from('online_manager_careers').update({ game_state: gameState }).eq('user_id', state.user.id);
+                }
+
+                switchManagerTab('manager-league');
+            }
+
+            // --- CARREIRA DE JOGADOR ---
+            function initPlayerCreation() {
+                const screen = UI.playerCareer.creationScreen;
+                showSubScreen(UI.playerCareer.container, screen);
+                screen.innerHTML = `
+                    <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Crie seu Craque</h2></header>
+                    <div class="p-4 md:p-8 max-w-2xl mx-auto">
+                        <div class="mb-4">
+                            <label for="player-name" class="block mb-2">Nome:</label>
+                            <input type="text" id="player-name-input" class="w-full p-2 rounded bg-gray-700 border border-gray-600" placeholder="Ex: Léo da Silva">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block mb-2">Posição:</label>
+                            <select id="player-position-select" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                                <option value="ATA">Atacante</option><option value="MEI">Meio-campista</option><option value="DEF">Defensor</option><option value="GOL">Goleiro</option>
+                            </select>
+                        </div>
+                        <div class="mb-6">
+                            <h3 class="font-semibold mb-2">Atributos Iniciais:</h3>
+                            <div id="attribute-inputs" class="space-y-2 mt-2 bg-gray-800 p-4 rounded"></div>
+                        </div>
+                        <button id="finalize-player-creation-btn" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Iniciar Carreira</button>
+                        <button id="back-to-menu-player-create" class="w-full mt-2 bg-red-600 p-2 rounded">Voltar</button>
+                    </div>`;
+                
+                const posSelect = document.getElementById('player-position-select');
+                posSelect.addEventListener('change', renderAttributeInputs);
+                document.getElementById('finalize-player-creation-btn').addEventListener('click', finalizePlayerCreation);
+                document.getElementById('back-to-menu-player-create').addEventListener('click', showMainMenu);
                 renderAttributeInputs();
             }
+
             function renderAttributeInputs() {
-                const position = UI.playerCareer.playerPositionSelect.value;
+                const position = document.getElementById('player-position-select').value;
                 const attributes = DB.ATTRIBUTES_MAP[position];
-                UI.playerCareer.attributeInputs.innerHTML = '';
-                for (const attr in attributes) { UI.playerCareer.attributeInputs.innerHTML += `<div><label>${attr}: <span class="font-bold text-teal-300">${attributes[attr]}</span></label></div>`; }
+                const container = document.getElementById('attribute-inputs');
+                container.innerHTML = '';
+                for (const attr in attributes) {
+                    container.innerHTML += `<div class="flex justify-between"><span>${attr}:</span> <span class="font-bold text-teal-400">${attributes[attr]}</span></div>`;
+                }
             }
+
             async function finalizePlayerCreation() {
-                const name = UI.playerCareer.playerNameInput.value.trim();
-                if (!name) {
-                    showModal("Erro", "O nome do jogador não pode estar em branco.");
+                const name = document.getElementById('player-name-input').value;
+                if (!name.trim()) {
+                    showToast("Por favor, insira um nome para o jogador.", "error");
                     return;
                 }
-                const initialState = { name: name, position: UI.playerCareer.playerPositionSelect.value, team: 'SevenxFoot Rookies' };
-                const { data } = await supabaseClient.from('online_player_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
-                state.player = data.game_state; state.player.id = data.id;
-                showSubScreen(UI.playerCareer.container, UI.playerCareer.hubScreen);
-                setupPlayerNav(); switchPlayerTab('player-home');
+                const position = document.getElementById('player-position-select').value;
+                const attributes = DB.ATTRIBUTES_MAP[position];
+
+                const initialState = {
+                    name, position, team: 'SevenxFoot Rookies', attributes
+                };
+                
+                const { data, error } = await supabaseClient.from('online_player_careers').insert([{ user_id: state.user.id, game_state: initialState, rank_id: 0, rank_xp: 0 }]).select().single();
+                if (error) { console.error("Erro ao criar carreira de jogador:", error); return; }
+                
+                state.player = data;
+                initPlayerHub();
             }
-            function setupPlayerNav() { UI.playerCareer.nav.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') switchPlayerTab(e.target.dataset.tab); }); }
+
+            function initPlayerHub() {
+                const hub = UI.playerCareer.hubScreen;
+                showSubScreen(UI.playerCareer.container, hub);
+                const gameState = state.player.game_state;
+                hub.innerHTML = `
+                    <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
+                        <h2 class="text-xl md:text-2xl font-bold truncate">${gameState.name}</h2>
+                        <div class="text-sm md:text-lg">${gameState.team}</div>
+                        <button id="player-back-btn" class="bg-red-600 p-2 rounded">Voltar</button>
+                    </header>
+                    <div id="player-rank-display" class="p-4 bg-gray-800 rounded-lg m-4 text-center"></div>
+                    <nav id="player-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
+                         <button data-tab="player-home" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Início</button>
+                         <button data-tab="player-training" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Treino</button>
+                    </nav>
+                    <main id="player-content" class="p-4"></main>
+                `;
+                document.getElementById('player-back-btn').addEventListener('click', showMainMenu);
+                document.getElementById('player-nav').addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') switchPlayerTab(e.target.dataset.tab); });
+                renderCareerRank('player');
+                switchPlayerTab('player-home');
+            }
+
             function switchPlayerTab(tabId) {
-                UI.playerCareer.nav.querySelector('.active').classList.remove('active');
-                UI.playerCareer.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+                const nav = document.getElementById('player-nav');
+                nav.querySelector('.active').classList.remove('active');
+                nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
                 renderPlayerContent(tabId);
             }
+
             function renderPlayerContent(tabId) {
-                UI.playerCareer.playerHubName.textContent = state.player.name;
-                UI.playerCareer.playerTeam.textContent = state.player.team;
-                UI.playerCareer.content.innerHTML = `<h3 class="text-2xl font-bold">${tabId.replace('player-', '')}</h3><p>Conteúdo em desenvolvimento.</p>`;
+                const content = document.getElementById('player-content');
+                const gameState = state.player.game_state;
+
+                if (tabId === 'player-home') {
+                    content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Atributos Atuais</h3><div class="grid grid-cols-2 gap-4 bg-gray-800 p-4 rounded-lg">`;
+                    for (const attr in gameState.attributes) {
+                        content.firstElementChild.nextElementSibling.innerHTML += `<div class="flex justify-between"><span>${attr}:</span> <span class="font-bold text-teal-400">${gameState.attributes[attr]}</span></div>`;
+                    }
+                } else if (tabId === 'player-training') {
+                    content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Centro de Treinamento</h3><p class="mb-4 text-gray-400">Clique em um atributo para treiná-lo e ganhar XP.</p><div id="training-buttons" class="grid grid-cols-2 gap-4"></div>`;
+                    const buttonsContainer = document.getElementById('training-buttons');
+                    for (const attr in gameState.attributes) {
+                        const button = document.createElement('button');
+                        button.className = 'w-full bg-blue-600 hover:bg-blue-500 p-4 rounded-lg text-lg btn-action';
+                        button.textContent = `Treinar ${attr}`;
+                        button.dataset.attribute = attr;
+                        buttonsContainer.appendChild(button);
+                    }
+                    buttonsContainer.querySelectorAll('button').forEach(btn => btn.addEventListener('click', (e) => trainAttribute(e.target.dataset.attribute)));
+                }
             }
 
-            // --- CENTRO DA COMUNIDADE ---
+            async function trainAttribute(attribute) {
+                const gameState = state.player.game_state;
+                if (gameState.attributes[attribute] < 99) {
+                    gameState.attributes[attribute]++;
+                    showToast(`${attribute} melhorado para ${gameState.attributes[attribute]}!`, 'success');
+                    await updateCareerProgress('player', 10); // Ganha 10 XP
+                    renderPlayerContent('player-home'); // Atualiza a tela de atributos
+                } else {
+                    showToast(`${attribute} já está no máximo!`, 'error');
+                }
+            }
+            
+             // --- CENTRO DA COMUNIDADE ---
             function initCommunityHub() {
-                showSubScreen(UI.communityHub.container, UI.communityHub.content.parentElement);
-                UI.communityHub.nav.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') switchHubTab(e.target.dataset.tab); });
-                switchHubTab('hub-patches');
-            }
-            function switchHubTab(tabId) {
-                UI.communityHub.nav.querySelector('.active').classList.remove('active');
-                UI.communityHub.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-                renderHubContent(tabId);
-            }
-            async function renderHubContent(tabId) {
-                const content = UI.communityHub.content;
-                content.innerHTML = '<div class="loader mx-auto"></div>';
-                switch (tabId) {
-                    case 'hub-patches':
-                        const { data: patches } = await supabaseClient.from('community_patches').select('*').order('created_at', { ascending: false });
-                        content.innerHTML = `<h2 class="text-3xl font-bold mb-4">Patches da Comunidade</h2><div class="space-y-4">${patches.map(p => `<div class="bg-gray-800 p-4 rounded-lg"><h3>${p.patch_name}</h3><p>por ${p.creator_email}</p></div>`).join('') || '<p>Ainda não há patches. Seja o primeiro a criar um!</p>'}</div>`;
-                        break;
-                    case 'hub-editor':
-                        content.innerHTML = document.getElementById('editor-template').innerHTML;
-                        content.querySelectorAll('.editor-choice-btn').forEach(btn => btn.onclick = (e) => showEditorForm(e.target.dataset.editor));
-                        content.querySelector('#publish-patch-btn').onclick = publishPatch;
-                        updatePatchSummary();
-                        break;
-                }
-            }
-            function showEditorForm(editorType) {
-                const container = document.getElementById('editor-form-container');
-                container.classList.remove('hidden');
-                let formHTML = '';
-                switch (editorType) {
-                    case 'player':
-                        formHTML = `<h4 class="text-xl font-bold mb-4">Criar Jogador</h4>
-                        <input id="new-player-name" type="text" placeholder="Nome do Jogador" class="w-full p-2 bg-gray-700 rounded mb-2">
-                        <select id="new-player-pos" class="w-full p-2 bg-gray-700 rounded mb-2"><option>ATA</option><option>MEI</option><option>DEF</option><option>GOL</option></select>
-                        <input id="new-player-forca" type="number" placeholder="Força (1-99)" class="w-full p-2 bg-gray-700 rounded mb-2">
-                        <label class="block mb-2">Foto do Jogador (Opcional):</label>
-                        <div class="flex items-center gap-4 mb-4">
-                           <img id="player-photo-preview" src="" alt="Pré-visualização" class="image-preview hidden">
-                           <input id="new-player-photo" type="file" accept="image/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
-                        </div>
-                        <button id="save-player-btn" class="w-full bg-green-600 p-2 rounded">Salvar Jogador</button>`;
-                        break;
-                    case 'team': formHTML = `<h4 class="text-xl font-bold mb-4">Criar Equipa</h4><p>Em desenvolvimento.</p>`; break;
-                    case 'league': formHTML = `<h4 class="text-xl font-bold mb-4">Criar Campeonato</h4><p>Em desenvolvimento.</p>`; break;
-                }
-                container.innerHTML = formHTML;
-                // NOVO: Adiciona a lógica da pré-visualização da imagem
-                if (editorType === 'player') { 
-                    document.getElementById('save-player-btn').onclick = saveNewPlayer;
-                    document.getElementById('new-player-photo').onchange = (evt) => {
-                        const [file] = evt.target.files;
-                        const preview = document.getElementById('player-photo-preview');
-                        if (file) {
-                            preview.src = URL.createObjectURL(file);
-                            preview.classList.remove('hidden');
-                        } else {
-                            preview.classList.add('hidden');
-                        }
-                    };
-                }
-            }
-            async function saveNewPlayer() {
-                const name = document.getElementById('new-player-name').value;
-                const photoFile = document.getElementById('new-player-photo').files[0];
-                if (!name) { showModal("Erro", "Preencha o nome do jogador."); return; }
-                
-                let publicUrl = null;
-                if(photoFile){
-                    const filePath = `${state.user.id}/${Date.now()}_${photoFile.name}`;
-                    const { error: uploadError } = await supabaseClient.storage.from('player_photos').upload(filePath, photoFile);
-                    if (uploadError) { console.error(uploadError); showModal("Erro", "Falha ao fazer upload da foto."); return; }
-                    publicUrl = supabaseClient.storage.from('player_photos').getPublicUrl(filePath).data.publicUrl;
-                }
-
-                const newPlayer = {
-                    id: `player_${Date.now()}`, name, position: document.getElementById('new-player-pos').value,
-                    forca: parseInt(document.getElementById('new-player-forca').value) || 70, photoUrl: publicUrl
-                };
-                state.communityCreations.players.push(newPlayer);
-                showModal("Sucesso!", `${name} foi salvo no seu patch local.`);
-                document.getElementById('editor-form-container').classList.add('hidden');
-                updatePatchSummary();
-            }
-            function updatePatchSummary() {
-                const summaryEl = document.getElementById('patch-summary');
-                if (!summaryEl) return;
-                summaryEl.innerHTML = `
-                    <h4 class="text-lg font-bold">Conteúdo do Patch:</h4>
-                    <p>${state.communityCreations.players.length} Jogadores</p>
-                    <p>${state.communityCreations.teams.length} Equipas</p>
-                    <p>${state.communityCreations.leagues.length} Campeonatos</p>
-                `;
-            }
-            async function publishPatch() {
-                const patchName = document.getElementById('patch-name').value;
-                if (!patchName) { showModal("Erro", "Dê um nome ao seu patch."); return; }
-                const patchData = { players: state.communityCreations.players, teams: state.communityCreations.teams, leagues: state.communityCreations.leagues, };
-                const { error } = await supabaseClient.from('community_patches').insert({
-                    creator_id: state.user.id, creator_email: state.user.email, patch_name: patchName,
-                    patch_description: document.getElementById('patch-description').value, patch_data: patchData
-                });
-                if (error) { console.error(error); showModal("Erro", "Falha ao publicar o patch."); }
-                else {
-                    showModal("Sucesso!", "Seu patch foi publicado na comunidade!");
-                    state.communityCreations = { players: [], teams: [], leagues: [] };
-                    switchHubTab('hub-patches');
-                }
+                 showSubScreen(UI.communityHub.container, UI.communityHub.container);
+                 UI.communityHub.container.innerHTML = `
+                    <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
+                        <h2 class="text-xl md:text-2xl font-bold">Centro da Comunidade</h2>
+                        <button id="community-back-btn" class="bg-red-600 hover:bg-red-500 p-2 rounded">Voltar</button>
+                    </header>
+                    <main id="hub-content" class="p-4"><p>Em desenvolvimento.</p></main>`;
+                 document.getElementById('community-back-btn').addEventListener('click', showMainMenu);
             }
 
-            // --- OBJETO PÚBLICO ---
-            window.Game = {
+            // --- INICIALIZAÇÃO DO JOGO ---
+            return {
                 init: async function() {
-                    if (!supabaseClient) { UI.authError.textContent = "Supabase não configurado."; return; }
                     UI.loginBtn.addEventListener('click', handleLogin);
                     UI.signupBtn.addEventListener('click', handleSignup);
                     UI.logoutBtn.addEventListener('click', confirmLogout);
+                    UI.startOnlineModeBtn.addEventListener('click', initPvpMode);
                     UI.startManagerCareerBtn.addEventListener('click', () => loadOrCreateOnlineCareer('manager'));
                     UI.startPlayerCareerBtn.addEventListener('click', () => loadOrCreateOnlineCareer('player'));
-                    UI.startOnlineModeBtn.addEventListener('click', initPvpMode);
                     UI.startCommunityHubBtn.addEventListener('click', initCommunityHub);
-                    UI.backToMenuBtns.forEach(btn => btn.addEventListener('click', showMainMenu));
                     
                     const { data: { session } } = await supabaseClient.auth.getSession();
-                    if (session) {
-                        state.user = session.user;
-                        await updateRankDisplay(); // Chama a função que já busca o perfil
-                        showScreen('main-menu');
-                    } else { showScreen('auth-screen'); }
-                },
-                closeAndGoToMenu: () => { closeModal(); showMainMenu(); },
-                handleLogout,
-                closeModal,
+                    if (session && session.user) {
+                        const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
+                        if (profile) {
+                             state.user = session.user;
+                             state.profile = profile;
+                             UI.welcomeMessage.textContent = `Bem-vindo, ${state.user.email.split('@')[0]}!`;
+                             await updatePvpRankDisplay();
+                             showScreen('main-menu');
+                        } else {
+                            await supabaseClient.auth.signOut();
+                            showScreen('auth-screen');
+                        }
+                    } else {
+                        showScreen('auth-screen');
+                    }
+                }
             };
+        })();
 
-            Game.init();
-        });
+        Game.init();
+    });
     </script>
 </body>
 </html>
