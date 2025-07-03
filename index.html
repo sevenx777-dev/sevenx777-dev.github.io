@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SevenxFoot v4.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .hidden { display: none; }
+        .main-menu-bg { background: linear-gradient(to bottom right, #1f2937, #111827); }
+        .nav-item.active { background-color: #047857; color: white; border-bottom: 2px solid #34d399; }
+        .btn-action { transition: all 0.2s ease-in-out; }
+        .btn-action:hover { transform: scale(1.05); }
+        .card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .modal-overlay { background-color: rgba(0,0,0,0.8); }
+        /* Mobile scrollbar for nav */
+        .mobile-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .mobile-scroll::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <!-- TELA DE MENU PRINCIPAL -->
+    <div id="main-menu" class="main-menu-bg min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="bg-black bg-opacity-70 p-10 rounded-lg text-center shadow-2xl">
+            <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-2">SevenxFoot</h1>
+            <p class="text-teal-400 font-bold text-2xl mb-8">Versão 4.0</p>
+            <div class="space-y-4">
+                <button id="start-manager-mode" class="w-full md:w-96 bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira: Técnico</button>
+                <button id="start-player-mode" class="w-full md:w-96 bg-amber-500 hover:bg-amber-400 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira: Jogador</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTAINER PRINCIPAL DO JOGO -->
+    <div id="game-container" class="hidden">
+        <!-- MODO TÉCNICO -->
+        <div id="manager-mode" class="hidden">
+            <div id="manager-philosophy-screen">
+                <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Defina a Filosofia do Clube</h2></header>
+                <div class="p-4 md:p-8 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer philosophy-card" data-philosophy="cantera">
+                        <h3 class="text-2xl font-bold mb-2">Cantera</h3>
+                        <p class="text-gray-400 mb-4">Foco na base. Orçamento menor, academia de elite. Paciência da diretoria com resultados.</p>
+                    </div>
+                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer philosophy-card" data-philosophy="galactic">
+                        <h3 class="text-2xl font-bold mb-2">Galácticos</h3>
+                        <p class="text-gray-400 mb-4">Orçamento gigante para contratar estrelas. A pressão por títulos é imediata.</p>
+                    </div>
+                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer philosophy-card" data-philosophy="moneyball">
+                        <h3 class="text-2xl font-bold mb-2">Moneyball</h3>
+                        <p class="text-gray-400 mb-4">Gestão inteligente. Foco em contratar jogadores subvalorizados e vender caro.</p>
+                    </div>
+                </div>
+            </div>
+            <div id="manager-hub-screen" class="hidden">
+                <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
+                    <h2 class="text-xl md:text-2xl font-bold">Modo Técnico</h2>
+                    <div id="manager-budget" class="text-sm md:text-lg"></div>
+                    <button class="back-to-menu bg-red-600 hover:bg-red-500 p-2 rounded">Sair</button>
+                </header>
+                <nav id="manager-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
+                    <button data-tab="manager-office" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Escritório</button>
+                    <button data-tab="manager-squad" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Elenco</button>
+                    <button data-tab="manager-staff" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Equipe</button>
+                    <button data-tab="manager-youth" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Academia</button>
+                    <button data-tab="manager-transfers" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Mercado</button>
+                    <button data-tab="manager-league" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Liga</button>
+                </nav>
+                <main id="manager-content" class="p-4"></main>
+            </div>
+        </div>
+
+        <!-- MODO JOGADOR -->
+        <div id="player-mode" class="hidden">
+            <div id="player-creation-screen">
+                 <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Crie seu Craque</h2></header>
+                <div class="p-4 md:p-8 max-w-2xl mx-auto">
+                    <div class="mb-4">
+                        <label for="player-name" class="block mb-2">Nome:</label>
+                        <input type="text" id="player-name" class="w-full p-2 rounded bg-gray-700 border border-gray-600" placeholder="Ex: Léo da Silva">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block mb-2">Posição:</label>
+                        <select id="player-position" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                            <option value="ATA">Atacante</option><option value="MEI">Meio-campista</option><option value="DEF">Defensor</option><option value="GOL">Goleiro</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-2">Atributos (Pontos restantes: <span id="attribute-points-left" class="font-bold text-amber-400">15</span>)</h3>
+                        <div id="attribute-inputs" class="space-y-2 mt-2"></div>
+                    </div>
+                    <button id="finalize-player-creation" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Iniciar Carreira</button>
+                    <button class="back-to-menu w-full mt-2 bg-red-600 p-2 rounded">Voltar</button>
+                </div>
+            </div>
+            <div id="player-hub-screen" class="hidden">
+                <header class="bg-gray-800 p-4 flex justify-between items-center sticky top-0 z-20">
+                    <h2 id="player-hub-name" class="text-xl md:text-2xl font-bold truncate"></h2>
+                    <div id="player-salary" class="text-sm md:text-lg"></div>
+                    <button class="back-to-menu bg-red-600 p-2 rounded">Sair</button>
+                </header>
+                <nav id="player-nav" class="bg-gray-700 flex justify-start md:justify-center overflow-x-auto mobile-scroll sticky top-[68px] md:top-[72px] z-20">
+                     <button data-tab="player-home" class="nav-item active p-3 md:p-4 font-semibold flex-shrink-0">Início</button>
+                     <button data-tab="player-training" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Treino</button>
+                     <button data-tab="player-brand" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Marca</button>
+                     <button data-tab="player-lifestyle" class="nav-item p-3 md:p-4 font-semibold flex-shrink-0">Lifestyle</button>
+                </nav>
+                <main id="player-content" class="p-4"></main>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL UNIVERSAL -->
+    <div id="modal" class="hidden fixed inset-0 modal-overlay z-30 flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-gray-800 p-6 md:p-8 rounded-lg text-center max-w-lg w-full shadow-2xl"></div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const Game = (() => {
+            let state = {};
+
+            const UI = {
+                mainMenu: document.getElementById('main-menu'),
+                gameContainer: document.getElementById('game-container'),
+                managerMode: {
+                    container: document.getElementById('manager-mode'),
+                    philosophyScreen: document.getElementById('manager-philosophy-screen'),
+                    hubScreen: document.getElementById('manager-hub-screen'),
+                    content: document.getElementById('manager-content'),
+                    nav: document.getElementById('manager-nav'),
+                    budget: document.getElementById('manager-budget'),
+                },
+                playerMode: {
+                    container: document.getElementById('player-mode'),
+                    creationScreen: document.getElementById('player-creation-screen'),
+                    hubScreen: document.getElementById('player-hub-screen'),
+                    content: document.getElementById('player-content'),
+                    nav: document.getElementById('player-nav'),
+                    attributePointsLeft: document.getElementById('attribute-points-left'),
+                    attributeInputs: document.getElementById('attribute-inputs'),
+                    finalizeCreationBtn: document.getElementById('finalize-player-creation'),
+                    playerNameInput: document.getElementById('player-name'),
+                    playerPositionSelect: document.getElementById('player-position'),
+                    playerHubName: document.getElementById('player-hub-name'),
+                    playerSalary: document.getElementById('player-salary'),
+                },
+                startManagerBtn: document.getElementById('start-manager-mode'),
+                startPlayerBtn: document.getElementById('start-player-mode'),
+                backToMenuBtns: document.querySelectorAll('.back-to-menu'),
+                modal: document.getElementById('modal'),
+                modalContent: document.getElementById('modal-content'),
+            };
+
+            const DB = {
+                ATTRIBUTES_MAP: {
+                    ATA: { Chute: 8, Drible: 7, Velocidade: 6, Passe: 4, Força: 5 },
+                    MEI: { Passe: 8, Drible: 7, Chute: 5, Defesa: 5, Visão: 6 },
+                    DEF: { Defesa: 8, Força: 7, Passe: 5, Velocidade: 5, Marcação: 6 },
+                    GOL: { Reflexos: 8, Posicionamento: 7, 'Um-pra-um': 6, Passe: 4, Agilidade: 5 }
+                },
+                LIFESTYLE_ITEMS: [
+                    { id: 'car1', name: 'Carro Popular', cost: 20000, reputation: { maverick: 2 } },
+                    { id: 'car2', name: 'Carro Esportivo', cost: 150000, reputation: { maverick: 5 } },
+                    { id: 'house1', name: 'Apartamento Simples', cost: 100000, reputation: { professional: 2 } },
+                    { id: 'house2', name: 'Mansão', cost: 500000, reputation: { maverick: 10, professional: -2 } },
+                    { id: 'charity1', name: 'Doação para Caridade', cost: 50000, reputation: { professional: 10, maverick: -2 } },
+                ],
+                STAFF: {
+                    assistant: [{ name: "J. Cruz", quality: 75, salary: 50000 }, { name: "M. Roca", quality: 85, salary: 90000 }],
+                    scout: [{ name: "P. Neto", quality: 78, salary: 40000 }, { name: "R. Lemos", quality: 88, salary: 80000 }],
+                    medic: [{ name: "Dra. Alves", quality: 80, salary: 60000 }, { name: "Dr. Borges", quality: 90, salary: 100000 }],
+                }
+            };
+            
+            function init() {
+                UI.startManagerBtn.addEventListener('click', () => showScreen(UI.managerMode.container, UI.managerMode.philosophyScreen));
+                UI.startPlayerBtn.addEventListener('click', () => {
+                    showScreen(UI.playerMode.container, UI.playerMode.creationScreen);
+                    setupPlayerCreation();
+                });
+                UI.backToMenuBtns.forEach(btn => btn.addEventListener('click', showMainMenu));
+                document.querySelectorAll('.philosophy-card').forEach(card => {
+                    card.addEventListener('click', (e) => setupManagerMode(e.currentTarget.dataset.philosophy));
+                });
+            }
+
+            function showScreen(modeContainer, screenToShow) {
+                UI.mainMenu.classList.add('hidden');
+                UI.gameContainer.classList.remove('hidden');
+                UI.managerMode.container.classList.add('hidden');
+                UI.playerMode.container.classList.add('hidden');
+                if (modeContainer) {
+                    modeContainer.classList.remove('hidden');
+                    Array.from(modeContainer.children).forEach(child => child.classList.add('hidden'));
+                    if(screenToShow) screenToShow.classList.remove('hidden');
+                }
+            }
+
+            function showMainMenu() { state = {}; showScreen(null, UI.mainMenu); }
+            function showModal(html) { UI.modalContent.innerHTML = html; UI.modal.classList.remove('hidden'); }
+            function closeModal() { UI.modal.classList.add('hidden'); }
+
+            // --- MANAGER MODE ---
+            function setupManagerMode(philosophy) {
+                const philosophies = {
+                    cantera: { budget: 2000000, youthQuality: 8 },
+                    galactic: { budget: 15000000, youthQuality: 4 },
+                    moneyball: { budget: 7000000, youthQuality: 6 }
+                };
+                state.manager = {
+                    philosophy: philosophy,
+                    orcamento: philosophies[philosophy].budget,
+                    youthAcademy: generateYouthPlayers(philosophies[philosophy].youthQuality),
+                    staff: { assistant: null, scout: null, medic: null },
+                    dilemmaQueue: [{
+                        title: "Coletiva de Imprensa",
+                        text: "O próximo jogo é um clássico contra nosso maior rival. O que você dirá à imprensa?",
+                        options: [
+                            { text: '"Respeitamos eles, mas viemos para vencer."', effect: { morale: 5 } },
+                            { text: '"Somos favoritos e vamos provar em campo."', effect: { morale: 10, rivalMorale: -5 } },
+                            { text: '"É apenas mais um jogo. Três pontos em jogo."', effect: { morale: 0 } },
+                        ]
+                    }]
+                };
+                showScreen(UI.managerMode.container, UI.managerMode.hubScreen);
+                setupManagerNav();
+                switchManagerTab('manager-office');
+            }
+
+            function generateYouthPlayers(quality) {
+                return Array(5).fill(0).map((_, i) => ({
+                    nome: `Jovem Talento ${i+1}`,
+                    idade: 16 + Math.floor(Math.random() * 3),
+                    posicao: ['ATA', 'MEI', 'DEF'][Math.floor(Math.random() * 3)],
+                    potencial: 70 + Math.floor(Math.random() * (quality * 3))
+                }));
+            }
+
+            function setupManagerNav() {
+                 UI.managerMode.nav.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'BUTTON') switchManagerTab(e.target.dataset.tab);
+                });
+            }
+
+            function switchManagerTab(tabId) {
+                UI.managerMode.nav.querySelector('.active').classList.remove('active');
+                UI.managerMode.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+                renderManagerContent(tabId);
+            }
+            
+            function renderManagerContent(tabId) {
+                 UI.managerMode.budget.textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
+                 const content = UI.managerMode.content;
+
+                 switch(tabId) {
+                    case 'manager-office':
+                        const dilemma = state.manager.dilemmaQueue[0];
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Escritório</h3>
+                        <div class="bg-gray-800 p-4 rounded-lg">
+                            <h4 class="text-xl font-semibold">Caixa de Entrada</h4>
+                            ${dilemma ? `<div class="mt-2 p-3 bg-gray-700 rounded">
+                                <p class="font-bold">${dilemma.title}</p>
+                                <p>${dilemma.text}</p>
+                                <button id="handle-dilemma" class="mt-2 bg-amber-500 p-2 rounded btn-action">Responder</button>
+                            </div>` : `<p class="text-gray-400 mt-2">Nenhuma mensagem nova.</p>`}
+                        </div>`;
+                        if(dilemma) document.getElementById('handle-dilemma').addEventListener('click', () => handleDilemma(dilemma));
+                        break;
+                    case 'manager-staff':
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Equipe Técnica</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            ${Object.keys(state.manager.staff).map(role => `
+                                <div class="bg-gray-800 p-4 rounded-lg">
+                                    <h4 class="text-xl font-semibold capitalize">${role}</h4>
+                                    ${state.manager.staff[role] ? `<p>${state.manager.staff[role].name} (Qualidade: ${state.manager.staff[role].quality})</p>` : `<p class="text-gray-400">Ninguém contratado.</p>
+                                    <button data-role="${role}" class="hire-staff-btn mt-2 bg-green-600 p-2 rounded w-full btn-action">Contratar</button>`}
+                                </div>
+                            `).join('')}
+                        </div>`;
+                        document.querySelectorAll('.hire-staff-btn').forEach(btn => btn.addEventListener('click', (e) => showHireStaffModal(e.target.dataset.role)));
+                        break;
+                    // ... other cases from v2.0
+                 }
+            }
+            
+            function handleDilemma(dilemma) {
+                showModal(`
+                    <h3 class="text-2xl font-bold mb-4">${dilemma.title}</h3>
+                    <p class="mb-6">${dilemma.text}</p>
+                    <div class="space-y-3">
+                    ${dilemma.options.map((opt, i) => `<button class="w-full p-3 bg-teal-700 hover:bg-teal-600 rounded btn-action" data-index="${i}">${opt.text}</button>`).join('')}
+                    </div>
+                `);
+                UI.modalContent.querySelectorAll('button').forEach(btn => btn.addEventListener('click', (e) => {
+                    // Apply effect here later
+                    state.manager.dilemmaQueue.shift();
+                    closeModal();
+                    renderManagerContent('manager-office');
+                }));
+            }
+            
+            function showHireStaffModal(role) {
+                showModal(`
+                    <h3 class="text-2xl font-bold mb-4">Contratar ${role}</h3>
+                    <div class="space-y-3">
+                    ${DB.STAFF[role].map(person => `
+                        <div class="text-left p-3 bg-gray-700 rounded flex justify-between items-center">
+                            <div>
+                                <p class="font-bold">${person.name}</p>
+                                <p class="text-sm">Qualidade: ${person.quality} | Salário: $${person.salary.toLocaleString()}</p>
+                            </div>
+                            <button data-role="${role}" data-name="${person.name}" class="confirm-hire-btn bg-green-600 p-2 rounded btn-action">Contratar</button>
+                        </div>
+                    `).join('')}
+                    </div>
+                    <button id="close-modal-btn" class="mt-4 bg-red-600 p-2 rounded">Cancelar</button>
+                `);
+                document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+                document.querySelectorAll('.confirm-hire-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                    const person = DB.STAFF[e.target.dataset.role].find(p => p.name === e.target.dataset.name);
+                    if (state.manager.orcamento >= person.salary) {
+                        state.manager.staff[e.target.dataset.role] = person;
+                        state.manager.orcamento -= person.salary;
+                        closeModal();
+                        renderManagerContent('manager-staff');
+                    } else {
+                        alert("Orçamento insuficiente para pagar o salário!");
+                    }
+                }));
+            }
+
+            // --- PLAYER MODE ---
+            function setupPlayerCreation() {
+                UI.playerMode.playerPositionSelect.addEventListener('change', renderAttributeInputs);
+                UI.playerMode.finalizeCreationBtn.addEventListener('click', finalizePlayerCreation);
+                renderAttributeInputs();
+            }
+
+            function renderAttributeInputs() {
+                const position = UI.playerMode.playerPositionSelect.value;
+                const attributes = DB.ATTRIBUTES_MAP[position];
+                UI.playerMode.attributeInputs.innerHTML = '';
+                UI.playerMode.attributePointsLeft.textContent = 15;
+                for (const attr in attributes) {
+                    const baseValue = attributes[attr];
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between';
+                    div.innerHTML = `<label>${attr}</label><div class="flex items-center gap-2"><button data-attr="${attr}" data-action="minus" class="attr-btn bg-red-500 w-8 h-8 rounded-full font-bold">-</button><span id="attr-${attr}" data-base-value="${baseValue}" class="font-bold w-8 text-center">${baseValue}</span><button data-attr="${attr}" data-action="plus" class="attr-btn bg-green-500 w-8 h-8 rounded-full font-bold">+</button></div>`;
+                    UI.playerMode.attributeInputs.appendChild(div);
+                }
+                UI.playerMode.attributeInputs.addEventListener('click', handleAttributeChange);
+            }
+            
+            function handleAttributeChange(e) {
+                if (!e.target.classList.contains('attr-btn')) return;
+                const attr = e.target.dataset.attr;
+                const action = e.target.dataset.action;
+                const valueEl = document.getElementById(`attr-${attr}`);
+                let currentValue = parseInt(valueEl.textContent);
+                let pointsLeft = parseInt(UI.playerMode.attributePointsLeft.textContent);
+
+                if (action === 'plus' && pointsLeft > 0) {
+                    valueEl.textContent = currentValue + 1;
+                    UI.playerMode.attributePointsLeft.textContent = pointsLeft - 1;
+                } else if (action === 'minus' && currentValue > parseInt(valueEl.dataset.baseValue)) {
+                    valueEl.textContent = currentValue - 1;
+                    UI.playerMode.attributePointsLeft.textContent = pointsLeft + 1;
+                }
+            }
+
+            function finalizePlayerCreation() {
+                const name = UI.playerMode.playerNameInput.value.trim();
+                if (!name) { alert("Insira um nome."); return; }
+                if (parseInt(UI.playerMode.attributePointsLeft.textContent) > 0 && !confirm("Ainda há pontos para distribuir. Continuar?")) return;
+                state.player = {
+                    name: name, position: UI.playerMode.playerPositionSelect.value, attributes: {},
+                    team: "Iniciantes FC", salary: 50000, morale: 80, xp: 0, ownedItems: [],
+                    reputation: { professional: 50, maverick: 50 },
+                    sponsorships: []
+                };
+                UI.playerMode.attributeInputs.querySelectorAll('span[id^="attr-"]').forEach(el => {
+                    state.player.attributes[el.id.replace('attr-', '')] = parseInt(el.textContent);
+                });
+                showScreen(UI.playerMode.container, UI.playerMode.hubScreen);
+                setupPlayerNav();
+                switchPlayerTab('player-home');
+            }
+            
+            function setupPlayerNav() {
+                UI.playerMode.nav.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'BUTTON') switchPlayerTab(e.target.dataset.tab);
+                });
+            }
+
+            function switchPlayerTab(tabId) {
+                UI.playerMode.nav.querySelector('.active').classList.remove('active');
+                UI.playerMode.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+                renderPlayerContent(tabId);
+            }
+
+            function renderPlayerContent(tabId) {
+                UI.playerMode.playerHubName.textContent = state.player.name;
+                UI.playerMode.playerSalary.textContent = `Salário: $${state.player.salary.toLocaleString()}`;
+                const content = UI.playerMode.content;
+
+                switch(tabId) {
+                    case 'player-home':
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Início</h3>
+                        <div class="bg-gray-800 p-4 rounded-lg">
+                            <h4 class="text-xl font-semibold">Próxima Partida</h4>
+                            <p class="text-3xl text-center p-4">${state.player.team} vs Titans da Cidade</p>
+                            <button id="play-match-btn" class="w-full mt-4 bg-amber-500 p-3 rounded btn-action">Jogar</button>
+                        </div>`;
+                        document.getElementById('play-match-btn').addEventListener('click', () => alert('Simulação de partida em breve!'));
+                        break;
+                    case 'player-training':
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Treinamento Interativo</h3>
+                        <p class="mb-4">Escolha um atributo para focar no treino desta semana.</p>
+                        <div class="space-y-3">
+                        ${Object.keys(state.player.attributes).map(attr => `
+                            <button data-attr="${attr}" class="training-btn w-full p-3 bg-gray-700 hover:bg-gray-600 rounded btn-action">Treinar ${attr}</button>
+                        `).join('')}
+                        </div>`;
+                        document.querySelectorAll('.training-btn').forEach(btn => btn.addEventListener('click', (e) => startTraining(e.target.dataset.attr)));
+                        break;
+                    case 'player-brand':
+                        const { professional, maverick } = state.player.reputation;
+                        const total = professional + maverick;
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Marca Pessoal</h3>
+                        <div class="bg-gray-800 p-4 rounded-lg">
+                            <h4 class="text-xl font-semibold mb-2">Reputação</h4>
+                            <div class="w-full bg-gray-700 rounded-full h-4 mb-4 flex">
+                                <div class="bg-blue-500 h-4 rounded-l-full" style="width: ${professional/total*100}%"></div>
+                                <div class="bg-purple-500 h-4 rounded-r-full" style="width: ${maverick/total*100}%"></div>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-blue-400">Profissional: ${professional}</span>
+                                <span class="text-purple-400">Marrento: ${maverick}</span>
+                            </div>
+                            <h4 class="text-xl font-semibold mt-6 mb-2">Patrocínios</h4>
+                            ${state.player.sponsorships.length > 0 ? '...' : '<p class="text-gray-400">Nenhum patrocínio ativo. Aumente sua reputação!</p>'}
+                        </div>`;
+                        break;
+                     case 'player-lifestyle':
+                        content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Lifestyle</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${DB.LIFESTYLE_ITEMS.map(item => `
+                            <div class="card bg-gray-800 p-4 rounded-lg text-center">
+                                <h4 class="text-lg font-bold">${item.name}</h4>
+                                <p class="text-green-400 font-semibold my-2">$${item.cost.toLocaleString()}</p>
+                                <button data-item-id="${item.id}" class="buy-lifestyle-btn w-full p-2 rounded ${state.player.ownedItems.includes(item.id) ? 'bg-gray-600' : 'bg-green-600 btn-action'}">
+                                    ${state.player.ownedItems.includes(item.id) ? 'Comprado' : 'Comprar'}
+                                </button>
+                            </div>
+                        `).join('')}
+                        </div>`;
+                        document.querySelectorAll('.buy-lifestyle-btn').forEach(btn => {
+                            if (!btn.disabled) {
+                                btn.addEventListener('click', (e) => buyLifestyleItem(e.target.dataset.itemId));
+                            }
+                        });
+                        break;
+                }
+            }
+            
+            function startTraining(attribute) {
+                showModal(`
+                    <h3 class="text-2xl font-bold mb-4">Treino de ${attribute}</h3>
+                    <p class="mb-6">Você está no campo de treino. O técnico prepara um exercício específico.</p>
+                    <p>"Vamos lá, ${state.player.name}! Mostre o que sabe fazer."</p>
+                    <button id="start-drill" class="mt-4 bg-teal-600 p-2 rounded btn-action">Começar Exercício</button>
+                `);
+                document.getElementById('start-drill').addEventListener('click', () => {
+                    const success = Math.random() < (state.player.attributes[attribute] / 25 + 0.2); // Base chance + attribute bonus
+                    const xpGained = success ? 10 + Math.floor(Math.random() * 5) : 2;
+                    state.player.xp += xpGained;
+                    state.player.reputation.professional += success ? 2 : 1;
+                    closeModal();
+                    alert(`Treino concluído! Você ganhou ${xpGained} XP em ${attribute}.`);
+                    switchPlayerTab('player-training');
+                });
+            }
+            
+            function buyLifestyleItem(itemId) {
+                const item = DB.LIFESTYLE_ITEMS.find(i => i.id === itemId);
+                if (state.player.salary >= item.cost) {
+                    state.player.salary -= item.cost;
+                    state.player.ownedItems.push(item.id);
+                    if (item.reputation.professional) state.player.reputation.professional += item.reputation.professional;
+                    if (item.reputation.maverick) state.player.reputation.maverick += item.reputation.maverick;
+                    alert(`Você comprou: ${item.name}!`);
+                    renderPlayerContent('player-lifestyle');
+                } else {
+                    alert("Salário insuficiente!");
+                }
+            }
+
+            return { init };
+        })();
+
+        Game.init();
+    });
+    </script>
+</body>
+</html>
