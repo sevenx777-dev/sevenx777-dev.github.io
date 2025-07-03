@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SevenxFoot v9.0</title>
+    <title>SevenxFoot 1.0.0</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -21,9 +21,10 @@
         .modal-overlay { background-color: rgba(0,0,0,0.8); }
         .mobile-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .mobile-scroll::-webkit-scrollbar { display: none; }
-        .harmony-bar { background: linear-gradient(to right, #ef4444, #f97316, #eab308, #84cc16, #22c55e); }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #match-commentary { height: 300px; }
+        #match-commentary p { transition: opacity 0.5s; }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
@@ -47,7 +48,7 @@
     <div id="main-menu" class="hidden main-menu-bg min-h-screen flex flex-col items-center justify-center p-4">
         <div class="bg-black bg-opacity-70 p-10 rounded-lg text-center shadow-2xl">
             <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-2">SevenxFoot</h1>
-            <p class="text-teal-400 font-bold text-2xl mb-8">v9.0 - Edição Definitiva</p>
+            <p class="text-teal-400 font-bold text-2xl mb-8">Release 1.0.0</p>
             <div class="space-y-4">
                 <button id="start-online-mode" class="w-full md:w-96 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Ligas Online</button>
                 <button id="start-manager-mode" class="w-full md:w-96 bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira Offline: Técnico</button>
@@ -83,11 +84,7 @@
                     <h2 id="league-hub-title" class="text-2xl font-bold"></h2>
                     <button class="back-to-menu bg-red-600 hover:bg-red-500 p-2 rounded">Sair da Liga</button>
                 </header>
-                <main class="p-4">
-                    <h3 class="text-xl font-bold mb-4">Técnicos na Liga</h3>
-                    <div id="league-managers-list" class="space-y-3"></div>
-                    <p class="mt-4 text-gray-400">Aguardando outros jogadores... O modo carreira compartilhado começará quando o criador da liga iniciar.</p>
-                </main>
+                <main id="online-league-content" class="p-4"></main>
             </div>
         </div>
         
@@ -175,6 +172,19 @@
         <div id="modal-content" class="bg-gray-800 p-6 md:p-8 rounded-lg text-center max-w-lg w-full shadow-2xl"></div>
     </div>
 
+    <!-- TEMPLATE DO SIMULADOR DE PARTIDA -->
+    <template id="match-simulator-template">
+        <div class="bg-gray-900 p-4 rounded-lg w-full max-w-3xl mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <div id="sim-home-team" class="text-lg md:text-xl font-bold text-center w-2/5">Time Casa</div>
+                <div id="sim-score" class="text-2xl md:text-3xl font-extrabold w-1/5 text-center">0 - 0</div>
+                <div id="sim-away-team" class="text-lg md:text-xl font-bold text-center w-2/5">Time Fora</div>
+            </div>
+            <div id="match-commentary" class="bg-black p-4 rounded-md overflow-y-scroll h-64 border border-gray-700"></div>
+            <button id="close-sim-btn" class="w-full mt-4 bg-teal-600 p-2 rounded btn-action">Fechar</button>
+        </div>
+    </template>
+
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const Game = (() => {
@@ -208,12 +218,12 @@
                     container: document.getElementById('online-mode'),
                     lobbyScreen: document.getElementById('online-lobby-screen'),
                     leagueHubScreen: document.getElementById('online-league-hub-screen'),
+                    content: document.getElementById('online-league-content'),
                     createLeagueBtn: document.getElementById('create-league-btn'),
                     joinLeagueBtn: document.getElementById('join-league-btn'),
                     leagueNameInput: document.getElementById('league-name-input'),
                     leagueCodeInput: document.getElementById('league-code-input'),
                     leagueHubTitle: document.getElementById('league-hub-title'),
-                    leagueManagersList: document.getElementById('league-managers-list'),
                 },
                 managerMode: {
                     container: document.getElementById('manager-mode'),
@@ -243,6 +253,7 @@
                 backToMenuBtns: document.querySelectorAll('.back-to-menu'),
                 modal: document.getElementById('modal'),
                 modalContent: document.getElementById('modal-content'),
+                matchSimTemplate: document.getElementById('match-simulator-template'),
             };
 
             const DB = {
@@ -336,9 +347,7 @@
                 UI.onlineMode.createLeagueBtn.addEventListener('click', createOnlineLeague);
                 UI.onlineMode.joinLeagueBtn.addEventListener('click', joinOnlineLeague);
                 UI.backToMenuBtns.forEach(btn => btn.addEventListener('click', showMainMenu));
-                document.querySelectorAll('.philosophy-card').forEach(card => {
-                    card.addEventListener('click', (e) => setupManagerMode(e.currentTarget.dataset.philosophy));
-                });
+                
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
                     state.user = session.user;
@@ -359,17 +368,19 @@
 
             async function handleSignup() {
                 toggleAuthLoading(true);
-                const { data, error } = await supabaseClient.auth.signUp({ email: UI.emailInput.value, password: UI.passwordInput.value });
-                if (error) UI.authError.textContent = error.message;
-                else alert('Cadastro realizado! Verifique seu e-mail para confirmação e depois faça o login.');
+                const { data: authData, error } = await supabaseClient.auth.signUp({ email: UI.emailInput.value, password: UI.passwordInput.value });
+                if (error) {
+                    UI.authError.textContent = error.message;
+                } else {
+                    const { error: profileError } = await supabaseClient.from('profiles').insert({ id: authData.user.id, email: authData.user.email });
+                    if (profileError) console.error("Erro ao criar perfil:", profileError);
+                    alert('Cadastro realizado! Verifique seu e-mail para confirmação e depois faça o login.');
+                }
                 toggleAuthLoading(false);
             }
 
             async function handleLogout() {
-                if (state.realtimeChannel) {
-                    supabaseClient.removeChannel(state.realtimeChannel);
-                    state.realtimeChannel = null;
-                }
+                if (state.realtimeChannel) supabaseClient.removeChannel(state.realtimeChannel);
                 await supabaseClient.auth.signOut();
                 state = {};
                 showScreen('auth-screen');
@@ -386,16 +397,24 @@
                 showModal('<div class="loader mx-auto"></div><p class="mt-4">Carregando sua carreira...</p>');
                 const { data, error } = await supabaseClient.from(`${careerType}_careers`).select('*').eq('user_id', state.user.id).single();
                 closeModal();
+                const modeUI = UI[`${careerType}Mode`];
                 if (data) {
                     state[careerType] = data.game_state;
                     state[careerType].id = data.id;
-                    const hub = UI[`${careerType}Mode`].hubScreen;
-                    showSubScreen(UI[`${careerType}Mode`].container, hub);
+                    showSubScreen(modeUI.container, document.getElementById(`${careerType}-hub-screen`));
                     if (careerType === 'manager') { setupManagerNav(); switchManagerTab('manager-office'); }
                     if (careerType === 'player') { setupPlayerNav(); switchPlayerTab('player-home'); }
                 } else {
-                    const creationScreen = UI[`${careerType}Mode`][`${careerType === 'manager' ? 'philosophy' : 'creation'}Screen`];
-                    showSubScreen(UI[`${careerType}Mode`].container, creationScreen);
+                    const creationScreenId = careerType === 'manager' ? 'manager-philosophy-screen' : 'player-creation-screen';
+                    const creationScreen = document.getElementById(creationScreenId);
+                    showSubScreen(modeUI.container, creationScreen);
+                    if (careerType === 'manager') {
+                         document.querySelectorAll('.philosophy-card').forEach(card => {
+                            card.addEventListener('click', (e) => setupManagerMode(e.currentTarget.dataset.philosophy));
+                        });
+                    } else {
+                        setupPlayerCreation();
+                    }
                 }
             }
             
@@ -404,9 +423,7 @@
                     supabaseClient.removeChannel(state.realtimeChannel);
                     state.realtimeChannel = null;
                 }
-                state.manager = null;
-                state.player = null;
-                state.onlineLeague = null;
+                state = { user: state.user };
                 showScreen('main-menu');
             }
 
@@ -427,9 +444,10 @@
 
                 showModal('<div class="loader mx-auto"></div><p class="mt-4">Criando liga online...</p>');
                 const leagueCode = generateLeagueCode();
+                
                 const { data, error } = await supabaseClient
                     .from('online_leagues')
-                    .insert({ name: leagueName, code: leagueCode, owner_id: state.user.id })
+                    .insert({ name: leagueName, code: leagueCode, owner_id: state.user.id, status: 'lobby' })
                     .select()
                     .single();
                 
@@ -467,9 +485,10 @@
             }
 
             async function enterLeagueLobby(leagueId) {
+                const { data: profile } = await supabaseClient.from('profiles').select('email').eq('id', state.user.id).single();
                 const { error } = await supabaseClient
                     .from('online_managers')
-                    .insert({ league_id: leagueId, user_id: state.user.id, manager_name: state.user.email });
+                    .insert({ league_id: leagueId, user_id: state.user.id, manager_name: profile.email, team_name: `Time de ${profile.email.split('@')[0]}` });
 
                 if (error && error.code !== '23505') {
                      console.error(error);
@@ -481,36 +500,52 @@
                 showSubScreen(UI.onlineMode.container, UI.onlineMode.leagueHubScreen);
                 UI.onlineMode.leagueHubTitle.textContent = `${state.onlineLeague.name} (Código: ${state.onlineLeague.code})`;
                 
-                await fetchAndRenderManagers(leagueId);
+                await fetchAndRenderLeagueHub(leagueId);
                 setupRealtimeForLeague(leagueId);
                 closeModal();
             }
 
-            async function fetchAndRenderManagers(leagueId) {
-                const { data: managers, error } = await supabaseClient
-                    .from('online_managers')
-                    .select('manager_name')
-                    .eq('league_id', leagueId);
-                
-                if (error) { console.error(error); return; }
+            async function fetchAndRenderLeagueHub(leagueId) {
+                const { data: leagueData, error } = await supabaseClient.from('online_leagues').select('*').eq('id', leagueId).single();
+                if(error) { console.error(error); return; }
+                state.onlineLeague = leagueData;
 
-                UI.onlineMode.leagueManagersList.innerHTML = managers.map(m => 
-                    `<div class="p-3 bg-gray-700 rounded">${m.manager_name}</div>`
-                ).join('');
+                const { data: managers, error: managersError } = await supabaseClient.from('online_managers').select('manager_name, ready_for_next_round').eq('league_id', leagueId);
+                if(managersError) { console.error(managersError); return; }
+
+                const content = UI.onlineMode.content;
+                const isOwner = state.onlineLeague.owner_id === state.user.id;
+
+                if (state.onlineLeague.status === 'lobby') {
+                    content.innerHTML = `<h3 class="text-xl font-bold mb-4">Lobby da Liga</h3>
+                    <div id="league-managers-list" class="space-y-3">${managers.map(m => `<div class="p-3 bg-gray-700 rounded">${m.manager_name}</div>`).join('')}</div>
+                    ${isOwner ? '<button id="start-season-btn" class="w-full mt-6 bg-green-600 p-3 rounded btn-action">Iniciar Temporada</button>' : '<p class="mt-6 text-gray-400">Aguardando o dono da liga iniciar a temporada...</p>'}`;
+                    if(isOwner) document.getElementById('start-season-btn').addEventListener('click', startOnlineSeason);
+                } else {
+                    // Renderiza a tela da temporada
+                    content.innerHTML = `<h3>Temporada em andamento... (WIP)</h3>`;
+                }
+            }
+
+            async function startOnlineSeason() {
+                alert("Temporada iniciada! (Funcionalidade em desenvolvimento)");
+                const { error } = await supabaseClient.from('online_leagues').update({ status: 'in_progress' }).eq('id', state.onlineLeague.id);
+                if(error) console.error(error);
             }
 
             function setupRealtimeForLeague(leagueId) {
-                if (state.realtimeChannel) {
-                    supabaseClient.removeChannel(state.realtimeChannel);
-                }
+                if (state.realtimeChannel) supabaseClient.removeChannel(state.realtimeChannel);
                 state.realtimeChannel = supabaseClient.channel(`league-${leagueId}`);
                 state.realtimeChannel
-                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'online_managers', filter: `league_id=eq.${leagueId}` }, payload => {
-                        fetchAndRenderManagers(leagueId);
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'online_managers', filter: `league_id=eq.${leagueId}` }, payload => {
+                        fetchAndRenderLeagueHub(leagueId);
+                    })
+                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'online_leagues', filter: `id=eq.${leagueId}` }, payload => {
+                        fetchAndRenderLeagueHub(leagueId);
                     })
                     .subscribe();
             }
-
+            
             // --- MODO TÉCNICO (OFFLINE) ---
             async function setupManagerMode(philosophy) {
                 const philosophies = { cantera: { budget: 2000000, youthQuality: 8 }, galactic: { budget: 15000000, youthQuality: 4 }, moneyball: { budget: 7000000, youthQuality: 6 } };
@@ -534,7 +569,7 @@
                 
                 state.manager = data.game_state;
                 state.manager.id = data.id;
-                showSubScreen(UI.managerMode.container, UI.managerMode.hubScreen);
+                showSubScreen(UI.managerMode.container, document.getElementById('manager-hub-screen'));
                 setupManagerNav();
                 switchManagerTab('manager-office');
             }
@@ -564,18 +599,18 @@
             }
 
             function setupManagerNav() {
-                 UI.managerMode.nav.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') switchManagerTab(e.target.dataset.tab); });
+                 document.getElementById('manager-nav').addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') switchManagerTab(e.target.dataset.tab); });
             }
 
             function switchManagerTab(tabId) {
-                UI.managerMode.nav.querySelector('.active').classList.remove('active');
-                UI.managerMode.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+                document.querySelector('#manager-nav .active').classList.remove('active');
+                document.querySelector(`#manager-nav [data-tab="${tabId}"]`).classList.add('active');
                 renderManagerContent(tabId);
             }
             
             function renderManagerContent(tabId) {
-                 UI.managerMode.budget.textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
-                 const content = UI.managerMode.content;
+                 document.getElementById('manager-budget').textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
+                 const content = document.getElementById('manager-content');
                  switch(tabId) {
                     case 'manager-office':
                         const dilemma = state.manager.dilemmaQueue[0];
@@ -694,7 +729,7 @@
                 } else {
                     alert('Orçamento insuficiente!');
                 }
-                UI.managerMode.budget.textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
+                document.getElementById('manager-budget').textContent = `Orçamento: $${state.manager.orcamento.toLocaleString()}`;
             }
 
             function renderLeagueTable() {
@@ -793,24 +828,25 @@
 
             // --- PLAYER MODE ---
             function setupPlayerCreation() {
-                UI.playerMode.playerPositionSelect.addEventListener('change', renderAttributeInputs);
-                UI.playerMode.finalizeCreationBtn.addEventListener('click', finalizePlayerCreation);
+                document.getElementById('player-position').addEventListener('change', renderAttributeInputs);
+                document.getElementById('finalize-player-creation').addEventListener('click', finalizePlayerCreation);
                 renderAttributeInputs();
             }
 
             function renderAttributeInputs() {
-                const position = UI.playerMode.playerPositionSelect.value;
+                const position = document.getElementById('player-position').value;
                 const attributes = DB.ATTRIBUTES_MAP[position];
-                UI.playerMode.attributeInputs.innerHTML = '';
-                UI.playerMode.attributePointsLeft.textContent = 15;
+                const attributeInputs = document.getElementById('attribute-inputs');
+                attributeInputs.innerHTML = '';
+                document.getElementById('attribute-points-left').textContent = 15;
                 for (const attr in attributes) {
                     const baseValue = attributes[attr];
                     const div = document.createElement('div');
                     div.className = 'flex items-center justify-between';
                     div.innerHTML = `<label>${attr}</label><div class="flex items-center gap-2"><button data-attr="${attr}" data-action="minus" class="attr-btn bg-red-500 w-8 h-8 rounded-full font-bold">-</button><span id="attr-${attr}" data-base-value="${baseValue}" class="font-bold w-8 text-center">${baseValue}</span><button data-attr="${attr}" data-action="plus" class="attr-btn bg-green-500 w-8 h-8 rounded-full font-bold">+</button></div>`;
-                    UI.playerMode.attributeInputs.appendChild(div);
+                    attributeInputs.appendChild(div);
                 }
-                UI.playerMode.attributeInputs.addEventListener('click', handleAttributeChange);
+                attributeInputs.addEventListener('click', handleAttributeChange);
             }
             
             function handleAttributeChange(e) {
@@ -819,47 +855,47 @@
                 const action = e.target.dataset.action;
                 const valueEl = document.getElementById(`attr-${attr}`);
                 let currentValue = parseInt(valueEl.textContent);
-                let pointsLeft = parseInt(UI.playerMode.attributePointsLeft.textContent);
-                if (action === 'plus' && pointsLeft > 0) { valueEl.textContent = currentValue + 1; UI.playerMode.attributePointsLeft.textContent = pointsLeft - 1; }
-                else if (action === 'minus' && currentValue > parseInt(valueEl.dataset.baseValue)) { valueEl.textContent = currentValue - 1; UI.playerMode.attributePointsLeft.textContent = pointsLeft + 1; }
+                let pointsLeft = parseInt(document.getElementById('attribute-points-left').textContent);
+                if (action === 'plus' && pointsLeft > 0) { valueEl.textContent = currentValue + 1; document.getElementById('attribute-points-left').textContent = pointsLeft - 1; }
+                else if (action === 'minus' && currentValue > parseInt(valueEl.dataset.baseValue)) { valueEl.textContent = currentValue - 1; document.getElementById('attribute-points-left').textContent = pointsLeft + 1; }
             }
 
             async function finalizePlayerCreation() {
-                const name = UI.playerMode.playerNameInput.value.trim();
+                const name = document.getElementById('player-name').value.trim();
                 if (!name) { alert("Insira um nome."); return; }
-                if (parseInt(UI.playerMode.attributePointsLeft.textContent) > 0 && !confirm("Ainda há pontos para distribuir. Continuar?")) return;
+                if (parseInt(document.getElementById('attribute-points-left').textContent) > 0 && !confirm("Ainda há pontos para distribuir. Continuar?")) return;
                 const initialState = {
-                    name: name, position: UI.playerMode.playerPositionSelect.value, attributes: {},
+                    name: name, position: document.getElementById('player-position').value, attributes: {},
                     team: "Iniciantes FC", salary: 50000, morale: 80, xp: 0, ownedItems: [],
                     reputation: { professional: 50, maverick: 50 },
                     sponsorships: []
                 };
-                UI.playerMode.attributeInputs.querySelectorAll('span[id^="attr-"]').forEach(el => {
+                document.getElementById('attribute-inputs').querySelectorAll('span[id^="attr-"]').forEach(el => {
                     initialState.attributes[el.id.replace('attr-', '')] = parseInt(el.textContent);
                 });
                 const { data, error } = await supabaseClient.from('player_careers').insert([{ user_id: state.user.id, game_state: initialState }]).select().single();
                 if (error) { alert("Erro ao criar nova carreira."); console.error(error); return; }
                 state.player = data.game_state;
                 state.player.id = data.id;
-                showSubScreen(UI.playerMode.container, UI.playerMode.hubScreen);
+                showSubScreen(UI.playerMode.container, document.getElementById('player-hub-screen'));
                 setupPlayerNav();
                 switchPlayerTab('player-home');
             }
             
             function setupPlayerNav() {
-                UI.playerMode.nav.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') switchPlayerTab(e.target.dataset.tab); });
+                document.getElementById('player-nav').addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') switchPlayerTab(e.target.dataset.tab); });
             }
 
             function switchPlayerTab(tabId) {
-                UI.playerMode.nav.querySelector('.active').classList.remove('active');
-                UI.playerMode.nav.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+                document.querySelector('#player-nav .active').classList.remove('active');
+                document.querySelector(`#player-nav [data-tab="${tabId}"]`).classList.add('active');
                 renderPlayerContent(tabId);
             }
 
             function renderPlayerContent(tabId) {
-                UI.playerMode.playerHubName.textContent = state.player.name;
-                UI.playerMode.playerSalary.textContent = `Salário: $${state.player.salary.toLocaleString()}`;
-                const content = UI.playerMode.content;
+                document.getElementById('player-hub-name').textContent = state.player.name;
+                document.getElementById('player-salary').textContent = `Salário: $${state.player.salary.toLocaleString()}`;
+                const content = document.getElementById('player-content');
                 switch(tabId) {
                     case 'player-home':
                         content.innerHTML = `<h3 class="text-2xl font-bold mb-4">Início</h3><div class="bg-gray-800 p-4 rounded-lg"><h4 class="text-xl font-semibold">Próxima Partida</h4><p class="text-3xl text-center p-4">${state.player.team} vs Titans da Cidade</p><button id="play-match-btn" class="w-full mt-4 bg-amber-500 p-3 rounded btn-action">Jogar</button></div>`;
