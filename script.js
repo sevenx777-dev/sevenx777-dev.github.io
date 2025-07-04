@@ -96,6 +96,7 @@ const Game = (() => {
                 <div class="auth-panel p-8 rounded-lg text-center shadow-2xl w-full max-w-md">
                     <h1 class="text-5xl font-black text-white mb-6">SevenxFoot</h1>
                     <div id="auth-form" class="space-y-4">
+                        <input type="text" id="username-input" class="w-full" placeholder="nome de usuário">
                         <input type="email" id="email-input" class="w-full" placeholder="seu@email.com">
                         <input type="password" id="password-input" class="w-full" placeholder="senha">
                         <button id="login-btn" class="w-full btn-action btn-primary">Entrar</button>
@@ -114,8 +115,8 @@ const Game = (() => {
     }
 
     function renderMainMenu() {
-        const isGuest = !state.profile; // A forma mais segura de verificar se é convidado
-        const welcomeMessage = isGuest ? `Bem-vindo, Convidado!` : `Bem-vindo, ${state.user.email.split('@')[0]}!`;
+        const isGuest = !state.profile;
+        const welcomeMessage = isGuest ? `Bem-vindo, Convidado!` : `Bem-vindo, ${state.profile.username || state.user.email.split('@')[0]}!`;
         const rankDisplayHTML = isGuest 
             ? `<div class="panel p-4 text-slate-dark">Para ver seu ranking, por favor, crie uma conta.</div>`
             : `<div id="player-rank-display" class="mb-8 panel p-4"></div>`;
@@ -297,6 +298,12 @@ const Game = (() => {
         const authError = document.getElementById('auth-error');
         const emailInput = document.getElementById('email-input');
         const passwordInput = document.getElementById('password-input');
+        const usernameInput = document.getElementById('username-input');
+
+        if (!usernameInput.value.trim()) {
+            authError.textContent = "Por favor, insira um nome de usuário.";
+            return;
+        }
 
         authForm.classList.add('hidden');
         authLoading.classList.remove('hidden');
@@ -304,46 +311,33 @@ const Game = (() => {
 
         const { data: authData, error: authErrorMsg } = await supabaseClient.auth.signUp({ 
             email: emailInput.value, 
-            password: passwordInput.value 
+            password: passwordInput.value,
+            options: {
+                data: {
+                    username: usernameInput.value.trim()
+                }
+            }
         });
         
         if (authErrorMsg) {
-            authError.textContent = "Não foi possível registar. Verifique os dados ou tente um email diferente."; 
+            if (authErrorMsg.status === 429) {
+                authError.textContent = "Muitas tentativas. Aguarde um pouco.";
+            } else {
+                authError.textContent = "Não foi possível registar. Verifique os dados.";
+            }
             authForm.classList.remove('hidden');
             authLoading.classList.add('hidden');
             return;
         }
 
         if (authData.user) {
-            showModal('Aguarde', 'A finalizar a criação do seu perfil de jogador...', []);
-            
-            const { data: profile, error: profileError } = await supabaseClient
-                .from('profiles')
-                .insert({ 
-                    id: authData.user.id, 
-                    email: authData.user.email,
-                    rank_id: 0,
-                    rank_stars: 0
-                })
-                .select()
-                .single();
-
-            if (profileError) {
-                authError.textContent = 'Erro ao criar o perfil. Tente fazer login.';
-                authForm.classList.remove('hidden');
-                authLoading.classList.add('hidden');
-                closeModal();
-                return;
-            }
-
-            showToast("Registo bem-sucedido! Faça o login para começar.", "success");
-            closeModal();
+            showModal(
+                'Cadastro Quase Completo!',
+                'Enviamos um link de confirmação para o seu e-mail. Por favor, verifique sua caixa de entrada para ativar sua conta e começar a jogar.',
+                [{ id: 'modal-ok-btn', text: 'Entendido', class: 'primary' }]
+            );
             authForm.classList.remove('hidden');
             authLoading.classList.add('hidden');
-        } else {
-             authError.textContent = 'Ocorreu um erro inesperado durante o registo.';
-             authForm.classList.remove('hidden');
-             authLoading.classList.add('hidden');
         }
     }
     
@@ -504,7 +498,7 @@ const Game = (() => {
         }
 
         const opponentId = match.player1_id === state.user.id ? match.player2_id : match.player1_id;
-        const { data: opponentProfile } = await supabaseClient.from('profiles').select('email').eq('id', opponentId).single();
+        const { data: opponentProfile } = await supabaseClient.from('profiles').select('username').eq('id', opponentId).single();
         
         state.onlineMatch = {
             ...match,
@@ -513,7 +507,7 @@ const Game = (() => {
             opponentScore: 0,
             myAction: null,
             opponentAction: null,
-            opponentName: opponentProfile ? opponentProfile.email.split('@')[0] : 'Oponente',
+            opponentName: opponentProfile ? opponentProfile.username : 'Oponente',
             opponentId: opponentId
         };
         
@@ -522,7 +516,7 @@ const Game = (() => {
     }
 
     function setupMatchUI() {
-        const myName = state.profile ? state.user.email.split('@')[0] : 'Convidado';
+        const myName = state.profile ? state.profile.username : 'Convidado';
         const opponentName = state.onlineMatch.opponentName;
 
         const content = `
@@ -900,6 +894,7 @@ const Game = (() => {
             closeModal();
             showModal('Resultado da Partida', `${resultText}\n\nVocê ganhou ${xpGained} XP de Técnico.`, [{id: 'modal-ok-btn', text: 'Continuar', class: 'primary'}]);
             renderManagerContent('manager-office');
+            renderCareerRank('manager');
         }, 1500);
     }
     
@@ -1180,7 +1175,7 @@ const Game = (() => {
 
         const { data, error } = await supabaseClient
             .from('profiles')
-            .select('email, rank_id, rank_stars')
+            .select('username, rank_id, rank_stars')
             .order('rank_id', { ascending: false })
             .order('rank_stars', { ascending: false })
             .limit(20);
@@ -1198,7 +1193,7 @@ const Game = (() => {
 
         const leaderboardHTML = data.map((profile, index) => {
             const rank = CONSTANTS.RANKS[profile.rank_id];
-            const playerName = profile.email.split('@')[0];
+            const playerName = profile.username;
             return `
                 <div class="grid grid-cols-12 gap-4 items-center p-3 rounded-md ${index % 2 === 0 ? 'bg-navy-darker' : ''}" style="background-color: var(--bg-dark-navy);">
                     <span class="col-span-1 text-xl font-bold text-slate-dark">#${index + 1}</span>
@@ -1281,8 +1276,14 @@ const Game = (() => {
             
             if (targetId === 'modal-ok-btn') {
                 closeModal();
-                if(state.player) renderPlayerContent('player-dashboard');
-                if(state.manager) renderManagerContent('manager-office');
+                if(state.player) {
+                    renderPlayerContent('player-dashboard');
+                    renderCareerRank('player');
+                }
+                if(state.manager) {
+                     renderManagerContent('manager-office');
+                     renderCareerRank('manager');
+                }
             }
         });
 
@@ -1307,8 +1308,19 @@ const Game = (() => {
                         state.profile = profile;
                         renderMainMenu();
                     } else {
-                        console.error("Utilizador autenticado mas sem perfil. A terminar sessão.");
-                        await handleLogout();
+                        // This can happen if the user confirms email but the trigger hasn't run yet or failed.
+                        // We'll give it a second and try again.
+                        setTimeout(async () => {
+                            const { data: retryProfile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
+                            if(retryProfile) {
+                                state.user = session.user;
+                                state.profile = retryProfile;
+                                renderMainMenu();
+                            } else {
+                                console.error("Utilizador autenticado mas sem perfil. A terminar sessão.");
+                                await handleLogout();
+                            }
+                        }, 1500);
                     }
                 }
              }
@@ -1327,7 +1339,7 @@ const Game = (() => {
                     state.profile = profile;
                     renderMainMenu();
                 } else {
-                    console.error("Utilizador autenticado mas sem perfil. A terminar sessão.");
+                    console.error("Sessão ativa mas sem perfil. A terminar sessão.");
                     await handleLogout();
                 }
             }
