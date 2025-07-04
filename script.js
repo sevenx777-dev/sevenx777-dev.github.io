@@ -108,7 +108,7 @@ const Game = (() => {
     }
 
     function renderMainMenu() {
-        const welcomeMessage = `Bem-vindo, ${state.profile.full_name || state.profile.username || 'Jogador'}!`;
+        const welcomeMessage = `Bem-vindo, ${state.profile.full_name || 'Jogador'}!`;
         const rankDisplayHTML = `<div id="player-rank-display" class="mb-8 panel p-4"></div>`;
         
         root.innerHTML = `
@@ -253,7 +253,6 @@ const Game = (() => {
         if (error) {
             console.error("Erro ao fazer logout:", error);
         }
-        // onAuthStateChange irá tratar da renderização da tela de login.
     }
 
     function showMainMenu() {
@@ -396,7 +395,7 @@ const Game = (() => {
         }
 
         const opponentId = match.player1_id === state.user.id ? match.player2_id : match.player1_id;
-        const { data: opponentProfile } = await supabaseClient.from('profiles').select('username').eq('id', opponentId).single();
+        const { data: opponentProfile } = await supabaseClient.from('profiles').select('full_name').eq('id', opponentId).single();
         
         state.onlineMatch = {
             ...match,
@@ -405,7 +404,7 @@ const Game = (() => {
             opponentScore: 0,
             myAction: null,
             opponentAction: null,
-            opponentName: opponentProfile ? opponentProfile.username : 'Oponente',
+            opponentName: opponentProfile ? opponentProfile.full_name : 'Oponente',
             opponentId: opponentId
         };
         
@@ -414,7 +413,7 @@ const Game = (() => {
     }
 
     function setupMatchUI() {
-        const myName = state.profile ? state.profile.username : 'Convidado';
+        const myName = state.profile ? state.profile.full_name : 'Jogador';
         const opponentName = state.onlineMatch.opponentName;
 
         const content = `
@@ -1073,7 +1072,7 @@ const Game = (() => {
 
         const { data, error } = await supabaseClient
             .from('profiles')
-            .select('username, rank_id, rank_stars')
+            .select('full_name, rank_id, rank_stars')
             .order('rank_id', { ascending: false })
             .order('rank_stars', { ascending: false })
             .limit(20);
@@ -1091,7 +1090,7 @@ const Game = (() => {
 
         const leaderboardHTML = data.map((profile, index) => {
             const rank = CONSTANTS.RANKS[profile.rank_id];
-            const playerName = profile.username;
+            const playerName = profile.full_name;
             return `
                 <div class="grid grid-cols-12 gap-4 items-center p-3 rounded-md ${index % 2 === 0 ? 'bg-navy-darker' : ''}" style="background-color: var(--bg-dark-navy);">
                     <span class="col-span-1 text-xl font-bold text-slate-dark">#${index + 1}</span>
@@ -1215,8 +1214,7 @@ const Game = (() => {
                                 id: session.user.id,
                                 email: session.user.email,
                                 full_name: session.user.user_metadata.full_name,
-                                avatar_url: session.user.user_metadata.avatar_url,
-                                username: session.user.email // Usa o email como username único para evitar duplicados
+                                avatar_url: session.user.user_metadata.avatar_url
                             })
                             .select()
                             .single();
