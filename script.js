@@ -15,7 +15,8 @@ const Game = (() => {
         transfers: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>`,
         finances: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01M12 6v-1h4v1m-4 0h-4v-1h4m0-4h.01M12 4h4v1h-4V4zM4 4h4v1H4V4z" /></svg>`,
         dashboard: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>`,
-        profile: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>`
+        profile: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>`,
+        leaderboard: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>`
     };
 
     const CONSTANTS = {
@@ -1041,7 +1042,7 @@ const Game = (() => {
             choices = [{ text: "Dar o bote", attr: "Defesa" }, { text: "Cercar e esperar o momento certo", attr: "Marcacao" }];
         }
         
-        const buttonsHTML = choices.map(c => `<button class="player-action-btn btn-primary w-full md:w-auto" data-attr="${c.attr}">${c.text}</button>`).join('');
+        const buttonsHTML = choices.map(c => `<button class="player-action-btn btn-action btn-primary w-full md:w-auto" data-attr="${c.attr}">${c.text}</button>`).join('');
 
         modalContent.innerHTML = `
             <h2 class="text-3xl font-bold mb-4">Momento Decisivo!</h2>
@@ -1085,7 +1086,71 @@ const Game = (() => {
         }, 1500);
     }
     
-    // --- 11. PONTO DE ENTRADA E DELEGAÇÃO DE EVENTOS ---
+    // --- 11. CENTRO DA COMUNIDADE ---
+    async function initCommunityHub() {
+        const content = `
+            <div id="community-hub" class="max-w-6xl mx-auto p-4">
+                <header class="panel p-4 flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Centro da Comunidade</h2>
+                    <button id="back-to-menu-btn" class="btn-action">Menu Principal</button>
+                </header>
+                <div id="leaderboard-container" class="panel p-6">
+                    <div class="flex items-center gap-4 mb-4">
+                        ${ICONS.leaderboard}
+                        <h3 class="text-3xl font-bold">Ranking Global 1x1</h3>
+                    </div>
+                    <div id="leaderboard-content">
+                        <div class="loader mx-auto"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        renderGameContainer(content);
+        renderLeaderboard();
+    }
+
+    async function renderLeaderboard() {
+        const container = document.getElementById('leaderboard-content');
+        if (!container) return;
+
+        const { data, error } = await supabaseClient
+            .from('profiles')
+            .select('email, rank_id, rank_stars')
+            .order('rank_id', { ascending: false })
+            .order('rank_stars', { ascending: false })
+            .limit(20);
+
+        if (error) {
+            console.error("Erro ao buscar ranking:", error);
+            container.innerHTML = `<p class="text-red-400">Não foi possível carregar o ranking.</p>`;
+            return;
+        }
+
+        if (data.length === 0) {
+            container.innerHTML = `<p class="text-slate-dark">Nenhum jogador classificado ainda. Seja o primeiro!</p>`;
+            return;
+        }
+
+        const leaderboardHTML = data.map((profile, index) => {
+            const rank = CONSTANTS.RANKS[profile.rank_id];
+            const playerName = profile.email.split('@')[0];
+            return `
+                <div class="grid grid-cols-12 gap-4 items-center p-3 rounded-md ${index % 2 === 0 ? 'bg-navy-darker' : ''}" style="background-color: var(--bg-dark-navy);">
+                    <span class="col-span-1 text-xl font-bold text-slate-dark">#${index + 1}</span>
+                    <span class="col-span-6 font-semibold">${playerName}</span>
+                    <div class="col-span-5 flex items-center justify-end gap-2">
+                        <span class="font-bold" style="color: ${rank.color};">${rank.name}</span>
+                        <span class="rank-star text-sm">${'★'.repeat(profile.rank_stars)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = `<div class="space-y-2">${leaderboardHTML}</div>`;
+    }
+
+
+    // --- 12. PONTO DE ENTRADA E DELEGAÇÃO DE EVENTOS ---
     async function init() {
         document.body.addEventListener('click', async (e) => {
             const target = e.target;
@@ -1105,7 +1170,7 @@ const Game = (() => {
             if (targetId === 'start-online-mode') initPvpMode();
             if (targetId === 'start-manager-career') await loadOrCreateOnlineCareer('manager');
             if (targetId === 'start-player-career') await loadOrCreateOnlineCareer('player');
-            if (targetId === 'start-community-hub') showToast('Em breve!', 'info');
+            if (targetId === 'start-community-hub') initCommunityHub(); // MODIFICADO
 
             // Modo 1x1
             if (targetId === 'find-match-btn') await findOnlineMatch();
