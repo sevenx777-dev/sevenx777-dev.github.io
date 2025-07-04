@@ -257,22 +257,26 @@ const Game = (() => {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email: emailInput.value, password: passwordInput.value });
         
         if (error) { 
-            authError.textContent = "Email ou senha inválidos."; 
-        } else if (data.user) {
+            authError.textContent = "Email ou senha inválidos.";
+            authForm.classList.remove('hidden');
+            authLoading.classList.add('hidden');
+            return;
+        }
+        
+        if (data.user) {
             const { data: profile, error: profileError } = await supabaseClient.from('profiles').select('*').eq('id', data.user.id).single();
             
             if (profileError || !profile) {
                 authError.textContent = 'Perfil de jogador não encontrado. Tente se cadastrar novamente.';
                 await supabaseClient.auth.signOut();
+                authForm.classList.remove('hidden');
+                authLoading.classList.add('hidden');
             } else {
                 state.user = data.user;
                 state.profile = profile;
                 renderMainMenu();
             }
         }
-        
-        authForm.classList.remove('hidden');
-        authLoading.classList.add('hidden');
     }
 
     async function handleGuestLogin() {
@@ -297,7 +301,7 @@ const Game = (() => {
         }
     }
 
-    // MODIFICADO: Lógica de cadastro sem confirmação de e-mail
+    // NOVA LÓGICA DE CADASTRO - MAIS ROBUSTA
     async function handleSignup() {
         const authForm = document.getElementById('auth-form');
         const authLoading = document.getElementById('auth-loading');
@@ -306,8 +310,12 @@ const Game = (() => {
         const passwordInput = document.getElementById('password-input');
         const usernameInput = document.getElementById('username-input');
 
-        if (!usernameInput.value.trim()) {
-            authError.textContent = "Por favor, insira um nome de usuário.";
+        const username = usernameInput.value.trim();
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (!username || !email || !password) {
+            authError.textContent = "Por favor, preencha todos os campos.";
             return;
         }
 
@@ -315,51 +323,46 @@ const Game = (() => {
         authLoading.classList.remove('hidden');
         authError.textContent = '';
 
+        // 1. Cria o usuário na autenticação do Supabase
         const { data: authData, error: authErrorMsg } = await supabaseClient.auth.signUp({ 
-            email: emailInput.value, 
-            password: passwordInput.value,
-            options: {
-                data: {
-                    username: usernameInput.value.trim()
-                }
-            }
+            email: email, 
+            password: password
         });
         
         if (authErrorMsg) {
-            if (authErrorMsg.status === 429) {
-                authError.textContent = "Muitas tentativas. Aguarde um pouco.";
-            } else {
-                authError.textContent = "Não foi possível registar. Verifique os dados.";
-            }
+            authError.textContent = "Erro no cadastro. O e-mail pode já estar em uso.";
             authForm.classList.remove('hidden');
             authLoading.classList.add('hidden');
             return;
         }
 
-        // Como a confirmação de e-mail está desativada, o usuário já está logado.
-        // O gatilho no banco de dados cria o perfil. Agora, buscamos esse perfil e entramos no jogo.
         if (authData.user) {
-            showModal('Aguarde', 'Finalizando a criação do seu perfil...', []);
-            setTimeout(async () => {
-                const { data: profile, error: profileError } = await supabaseClient
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', authData.user.id)
-                    .single();
+            // 2. Imediatamente cria o perfil na tabela 'profiles'
+            const { data: profile, error: profileError } = await supabaseClient
+                .from('profiles')
+                .insert({
+                    id: authData.user.id,
+                    email: email,
+                    username: username,
+                    rank_id: 0,
+                    rank_stars: 0
+                })
+                .select()
+                .single();
 
-                if (profileError || !profile) {
-                    authError.textContent = 'Erro ao criar o perfil. Tente novamente.';
-                    await supabaseClient.auth.signOut();
-                    closeModal();
-                    authForm.classList.remove('hidden');
-                    authLoading.classList.add('hidden');
-                } else {
-                    state.user = authData.user;
-                    state.profile = profile;
-                    closeModal();
-                    renderMainMenu();
-                }
-            }, 1500); // Espera 1.5s para dar tempo do gatilho do DB rodar.
+            if (profileError) {
+                authError.textContent = 'Erro ao criar o perfil. Tente novamente.';
+                // Opcional: deletar o usuário recém-criado para evitar usuários órfãos
+                await supabaseClient.auth.admin.deleteUser(authData.user.id);
+                authForm.classList.remove('hidden');
+                authLoading.classList.add('hidden');
+                return;
+            }
+
+            // 3. Define o estado do jogo e renderiza o menu principal
+            state.user = authData.user;
+            state.profile = profile;
+            renderMainMenu();
         }
     }
     
@@ -1320,28 +1323,21 @@ const Game = (() => {
                 closeModal();
                 renderAuthScreen();
              } else if (event === 'SIGNED_IN') {
-                if (session.user.is_anonymous) {
-                    state.user = session.user;
-                    state.profile = null;
-                    renderMainMenu();
-                } else {
-                    const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
-                    if (profile) {
+                if (session && session.user) {
+                    if (session.user.is_anonymous) {
                         state.user = session.user;
-                        state.profile = profile;
+                        state.profile = null;
                         renderMainMenu();
                     } else {
-                        setTimeout(async () => {
-                            const { data: retryProfile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
-                            if(retryProfile) {
-                                state.user = session.user;
-                                state.profile = retryProfile;
-                                renderMainMenu();
-                            } else {
-                                console.error("Utilizador autenticado mas sem perfil. A terminar sessão.");
-                                await handleLogout();
-                            }
-                        }, 1500);
+                        const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
+                        if (profile) {
+                            state.user = session.user;
+                            state.profile = profile;
+                            renderMainMenu();
+                        } else {
+                            console.error("Utilizador autenticado mas sem perfil. A terminar sessão.");
+                            await handleLogout();
+                        }
                     }
                 }
              }
