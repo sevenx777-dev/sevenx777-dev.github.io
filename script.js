@@ -108,7 +108,6 @@ const Game = (() => {
     }
 
     function renderMainMenu() {
-        // A lógica de convidado foi removida, pois agora só há login autenticado.
         const welcomeMessage = `Bem-vindo, ${state.profile.full_name || state.profile.username || 'Jogador'}!`;
         const rankDisplayHTML = `<div id="player-rank-display" class="mb-8 panel p-4"></div>`;
         
@@ -254,7 +253,7 @@ const Game = (() => {
         if (error) {
             console.error("Erro ao fazer logout:", error);
         }
-        // A lógica de onAuthStateChange irá tratar da renderização da tela de login.
+        // onAuthStateChange irá tratar da renderização da tela de login.
     }
 
     function showMainMenu() {
@@ -1234,6 +1233,13 @@ const Game = (() => {
                 }
             }
         });
+
+        // CORREÇÃO: Adiciona a verificação inicial da sessão ao carregar a página
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+            renderAuthScreen();
+        }
+        // Se houver uma sessão, onAuthStateChange será acionado e tratará da lógica.
     }
 
     return { init };
