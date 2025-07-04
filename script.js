@@ -1,45 +1,49 @@
 const Game = (() => {
-    // --- ESTADO GLOBAL E CONFIGURAÇÕES ---
+    // --- 1. ESTADO GLOBAL E CONFIGURAÇÕES ---
+    // Manter todas as variáveis de estado aqui ajuda na organização.
     let state = {
         user: null, profile: null, manager: null, player: null, onlineMatch: null, realtimeChannel: null,
         communityCreations: { players: [], teams: [], leagues: [] }
     };
     let matchmakingTimer = null;
 
-    const SUPABASE_URL = 'https://fwwwpdzvnptcbcoarejm.supabase.co'; 
+    const SUPABASE_URL = 'https://fwwwpdzvnptcbcoarejm.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJzdXBhYmFzZSIsInJlZiI6ImZ3d3dwZHp2bnB0Y2Jjb2FyZWptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NjM2MTQsImV4cCI6MjA2NzEzOTYxNH0.uozT2nfKs4EINeF6Suyp6AbmkrQ4V8W1sG9SWiokU1o';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const RANKS = [
-        { name: 'Bronze III', starsToPromote: 3, color: '#a97142' }, { name: 'Bronze II',  starsToPromote: 3, color: '#a97142' }, { name: 'Bronze I',   starsToPromote: 4, color: '#a97142' },
-        { name: 'Prata III',  starsToPromote: 4, color: '#a8a8a8' }, { name: 'Prata II',   starsToPromote: 4, color: '#a8a8a8' }, { name: 'Prata I',    starsToPromote: 5, color: '#a8a8a8' },
-        { name: 'Ouro III',   starsToPromote: 5, color: '#f5d742' }, { name: 'Ouro II',    starsToPromote: 5, color: '#f5d742' }, { name: 'Ouro I',     starsToPromote: 5, color: '#f5d742' },
-        { name: 'Platina III', starsToPromote: 5, color: '#4E9C81' }, { name: 'Platina II',  starsToPromote: 5, color: '#4E9C81' }, { name: 'Platina I',   starsToPromote: 5, color: '#4E9C81' },
-        { name: 'Diamante III', starsToPromote: 5, color: '#4d82d1' }, { name: 'Diamante II',  starsToPromote: 5, color: '#4d82d1' }, { name: 'Diamante I',   starsToPromote: 5, color: '#4d82d1' },
-        { name: 'Lendário I',   starsToPromote: 3, color: '#8a2be2' }, { name: 'Lendário II',  starsToPromote: 3, color: '#8a2be2' }, { name: 'Lendário III', starsToPromote: 3, color: '#8a2be2' },
-        { name: 'Global',       starsToPromote: 0, color: '#ff4500' }
-    ];
-    const CAREER_RANK_XP_THRESHOLDS = [100, 250, 500, 800, 1200, 1700, 2300, 3000, 4000, 5200, 6500, 8000, 10000, 12500, 15000, 20000, 25000, 30000];
-    const DB = {
-        ATTRIBUTES_MAP: {
-            ATA: { Chute: 8, Drible: 7, Velocidade: 6, Passe: 4, Forca: 5 },
-            MEI: { Passe: 8, Drible: 7, Chute: 5, Defesa: 5, Visao: 6 },
-            DEF: { Defesa: 8, Forca: 7, Passe: 5, Velocidade: 5, Marcacao: 6 },
-            GOL: { Reflexos: 8, Posicionamento: 7, 'Um-pra-um': 6, Passe: 4, Agilidade: 5 }
-        },
-        AI_TEAMS: [
-            { nome: "Titans da Capital", forca: 91 }, { nome: "Corsários da Costa", forca: 88 }, { nome: "Lobos da Montanha", forca: 85 },
-            { nome: "Fênix do Deserto", forca: 82 }, { nome: "Guerreiros do Vale", forca: 79 }, { nome: "Dragões do Norte", forca: 75 },
-            { nome: "Tubarões do Litoral", forca: 72 }, { nome: "Espectros Urbanos", forca: 68 }
-        ]
+    // Agrupar constantes relacionadas facilita a manutenção.
+    const CONSTANTS = {
+        RANKS: [
+            { name: 'Bronze III', starsToPromote: 3, color: '#a97142' }, { name: 'Bronze II',  starsToPromote: 3, color: '#a97142' }, { name: 'Bronze I',   starsToPromote: 4, color: '#a97142' },
+            { name: 'Prata III',  starsToPromote: 4, color: '#a8a8a8' }, { name: 'Prata II',   starsToPromote: 4, color: '#a8a8a8' }, { name: 'Prata I',    starsToPromote: 5, color: '#a8a8a8' },
+            { name: 'Ouro III',   starsToPromote: 5, color: '#f5d742' }, { name: 'Ouro II',    starsToPromote: 5, color: '#f5d742' }, { name: 'Ouro I',     starsToPromote: 5, color: '#f5d742' },
+            { name: 'Platina III', starsToPromote: 5, color: '#4E9C81' }, { name: 'Platina II',  starsToPromote: 5, color: '#4E9C81' }, { name: 'Platina I',   starsToPromote: 5, color: '#4E9C81' },
+            { name: 'Diamante III', starsToPromote: 5, color: '#4d82d1' }, { name: 'Diamante II',  starsToPromote: 5, color: '#4d82d1' }, { name: 'Diamante I',   starsToPromote: 5, color: '#4d82d1' },
+            { name: 'Lendário I',   starsToPromote: 3, color: '#8a2be2' }, { name: 'Lendário II',  starsToPromote: 3, color: '#8a2be2' }, { name: 'Lendário III', starsToPromote: 3, color: '#8a2be2' },
+            { name: 'Global',       starsToPromote: 0, color: '#ff4500' }
+        ],
+        CAREER_RANK_XP_THRESHOLDS: [100, 250, 500, 800, 1200, 1700, 2300, 3000, 4000, 5200, 6500, 8000, 10000, 12500, 15000, 20000, 25000, 30000],
+        DB: {
+            ATTRIBUTES_MAP: {
+                ATA: { Chute: 8, Drible: 7, Velocidade: 6, Passe: 4, Forca: 5 },
+                MEI: { Passe: 8, Drible: 7, Chute: 5, Defesa: 5, Visao: 6 },
+                DEF: { Defesa: 8, Forca: 7, Passe: 5, Velocidade: 5, Marcacao: 6 },
+                GOL: { Reflexos: 8, Posicionamento: 7, 'Um-pra-um': 6, Passe: 4, Agilidade: 5 }
+            },
+            AI_TEAMS: [
+                { nome: "Titans da Capital", forca: 91 }, { nome: "Corsários da Costa", forca: 88 }, { nome: "Lobos da Montanha", forca: 85 },
+                { nome: "Fênix do Deserto", forca: 82 }, { nome: "Guerreiros do Vale", forca: 79 }, { nome: "Dragões do Norte", forca: 75 },
+                { nome: "Tubarões do Litoral", forca: 72 }, { nome: "Espectros Urbanos", forca: 68 }
+            ]
+        }
     };
     
-    // --- ELEMENTOS DA UI ---
+    // --- 2. ELEMENTOS DA UI (INTERFACE DO USUÁRIO) ---
     const root = document.getElementById('app-root');
     const modal = document.getElementById('modal');
     const modalContent = document.getElementById('modal-content');
 
-    // --- FUNÇÕES UTILITÁRIAS E DE UI ---
+    // --- 3. FUNÇÕES UTILITÁRIAS E DE UI ---
     function showToast(message, type = 'info', duration = 3000) {
         const toastContainer = document.getElementById('toast-container');
         if (!toastContainer) return;
@@ -54,7 +58,7 @@ const Game = (() => {
         let buttonsHTML = buttons.map(btn => `<button id="${btn.id}" class="w-full md:w-auto px-6 py-2 rounded-lg font-bold text-white ${btn.class}">${btn.text}</button>`).join('');
         modalContent.innerHTML = `
             <h2 class="text-3xl font-bold mb-4">${title}</h2>
-            <p class="text-gray-300 mb-6 whitespace-pre-wrap">${message}</p>
+            <div class="text-gray-300 mb-6 whitespace-pre-wrap">${message}</div>
             <div class="flex justify-center gap-4 flex-wrap">${buttonsHTML}</div>`;
         modal.classList.remove('hidden');
     }
@@ -65,7 +69,7 @@ const Game = (() => {
         if (element) element.innerHTML = '<div class="loader mx-auto"></div>';
     }
 
-    // --- FUNÇÕES DE RENDERIZAÇÃO DE TELA ---
+    // --- 4. FUNÇÕES DE RENDERIZAÇÃO DE TELA ---
     function renderGameContainer(contentHTML) {
         root.innerHTML = `<div id="game-container">${contentHTML}</div>`;
     }
@@ -106,7 +110,7 @@ const Game = (() => {
         updatePvpRankDisplay();
     }
     
-    // --- LÓGICA DE RANKING ---
+    // --- 5. LÓGICA DE RANKING E CARREIRA ---
     async function updatePvpRankDisplay() {
         const display = document.getElementById('player-rank-display');
         if (!state.profile || !display) return;
@@ -118,7 +122,7 @@ const Game = (() => {
         state.profile.rank_id = data.rank_id;
         state.profile.rank_stars = data.rank_stars;
 
-        const currentRank = RANKS[data.rank_id];
+        const currentRank = CONSTANTS.RANKS[data.rank_id];
         display.innerHTML = `
             <h3 class="text-lg font-semibold text-gray-400">RANK ATUAL 1x1</h3>
             <div class="text-3xl font-extrabold" style="color: ${currentRank.color};">${currentRank.name}</div>
@@ -131,11 +135,11 @@ const Game = (() => {
         const displayElement = document.getElementById(`${mode}-rank-display`);
         if (!career || !displayElement) return;
 
-        const currentRank = RANKS[career.rank_id];
+        const currentRank = CONSTANTS.RANKS[career.rank_id];
         const currentXP = career.rank_xp;
         
-        const xpForCurrentRank = career.rank_id > 0 ? CAREER_RANK_XP_THRESHOLDS[career.rank_id - 1] : 0;
-        const xpForNextRank = career.rank_id < CAREER_RANK_XP_THRESHOLDS.length ? CAREER_RANK_XP_THRESHOLDS[career.rank_id] : currentXP;
+        const xpForCurrentRank = career.rank_id > 0 ? CONSTANTS.CAREER_RANK_XP_THRESHOLDS[career.rank_id - 1] : 0;
+        const xpForNextRank = career.rank_id < CONSTANTS.CAREER_RANK_XP_THRESHOLDS.length ? CONSTANTS.CAREER_RANK_XP_THRESHOLDS[career.rank_id] : currentXP;
         const xpInCurrentRank = currentXP - xpForCurrentRank;
         const xpNeededForRankUp = xpForNextRank - xpForCurrentRank;
         
@@ -161,15 +165,15 @@ const Game = (() => {
         career.rank_xp += xpToAdd;
         let rankUp = false;
         while (
-            career.rank_id < CAREER_RANK_XP_THRESHOLDS.length &&
-            career.rank_xp >= CAREER_RANK_XP_THRESHOLDS[career.rank_id]
+            career.rank_id < CONSTANTS.CAREER_RANK_XP_THRESHOLDS.length &&
+            career.rank_xp >= CONSTANTS.CAREER_RANK_XP_THRESHOLDS[career.rank_id]
         ) {
             career.rank_id++;
             rankUp = true;
         }
 
         if (rankUp) {
-            const newRank = RANKS[career.rank_id];
+            const newRank = CONSTANTS.RANKS[career.rank_id];
             showToast(`PATENTE ATINGIDA: ${newRank.name}!`, 'success', 5000);
         }
 
@@ -181,10 +185,10 @@ const Game = (() => {
         }).eq('user_id', state.user.id);
 
         if (error) console.error(`Erro ao salvar carreira de ${mode}:`, error);
-        renderCareerRank(mode);
+        renderCareerRank(mode); // Atualiza a UI com o novo XP/Rank
     }
 
-    // --- LÓGICA DE AUTENTICAÇÃO E NAVEGAÇÃO ---
+    // --- 6. LÓGICA DE AUTENTICAÇÃO E NAVEGAÇÃO ---
     async function handleLogin() {
         const authForm = document.getElementById('auth-form');
         const authLoading = document.getElementById('auth-loading');
@@ -241,10 +245,10 @@ const Game = (() => {
 
         if (authData.user) {
             showModal('Aguarde', 'Finalizando a criação do seu perfil de jogador...', []);
-            // A trigger `handle_new_user` do Supabase criará o perfil. Vamos esperar e buscar.
+            
             for (let i = 0; i < 5; i++) {
                 await new Promise(res => setTimeout(res, 1000));
-                const { data: profile, error: profileError } = await supabaseClient
+                const { data: profile } = await supabaseClient
                     .from('profiles').select('*').eq('id', authData.user.id).single();
                 if (profile) {
                     state.user = authData.user;
@@ -257,10 +261,10 @@ const Game = (() => {
 
             console.error("Erro crítico: Perfil não encontrado após o cadastro.");
             authError.textContent = 'Erro ao criar perfil. Tente fazer login.';
-            authForm.classList.remove('hidden');
-            authLoading.classList.add('hidden');
             closeModal();
         }
+        authForm.classList.remove('hidden');
+        authLoading.classList.add('hidden');
     }
     
     function confirmLogout() {
@@ -285,7 +289,7 @@ const Game = (() => {
         renderMainMenu();
     }
     
-    // --- MODO ONLINE 1X1 ---
+    // --- 7. MODO ONLINE 1X1 (PVP) ---
     function initPvpMode() {
         const content = `
             <div id="online-mode">
@@ -327,9 +331,10 @@ const Game = (() => {
             matchmakingTimer = setTimeout(() => {
                 showToast('Nenhum jogador encontrado. Iniciando partida contra um bot.', 'info');
                 startBotMatch();
-            }, 15000); // 15 segundos
+            }, 15000);
         }
     }
+
     async function cancelMatchmaking(showUiUpdate = true) {
         clearTimeout(matchmakingTimer);
         matchmakingTimer = null;
@@ -343,12 +348,14 @@ const Game = (() => {
         state.onlineMatch = null;
         if (showUiUpdate) togglePvpUi(false, 'Busca cancelada.');
     }
+
     function togglePvpUi(isSearching, text) {
         document.getElementById('pvp-status-text').textContent = text;
         document.getElementById('pvp-loader').classList.toggle('hidden', !isSearching);
         document.getElementById('find-match-btn').classList.toggle('hidden', isSearching);
         document.getElementById('cancel-search-btn').classList.toggle('hidden', !isSearching);
     }
+
     function setupRealtimeForMatch(matchId) {
         if (state.realtimeChannel) supabaseClient.removeChannel(state.realtimeChannel);
         
@@ -437,7 +444,7 @@ const Game = (() => {
                     <div id="score" class="text-4xl font-extrabold">${state.onlineMatch.myScore} x ${state.onlineMatch.opponentScore}</div>
                     <div id="opponent-player-name" class="text-xl font-bold text-red-400">${opponentName}</div>
                 </div>
-                <div id="match-commentary" class="bg-gray-800 p-4 rounded-lg mb-6 overflow-y-auto text-gray-300">
+                <div id="match-commentary" class="bg-gray-800 p-4 rounded-lg mb-6 overflow-y-auto text-gray-300 h-32">
                     <p>A partida começou! Escolha sua ação.</p>
                 </div>
                 <div id="action-panel" class="grid grid-cols-3 gap-4">
@@ -472,7 +479,7 @@ const Game = (() => {
         if (state.onlineMatch.isBotMatch) {
             const actions = ['attack', 'defend', 'counter'];
             state.onlineMatch.opponentAction = actions[Math.floor(Math.random() * actions.length)];
-            setTimeout(resolveRound, 1000); // Simula o pensamento do bot
+            setTimeout(resolveRound, 1000); 
         } else {
             await state.realtimeChannel.send({
                 type: 'broadcast',
@@ -487,11 +494,9 @@ const Game = (() => {
         const myAction = state.onlineMatch.myAction;
         const opAction = state.onlineMatch.opponentAction;
         let commentaryText = `Você jogou ${myAction}. Oponente jogou ${opAction}.\n`;
-        let roundWinner = null; // 'me', 'opponent', 'draw'
-
+        
         if (myAction === opAction) {
             commentaryText += "Ações iguais! Ninguém marcou.";
-            roundWinner = 'draw';
         } else if (
             (myAction === 'attack' && opAction === 'counter') ||
             (myAction === 'counter' && opAction === 'defend') ||
@@ -499,11 +504,9 @@ const Game = (() => {
         ) {
             commentaryText += "Você levou a melhor na disputa! GOL!";
             state.onlineMatch.myScore++;
-            roundWinner = 'me';
         } else {
             commentaryText += "O oponente previu sua jogada! Gol deles.";
             state.onlineMatch.opponentScore++;
-            roundWinner = 'opponent';
         }
         
         updateMatchUI(commentaryText);
@@ -522,22 +525,13 @@ const Game = (() => {
     }
     
     async function endMatch() {
-        let title, message, winner, loser;
         const iWon = state.onlineMatch.myScore > state.onlineMatch.opponentScore;
-
-        if (iWon) {
-            title = "VITÓRIA!";
-            message = "Você venceu a partida!";
-            winner = state.user.id;
-            loser = state.onlineMatch.opponentId;
-        } else {
-            title = "DERROTA";
-            message = "Não foi dessa vez. Mais sorte na próxima!";
-            winner = state.onlineMatch.opponentId;
-            loser = state.user.id;
-        }
-
+        const title = iWon ? "VITÓRIA!" : "DERROTA";
+        const message = iWon ? "Você venceu a partida!" : "Não foi dessa vez. Mais sorte na próxima!";
+        
         if (!state.onlineMatch.isBotMatch) {
+            const winner = iWon ? state.user.id : state.onlineMatch.opponentId;
+            const loser = iWon ? state.onlineMatch.opponentId : state.user.id;
             await supabaseClient.rpc('handle_match_result', { winner_id: winner, loser_id: loser });
             showModal(title, message, [
                 {id: 'modal-rematch-btn', text: 'Revanche', class: 'bg-green-600'},
@@ -549,14 +543,13 @@ const Game = (() => {
             };
         } else {
             showToast('Partida contra o bot finalizada.', 'info');
-             showModal(title, message, [{id: 'modal-back-to-menu-btn', text: 'Voltar ao Menu', class: 'bg-gray-600'}]);
+            showModal(title, message, [{id: 'modal-back-to-menu-btn', text: 'Voltar ao Menu', class: 'bg-gray-600'}]);
         }
     }
 
-    
-    // --- MODOS DE CARREIRA ---
+    // --- 8. MODOS DE CARREIRA (Função de Carregamento Genérica) ---
     async function loadOrCreateOnlineCareer(careerType) {
-        showModal('Aguarde', '<div class="loader mx-auto"></div><p class="mt-4">A carregar carreira online...</p>', []);
+        showModal('Aguarde', '<div class="loader mx-auto"></div><p class="mt-4">Carregando carreira online...</p>', []);
         const tableName = `online_${careerType}_careers`;
         const { data, error } = await supabaseClient.from(tableName).select('*').eq('user_id', state.user.id).single();
         closeModal();
@@ -571,7 +564,7 @@ const Game = (() => {
         }
     }
     
-    // --- CARREIRA DE TÉCNICO ---
+    // --- 9. CARREIRA DE TÉCNICO ---
     function initManagerCreation() {
         const content = `
             <div id="manager-career-mode">
@@ -592,6 +585,7 @@ const Game = (() => {
         `;
         renderGameContainer(content);
     }
+
     async function setupManagerMode(philosophy) {
         showModal('Criando Carreira...', '<div class="loader mx-auto"></div>', []);
         let gameState = {
@@ -601,7 +595,8 @@ const Game = (() => {
             wins: 0,
             draws: 0,
             losses: 0,
-            teamStrength: 0
+            teamStrength: 0,
+            tactic: 'Equilibrada' // **NOVO**
         };
 
         if (philosophy === 'cantera') { gameState.budget = 5000000; gameState.teamStrength = 65; }
@@ -625,6 +620,7 @@ const Game = (() => {
         closeModal();
         initManagerHub();
     }
+
     function initManagerHub() {
         const content = `
             <div id="manager-hub" class="max-w-6xl mx-auto">
@@ -662,7 +658,7 @@ const Game = (() => {
         let content = '';
         switch(tabId) {
             case 'manager-office':
-                const nextOpponent = DB.AI_TEAMS[Math.min(gs.wins + gs.draws + gs.losses, DB.AI_TEAMS.length -1)];
+                const nextOpponent = CONSTANTS.DB.AI_TEAMS[Math.min(gs.wins + gs.draws + gs.losses, CONSTANTS.DB.AI_TEAMS.length -1)];
                 content = `
                     <h3 class="text-3xl font-bold mb-4">Escritório Principal</h3>
                     <p class="text-lg mb-2">Temporada: ${gs.season}</p>
@@ -671,6 +667,16 @@ const Game = (() => {
                         <h4 class="text-2xl font-semibold mb-4">Próxima Partida</h4>
                         <p class="text-xl mb-1">Adversário: <span class="font-bold">${nextOpponent.nome}</span></p>
                         <p class="mb-4">Força do Adversário: ${nextOpponent.forca}</p>
+                        
+                        <div class="mb-4">
+                            <label for="tactic-select" class="block mb-2 text-gray-400">Tática para a partida:</label>
+                            <select id="tactic-select" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                                <option value="Equilibrada" ${gs.tactic === 'Equilibrada' ? 'selected' : ''}>Equilibrada (Padrão)</option>
+                                <option value="Ofensiva" ${gs.tactic === 'Ofensiva' ? 'selected' : ''}>Ofensiva (+5 Força, Risco Maior)</option>
+                                <option value="Defensiva" ${gs.tactic === 'Defensiva' ? 'selected' : ''}>Defensiva (-5 Força, Risco Menor)</option>
+                            </select>
+                        </div>
+                        
                         <button id="simulate-round-btn" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Jogar Partida</button>
                     </div>
                 `;
@@ -697,13 +703,21 @@ const Game = (() => {
     async function simulateRound() {
         showModal('Simulando...', '<div class="loader mx-auto"></div><p class="mt-4">A partida está em andamento...</p>', []);
         const gs = state.manager.game_state;
-        const nextOpponent = DB.AI_TEAMS[Math.min(gs.wins + gs.draws + gs.losses, DB.AI_TEAMS.length - 1)];
+        const tactic = document.getElementById('tactic-select').value;
+        gs.tactic = tactic; // Salva a tática escolhida
 
-        const myStrength = gs.teamStrength;
+        const nextOpponent = CONSTANTS.DB.AI_TEAMS[Math.min(gs.wins + gs.draws + gs.losses, CONSTANTS.DB.AI_TEAMS.length - 1)];
+
+        // **LÓGICA DE SIMULAÇÃO MELHORADA**
+        let myStrength = gs.teamStrength;
+        if (tactic === 'Ofensiva') myStrength += 5;
+        if (tactic === 'Defensiva') myStrength -= 5;
+
         const opStrength = nextOpponent.forca;
-        const totalStrength = myStrength + opStrength;
         
-        const winChance = (myStrength / totalStrength);
+        // A chance de vitória é a proporção da sua força + um fator sorte/aleatoriedade
+        const strengthDifference = myStrength - opStrength;
+        const winChance = 0.5 + (strengthDifference / 100); // Ex: +10 de força = +10% de chance
         const roll = Math.random();
 
         let resultText = '';
@@ -711,15 +725,15 @@ const Game = (() => {
         
         if (roll < winChance) { // Win
             gs.wins++;
-            xpGained = 50;
+            xpGained = tactic === 'Ofensiva' ? 60 : 50; // Bônus por tática ofensiva
             resultText = `VITÓRIA! Vencemos o ${nextOpponent.nome}.`;
-        } else if (roll < winChance + 0.15) { // Draw (15% chance after win check)
+        } else if (roll < winChance + 0.15) { // Draw
             gs.draws++;
             xpGained = 20;
             resultText = `EMPATE. Jogo duro contra o ${nextOpponent.nome}.`;
         } else { // Loss
             gs.losses++;
-            xpGained = 10;
+            xpGained = tactic === 'Defensiva' ? 15 : 10; // Bônus de consolação
             resultText = `DERROTA. Não foi possível superar o ${nextOpponent.nome}.`;
         }
 
@@ -727,12 +741,12 @@ const Game = (() => {
         
         setTimeout(() => {
             closeModal();
-            showModal('Resultado da Partida', resultText, [{id: 'modal-ok-btn', text: 'Continuar', class: 'bg-teal-600'}]);
+            showModal('Resultado da Partida', `${resultText}\n\nVocê ganhou ${xpGained} XP de Técnico.`, [{id: 'modal-ok-btn', text: 'Continuar', class: 'bg-teal-600'}]);
             renderManagerContent('manager-office');
         }, 1500);
     }
     
-    // --- CARREIRA DE JOGADOR ---
+    // --- 10. CARREIRA DE JOGADOR ---
     function initPlayerCreation() {
         const content = `
             <div id="player-career-mode">
@@ -759,9 +773,10 @@ const Game = (() => {
         renderGameContainer(content);
         renderAttributeInputs();
     }
+
     function renderAttributeInputs() {
         const position = document.getElementById('player-position-select').value;
-        const attributes = DB.ATTRIBUTES_MAP[position];
+        const attributes = CONSTANTS.DB.ATTRIBUTES_MAP[position];
         const container = document.getElementById('attribute-inputs');
         container.innerHTML = Object.entries(attributes).map(([attr, value]) => `
             <div class="flex justify-between items-center">
@@ -770,6 +785,7 @@ const Game = (() => {
             </div>
         `).join('');
     }
+
     async function finalizePlayerCreation() {
         const name = document.getElementById('player-name-input').value.trim();
         if (!name) {
@@ -779,7 +795,7 @@ const Game = (() => {
         
         showModal('Criando Craque...', '<div class="loader mx-auto"></div>', []);
         const position = document.getElementById('player-position-select').value;
-        const attributes = DB.ATTRIBUTES_MAP[position];
+        const attributes = CONSTANTS.DB.ATTRIBUTES_MAP[position];
 
         const gameState = {
             name,
@@ -806,6 +822,7 @@ const Game = (() => {
         closeModal();
         initPlayerHub();
     }
+
     function initPlayerHub() {
         const content = `
             <div id="player-hub" class="max-w-6xl mx-auto">
@@ -829,11 +846,13 @@ const Game = (() => {
         renderCareerRank('player');
         renderPlayerContent('player-training');
     }
+
     function switchPlayerTab(tabId) {
         document.querySelectorAll('#player-hub .nav-item').forEach(el => el.classList.remove('active'));
         document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
         renderPlayerContent(tabId);
     }
+
     function renderPlayerContent(tabId) {
         const area = document.getElementById('player-content-area');
         const gs = state.player.game_state;
@@ -843,14 +862,19 @@ const Game = (() => {
                 const attributesHTML = Object.entries(gs.attributes).map(([attr, value]) => `
                     <div class="flex items-center justify-between bg-gray-900 p-3 rounded">
                         <span class="font-semibold">${attr}: <span class="text-xl text-teal-400">${value}</span></span>
-                        <button data-attribute="${attr}" class="bg-blue-600 hover:bg-blue-500 px-4 py-1 rounded text-sm font-bold" ${gs.trainingPoints <= 0 ? 'disabled' : ''}>Treinar</button>
+                        <button data-attribute="${attr}" class="train-attribute-btn bg-blue-600 hover:bg-blue-500 px-4 py-1 rounded text-sm font-bold" ${gs.trainingPoints <= 0 ? 'disabled' : ''}>+1 Ponto</button>
                     </div>
                 `).join('');
                 content = `
                     <h3 class="text-3xl font-bold mb-2">Centro de Treinamento</h3>
                     <p class="mb-4">Pontos de Treino: <span class="font-bold text-2xl">${gs.trainingPoints}</span></p>
-                    <div class="space-y-3">${attributesHTML}</div>
-                    <p class="text-gray-400 mt-4 text-sm">Você ganha mais pontos de treino jogando partidas.</p>
+                    <div class="space-y-3 mb-6">${attributesHTML}</div>
+
+                    <div class="bg-gray-900 p-4 rounded-lg text-center">
+                        <h4 class="text-xl font-semibold mb-2">Ganhe mais pontos!</h4>
+                        <p class="text-gray-400 mb-4">Jogue uma partida de treino para ganhar mais XP e Pontos de Treino.</p>
+                        <button id="play-training-match-btn" class="w-full bg-green-600 p-3 rounded-lg text-lg btn-action">Jogar Partida de Treino</button>
+                    </div>
                 `;
                 break;
             case 'player-profile':
@@ -870,21 +894,56 @@ const Game = (() => {
         }
         area.innerHTML = content;
     }
+
     async function trainAttribute(attribute) {
         const gs = state.player.game_state;
         if (gs.trainingPoints > 0) {
             gs.trainingPoints--;
             gs.attributes[attribute]++;
+            // Salva o progresso e atualiza a UI
             await updateCareerProgress('player', 15); // Ganha 15 XP por treino
-            renderPlayerContent('player-training');
+            renderPlayerContent('player-training'); // Re-renderiza para atualizar os pontos e botões
         } else {
             showToast("Sem pontos de treino suficientes.", 'error');
         }
     }
+
+    // **NOVO: Lógica da Partida de Treino**
+    async function playTrainingMatch() {
+        showModal('Jogando Partida...', '<div class="loader mx-auto"></div><p class="mt-4">Seu craque está em campo...</p>', []);
+        const gs = state.player.game_state;
+        
+        // Simulação simples baseada no overall do jogador
+        const performanceRoll = Math.random();
+        const overallFactor = Math.min(1, gs.overall / 100); // Normaliza o overall para 0-1
+        
+        let xpGained = 0;
+        let pointsGained = 0;
+        let resultMessage = '';
+
+        if (performanceRoll < overallFactor * 0.7) { // Grande chance de bom resultado
+            xpGained = 30 + Math.floor(Math.random() * 20); // 30-50 XP
+            pointsGained = Math.random() < 0.5 ? 2 : 1; // 50% de chance de 2 pontos
+            resultMessage = `Partida excelente! Seu jogador foi o destaque e ganhou ${xpGained} XP e ${pointsGained} Ponto(s) de Treino!`;
+        } else { // Resultado mediano/ruim
+            xpGained = 10 + Math.floor(Math.random() * 10); // 10-20 XP
+            pointsGained = 1;
+            resultMessage = `Jogo difícil. Seu jogador se esforçou e ganhou ${xpGained} XP e ${pointsGained} Ponto de Treino.`;
+        }
+
+        gs.trainingPoints += pointsGained;
+        await updateCareerProgress('player', xpGained);
+
+        setTimeout(() => {
+            closeModal();
+            showModal('Fim do Treino!', resultMessage, [{id: 'modal-ok-btn', text: 'Legal!', class: 'bg-teal-600'}]);
+            renderPlayerContent('player-training');
+        }, 2000);
+    }
     
-    // --- PONTO DE ENTRADA E DELEGAÇÃO DE EVENTOS ---
+    // --- 11. PONTO DE ENTRADA E DELEGAÇÃO DE EVENTOS ---
     async function init() {
-        document.addEventListener('click', async (e) => {
+        document.body.addEventListener('click', async (e) => {
             const target = e.target;
             const targetId = target.id;
             const closest = (selector) => target.closest(selector);
@@ -929,11 +988,12 @@ const Game = (() => {
             if (targetId === 'finalize-player-creation-btn') await finalizePlayerCreation();
             const playerTab = closest('[data-tab^="player-"]');
             if (playerTab) switchPlayerTab(playerTab.dataset.tab);
-            const trainBtn = closest('button[data-attribute]');
+            const trainBtn = closest('.train-attribute-btn[data-attribute]');
             if (trainBtn) await trainAttribute(trainBtn.dataset.attribute);
+            if (targetId === 'play-training-match-btn') await playTrainingMatch();
         });
 
-        document.addEventListener('change', (e) => {
+        document.body.addEventListener('change', (e) => {
             if (e.target.id === 'player-position-select') renderAttributeInputs();
         });
 
@@ -944,13 +1004,13 @@ const Game = (() => {
                 closeModal();
                 renderAuthScreen();
              } else if (event === 'SIGNED_IN') {
-                 const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
+                 const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
                  if (profile) {
                     state.user = session.user;
                     state.profile = profile;
                     renderMainMenu();
                  } else {
-                    console.error("Usuário autenticado mas sem perfil. Deslogando.", error);
+                    console.error("Usuário autenticado mas sem perfil. Deslogando.");
                     await handleLogout();
                  }
              }
@@ -959,13 +1019,13 @@ const Game = (() => {
         // Inicia o Jogo
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session && session.user) {
-            const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
+            const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
             if (profile) {
                 state.user = session.user;
                 state.profile = profile;
                 renderMainMenu();
             } else {
-                console.error("Usuário autenticado mas sem perfil. Deslogando.", error);
+                console.error("Usuário autenticado mas sem perfil. Deslogando.");
                 await handleLogout();
             }
         } else {
@@ -973,7 +1033,9 @@ const Game = (() => {
         }
     }
 
+    // Expõe a função de inicialização para ser chamada externamente
     return { init };
 })();
 
+// Inicia o jogo quando o script é carregado
 Game.init();
