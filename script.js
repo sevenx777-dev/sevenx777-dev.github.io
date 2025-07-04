@@ -22,15 +22,14 @@ const Game = (() => {
 
     const CONSTANTS = {
         RANKS: [
-            { name: 'Bronze III', starsToPromote: 3, color: '#a97142' }, { name: 'Bronze II',  starsToPromote: 3, color: '#a97142' }, { name: 'Bronze I',   starsToPromote: 4, color: '#a97142' },
-            { name: 'Prata III',  starsToPromote: 4, color: '#a8a8a8' }, { name: 'Prata II',   starsToPromote: 4, color: '#a8a8a8' }, { name: 'Prata I',    starsToPromote: 5, color: '#a8a8a8' },
-            { name: 'Ouro III',   starsToPromote: 5, color: '#f5d742' }, { name: 'Ouro II',    starsToPromote: 5, color: '#f5d742' }, { name: 'Ouro I',     starsToPromote: 5, color: '#f5d742' },
-            { name: 'Platina III', starsToPromote: 5, color: '#4E9C81' }, { name: 'Platina II',  starsToPromote: 5, color: '#4E9C81' }, { name: 'Platina I',   starsToPromote: 5, color: '#4E9C81' },
-            { name: 'Diamante III', starsToPromote: 5, color: '#4d82d1' }, { name: 'Diamante II',  starsToPromote: 5, color: '#4d82d1' }, { name: 'Diamante I',   starsToPromote: 5, color: '#4d82d1' },
+            { name: 'Bronze III', starsToPromote: 3, color: '#a97142' }, { name: 'Bronze II',  starsToPromote: 3, color: '#a97142' }, { name: 'Bronze I',   starsToPromote: 3, color: '#a97142' },
+            { name: 'Prata III',  starsToPromote: 3, color: '#a8a8a8' }, { name: 'Prata II',   starsToPromote: 3, color: '#a8a8a8' }, { name: 'Prata I',    starsToPromote: 3, color: '#a8a8a8' },
+            { name: 'Ouro III',   starsToPromote: 3, color: '#f5d742' }, { name: 'Ouro II',    starsToPromote: 3, color: '#f5d742' }, { name: 'Ouro I',     starsToPromote: 3, color: '#f5d742' },
+            { name: 'Platina III', starsToPromote: 3, color: '#4E9C81' }, { name: 'Platina II',  starsToPromote: 3, color: '#4E9C81' }, { name: 'Platina I',   starsToPromote: 3, color: '#4E9C81' },
+            { name: 'Diamante III', starsToPromote: 3, color: '#4d82d1' }, { name: 'Diamante II',  starsToPromote: 3, color: '#4d82d1' }, { name: 'Diamante I',   starsToPromote: 3, color: '#4d82d1' },
             { name: 'Lendário I',   starsToPromote: 3, color: '#8a2be2' }, { name: 'Lendário II',  starsToPromote: 3, color: '#8a2be2' }, { name: 'Lendário III', starsToPromote: 3, color: '#8a2be2' },
             { name: 'Global',       starsToPromote: 0, color: '#ff4500' }
         ],
-        CAREER_RANK_XP_THRESHOLDS: [100, 250, 500, 800, 1200, 1700, 2300, 3000, 4000, 5200, 6500, 8000, 10000, 12500, 15000, 20000, 25000, 30000],
         DB: {
             ATTRIBUTES_MAP: {
                 ATA: { "Chute": 8, "Drible": 7, "Velocidade": 6, "Passe": 4, "Forca": 5 },
@@ -165,56 +164,62 @@ const Game = (() => {
             <div class="rank-star mt-2">${'★'.repeat(data.rank_stars)}${'☆'.repeat(currentRank.starsToPromote > 0 ? Math.max(0, currentRank.starsToPromote - data.rank_stars) : 0)}</div>
         `;
     }
-
+    
     function renderCareerRank(mode) {
         const career = state[mode];
         const displayElement = document.getElementById(`${mode}-rank-display`);
         if (!career || !displayElement) return;
 
         const currentRank = CONSTANTS.RANKS[career.rank_id];
-        const currentXP = career.rank_xp;
-        
-        const xpForCurrentRank = career.rank_id > 0 ? CONSTANTS.CAREER_RANK_XP_THRESHOLDS[career.rank_id - 1] : 0;
-        const xpForNextRank = career.rank_id < CONSTANTS.CAREER_RANK_XP_THRESHOLDS.length ? CONSTANTS.CAREER_RANK_XP_THRESHOLDS[career.rank_id] : currentXP;
-        const xpInCurrentRank = currentXP - xpForCurrentRank;
-        const xpNeededForRankUp = xpForNextRank - xpForCurrentRank;
-        
-        const progressPercentage = (xpNeededForRankUp > 0) ? Math.max(0, Math.min(100, Math.floor((xpInCurrentRank / xpNeededForRankUp) * 100))) : 100;
         const rankTitle = mode === 'manager' ? 'Patente de Técnico' : 'Patente do Jogador';
 
         displayElement.innerHTML = `
             <h4 class="text-sm font-semibold text-slate-dark uppercase tracking-widest">${rankTitle}</h4>
             <div class="text-2xl font-extrabold mt-1" style="color: ${currentRank.color};">${currentRank.name}</div>
-            <div class="mt-2 text-sm text-slate-dark">
-                <span>XP: ${currentXP.toLocaleString()} / ${xpForNextRank.toLocaleString()}</span>
-            </div>
-            <div class="w-full bg-slate-700 rounded-full h-2.5 mt-2" style="background-color: var(--bg-dark-navy);">
-                <div class="h-2.5 rounded-full" style="width: ${progressPercentage}%; background-color: var(--accent-green);"></div>
-            </div>
+            <div class="rank-star mt-2">${'★'.repeat(career.rank_stars)}${'☆'.repeat(currentRank.starsToPromote > 0 ? Math.max(0, currentRank.starsToPromote - career.rank_stars) : 0)}</div>
         `;
     }
 
-    async function updateCareerProgress(mode, xpToAdd) {
-        if (!state.profile) return; // Não salva progresso para convidados
+    async function handleCareerMatchResult(mode, result) {
+        if (!state.profile) return;
         const career = state[mode];
         if (!career) return;
-    
-        career.rank_xp += xpToAdd;
-        let rankUp = false;
-        while (
-            career.rank_id < CONSTANTS.CAREER_RANK_XP_THRESHOLDS.length &&
-            career.rank_xp >= CONSTANTS.CAREER_RANK_XP_THRESHOLDS[career.rank_id]
-        ) {
-            career.rank_id++;
-            rankUp = true;
+
+        const currentRank = CONSTANTS.RANKS[career.rank_id];
+        const maxRank = CONSTANTS.RANKS.length - 1;
+
+        if (result === 'win') {
+            if (career.rank_id === maxRank) {
+                showToast("Você já está no rank máximo!", "info");
+                return;
+            }
+
+            career.rank_stars++;
+            showToast("+1 Estrela!", "success");
+
+            if (career.rank_stars >= currentRank.starsToPromote) {
+                career.rank_id++;
+                career.rank_stars = 0;
+                const newRank = CONSTANTS.RANKS[career.rank_id];
+                showModal("PROMOÇÃO!", `Você subiu para a patente ${newRank.name}!`, [{id: 'modal-ok-btn', text: 'Excelente!', class: 'primary'}]);
+            }
+        } else if (result === 'loss') {
+            if (career.rank_stars > 0) {
+                career.rank_stars--;
+                showToast("-1 Estrela.", "error");
+            } else { 
+                if (career.rank_id > 0) {
+                    career.rank_id--;
+                    const previousRank = CONSTANTS.RANKS[career.rank_id];
+                    career.rank_stars = previousRank.starsToPromote - 1;
+                    showModal("REBAIXAMENTO", `Você caiu para a patente ${previousRank.name}.`, [{id: 'modal-ok-btn', text: 'Continuar', class: 'danger'}]);
+                } else {
+                    showToast("Você não pode perder mais estrelas neste rank.", "info");
+                }
+            }
         }
-    
-        if (rankUp) {
-            const newRank = CONSTANTS.RANKS[career.rank_id];
-            showToast(`PATENTE ATINGIDA: ${newRank.name}!`, 'success', 5000);
-        }
-    
-        await saveCareer(mode); 
+        
+        await saveCareer(mode);
     }
     
     async function saveCareer(mode) {
@@ -227,7 +232,7 @@ const Game = (() => {
             .update({
                 game_state: career.game_state,
                 rank_id: career.rank_id,
-                rank_xp: career.rank_xp
+                rank_stars: career.rank_stars
             })
             .eq('user_id', state.user.id);
     
@@ -287,11 +292,12 @@ const Game = (() => {
             authLoading.classList.add('hidden');
         } else if (data.user) {
             state.user = data.user;
-            state.profile = null; // Convidados não têm perfil salvo
+            state.profile = null;
             renderMainMenu();
         }
     }
 
+    // MODIFICADO: Lógica de cadastro sem confirmação de e-mail
     async function handleSignup() {
         const authForm = document.getElementById('auth-form');
         const authLoading = document.getElementById('auth-loading');
@@ -330,14 +336,30 @@ const Game = (() => {
             return;
         }
 
+        // Como a confirmação de e-mail está desativada, o usuário já está logado.
+        // O gatilho no banco de dados cria o perfil. Agora, buscamos esse perfil e entramos no jogo.
         if (authData.user) {
-            showModal(
-                'Cadastro Quase Completo!',
-                'Enviamos um link de confirmação para o seu e-mail. Por favor, verifique sua caixa de entrada para ativar sua conta e começar a jogar.',
-                [{ id: 'modal-ok-btn', text: 'Entendido', class: 'primary' }]
-            );
-            authForm.classList.remove('hidden');
-            authLoading.classList.add('hidden');
+            showModal('Aguarde', 'Finalizando a criação do seu perfil...', []);
+            setTimeout(async () => {
+                const { data: profile, error: profileError } = await supabaseClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', authData.user.id)
+                    .single();
+
+                if (profileError || !profile) {
+                    authError.textContent = 'Erro ao criar o perfil. Tente novamente.';
+                    await supabaseClient.auth.signOut();
+                    closeModal();
+                    authForm.classList.remove('hidden');
+                    authLoading.classList.add('hidden');
+                } else {
+                    state.user = authData.user;
+                    state.profile = profile;
+                    closeModal();
+                    renderMainMenu();
+                }
+            }, 1500); // Espera 1.5s para dar tempo do gatilho do DB rodar.
         }
     }
     
@@ -611,7 +633,7 @@ const Game = (() => {
         const title = iWon ? "VITÓRIA!" : "DERROTA";
         const message = iWon ? "Você venceu a partida!" : "Não foi dessa vez. Mais sorte na próxima!";
         
-        if (!state.onlineMatch.isBotMatch && state.profile) { // Só atualiza o rank se não for convidado
+        if (!state.onlineMatch.isBotMatch && state.profile) {
             const winner = iWon ? state.user.id : state.onlineMatch.opponentId;
             const loser = iWon ? state.onlineMatch.opponentId : state.user.id;
             await supabaseClient.rpc('handle_match_result', { winner_id: winner, loser_id: loser });
@@ -629,7 +651,7 @@ const Game = (() => {
         }
     }
 
-    // --- 8. MODOS DE CARREIRA (Função de Carregamento Genérica) ---
+    // --- 8. MODOS DE CARREIRA ---
     async function loadOrCreateOnlineCareer(careerType) {
         if (!state.profile) {
             showModal('Função Bloqueada', 'Para salvar seu progresso na carreira, por favor, crie uma conta gratuita.', [
@@ -723,7 +745,8 @@ const Game = (() => {
         const { data, error } = await supabaseClient.from('online_manager_careers').insert({
             user_id: state.user.id,
             game_state: gameState,
-            rank_id: 0, rank_xp: 0
+            rank_id: 0, 
+            rank_stars: 0
         }).select().single();
 
         if (error) { showToast('Erro ao criar carreira.', 'error'); closeModal(); return; }
@@ -872,29 +895,28 @@ const Game = (() => {
         const roll = Math.random();
 
         let resultText = '';
-        let xpGained = 0;
+        let result = '';
         
         if (roll < winChance) {
             gs.wins++;
-            xpGained = tactic === 'Ofensiva' ? 60 : 50;
+            result = 'win';
             resultText = `VITÓRIA! Vencemos o ${nextOpponent.nome}.`;
         } else if (roll < winChance + 0.15) {
             gs.draws++;
-            xpGained = 20;
+            result = 'draw';
             resultText = `EMPATE. Jogo duro contra o ${nextOpponent.nome}.`;
         } else {
             gs.losses++;
-            xpGained = tactic === 'Defensiva' ? 15 : 10;
+            result = 'loss';
             resultText = `DERROTA. Não foi possível superar o ${nextOpponent.nome}.`;
         }
 
-        await updateCareerProgress('manager', xpGained);
+        await handleCareerMatchResult('manager', result);
         
         setTimeout(() => {
             closeModal();
-            showModal('Resultado da Partida', `${resultText}\n\nVocê ganhou ${xpGained} XP de Técnico.`, [{id: 'modal-ok-btn', text: 'Continuar', class: 'primary'}]);
+            showModal('Resultado da Partida', resultText, [{id: 'modal-ok-btn', text: 'Continuar', class: 'primary'}]);
             renderManagerContent('manager-office');
-            renderCareerRank('manager');
         }, 1500);
     }
     
@@ -997,7 +1019,7 @@ const Game = (() => {
             user_id: state.user.id,
             game_state: gameState,
             rank_id: 0,
-            rank_xp: 0
+            rank_stars: 0
         }).select().single();
 
         if (error) {
@@ -1057,7 +1079,7 @@ const Game = (() => {
                     </div>
                     <div class="panel p-6 text-center" style="background-color: var(--bg-dark-navy);">
                         <h4 class="text-xl font-semibold mb-2">Próxima Oportunidade</h4>
-                        <p class="text-slate-dark mb-4">Jogue a próxima partida para ganhar XP, reputação e seu salário.</p>
+                        <p class="text-slate-dark mb-4">Jogue a próxima partida para ganhar reputação, seu salário e estrelas para sua patente.</p>
                         <button id="play-player-match-btn" class="w-full btn-action btn-primary">Jogar Partida</button>
                     </div>
                 `;
@@ -1115,15 +1137,15 @@ const Game = (() => {
         const successChance = Math.max(0.1, Math.min(0.9, 0.5 + (attributeValue - difficulty) / 15));
         const roll = Math.random();
 
-        let xpGained, repGained, resultText;
+        let repGained, resultText, result;
 
         if(roll < successChance) {
-            xpGained = 25 + Math.floor(Math.random() * 15);
+            result = 'win';
             repGained = 2;
             resultText = "BOA ESCOLHA! Você executa a ação com perfeição e ajuda o time.";
             showToast("Sucesso!", "success");
         } else {
-            xpGained = 10 + Math.floor(Math.random() * 5);
+            result = 'loss';
             repGained = -1;
             resultText = "NÃO DEU! A jogada não sai como esperado, mas vale a tentativa.";
             showToast("Falha.", "error");
@@ -1132,10 +1154,11 @@ const Game = (() => {
         gs.reputation = Math.max(0, gs.reputation + repGained);
         gs.cash += gs.salary;
         gs.gamesPlayed++;
-        await updateCareerProgress('player', xpGained);
+        
+        await handleCareerMatchResult('player', result);
 
         setTimeout(() => {
-            commentaryEl.innerHTML += `<br><br>${resultText}<br>+${xpGained} XP, ${repGained > 0 ? `+${repGained}` : repGained} Rep, +$${gs.salary.toLocaleString()} Salário`;
+            commentaryEl.innerHTML += `<br><br>${resultText}<br>${repGained > 0 ? `+${repGained}` : repGained} Rep, +$${gs.salary.toLocaleString()} Salário`;
             document.getElementById('player-match-choices').innerHTML = `<button id="modal-ok-btn" class="btn-action">Continuar</button>`;
         }, 1500);
     }
@@ -1308,8 +1331,6 @@ const Game = (() => {
                         state.profile = profile;
                         renderMainMenu();
                     } else {
-                        // This can happen if the user confirms email but the trigger hasn't run yet or failed.
-                        // We'll give it a second and try again.
                         setTimeout(async () => {
                             const { data: retryProfile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
                             if(retryProfile) {
