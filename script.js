@@ -7,7 +7,7 @@ const Game = (() => {
     let matchmakingTimer = null;
 
     const SUPABASE_URL = 'https://fwwwpdzvnptcbcoarejm.supabase.co'; 
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3d3dwZHp2bnB0Y2Jjb2FyZWptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NjM2MTQsImV4cCI6MjA2NzEzOTYxNH0.uozT2nfKs4EINeF6Suyp6AbmkrQ4V8W1sG9SWiokU1o';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJzdXBhYmFzZSIsInJlZiI6ImZ3d3dwZHp2bnB0Y2Jjb2FyZWptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NjM2MTQsImV4cCI6MjA2NzEzOTYxNH0.uozT2nfKs4EINeF6Suyp6AbmkrQ4V8W1sG9SWiokU1o';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const RANKS = [
@@ -28,9 +28,9 @@ const Game = (() => {
             GOL: { Reflexos: 8, Posicionamento: 7, 'Um-pra-um': 6, Passe: 4, Agilidade: 5 }
         },
         AI_TEAMS: [
-            { nome: "Titans da Capital", forca: 91 },
-            { nome: "Corsários da Costa", forca: 88 },
-            { nome: "Lobos da Montanha", forca: 85 },
+            { nome: "Titans da Capital", forca: 91 }, { nome: "Corsários da Costa", forca: 88 }, { nome: "Lobos da Montanha", forca: 85 },
+            { nome: "Fênix do Deserto", forca: 82 }, { nome: "Guerreiros do Vale", forca: 79 }, { nome: "Dragões do Norte", forca: 75 },
+            { nome: "Tubarões do Litoral", forca: 72 }, { nome: "Espectros Urbanos", forca: 68 }
         ]
     };
     
@@ -199,7 +199,7 @@ const Game = (() => {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email: emailInput.value, password: passwordInput.value });
         
         if (error) { 
-            authError.textContent = error.message; 
+            authError.textContent = "Email ou senha inválidos."; 
         } else if (data.user) {
             const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', data.user.id).single();
             if(profile) {
@@ -233,32 +233,33 @@ const Game = (() => {
         });
         
         if (authErrorMsg) {
-            authError.textContent = authErrorMsg.message; 
+            authError.textContent = "Não foi possível cadastrar. Verifique os dados ou tente um email diferente."; 
             authForm.classList.remove('hidden');
             authLoading.classList.add('hidden');
             return;
         }
 
         if (authData.user) {
-            showModal('Aguarde', 'Finalizando a criação do seu perfil de jogador...');
-            await new Promise(res => setTimeout(res, 1000)); // Espera o gatilho do DB
-
-            const { data: profile, error: profileError } = await supabaseClient
-                .from('profiles').select('*').eq('id', authData.user.id).single();
-
-            if (profileError || !profile) {
-                console.error("Erro crítico: Perfil não encontrado após o cadastro.", profileError);
-                authError.textContent = 'Erro ao criar perfil. Tente novamente.';
-                authForm.classList.remove('hidden');
-                authLoading.classList.add('hidden');
-                closeModal();
-                return;
+            showModal('Aguarde', 'Finalizando a criação do seu perfil de jogador...', []);
+            // A trigger `handle_new_user` do Supabase criará o perfil. Vamos esperar e buscar.
+            for (let i = 0; i < 5; i++) {
+                await new Promise(res => setTimeout(res, 1000));
+                const { data: profile, error: profileError } = await supabaseClient
+                    .from('profiles').select('*').eq('id', authData.user.id).single();
+                if (profile) {
+                    state.user = authData.user;
+                    state.profile = profile;
+                    closeModal();
+                    renderMainMenu();
+                    return;
+                }
             }
 
-            state.user = authData.user;
-            state.profile = profile;
+            console.error("Erro crítico: Perfil não encontrado após o cadastro.");
+            authError.textContent = 'Erro ao criar perfil. Tente fazer login.';
+            authForm.classList.remove('hidden');
+            authLoading.classList.add('hidden');
             closeModal();
-            renderMainMenu();
         }
     }
     
@@ -301,33 +302,263 @@ const Game = (() => {
                 </div>
             </div>`;
         renderGameContainer(content);
-        updatePvpRankDisplay().then(() => {
-             const lobbyRankDisplay = document.getElementById('lobby-rank-display');
-             const pvpRankDisplay = document.querySelector('#main-menu #player-rank-display'); // Pega do menu principal recém-renderizado em memória
-             if (pvpRankDisplay && lobbyRankDisplay) {
-                 lobbyRankDisplay.innerHTML = pvpRankDisplay.innerHTML;
-             }
-        });
+        const lobbyRankDisplay = document.getElementById('lobby-rank-display');
+        const currentRankHTML = document.getElementById('player-rank-display').innerHTML;
+        lobbyRankDisplay.innerHTML = currentRankHTML;
     }
 
-    async function findOnlineMatch() { /* ... implementação completa ... */ }
-    async function cancelMatchmaking(showUiUpdate = true) { /* ... */ }
-    function togglePvpUi(isSearching, text) { /* ... */ }
-    function setupRealtimeForMatch(matchId) { /* ... */ }
-    function startBotMatch() { /* ... */ }
-    async function startOnlineMatch(match) { /* ... */ }
-    function setupMatchUI() { /* ... */ }
-    function playNextRound() { /* ... */ }
-    async function handlePlayerAction(action) { /* ... */ }
-    function resolveRound() { /* ... */ }
-    function updateMatchUI(commentary) { /* ... */ }
-    async function endMatch() { /* ... */ }
+    async function findOnlineMatch() {
+        togglePvpUi(true, 'Procurando oponente...');
+        const { data: match, error } = await supabaseClient.rpc('find_or_create_match');
+
+        if (error) {
+            showToast('Erro ao procurar partida.', 'error');
+            togglePvpUi(false, 'Pronto para encontrar um oponente?');
+            return;
+        }
+
+        state.onlineMatch = match;
+        if (match.status === 'in_progress') {
+            clearTimeout(matchmakingTimer);
+            showToast('Oponente encontrado!', 'success');
+            await startOnlineMatch(match);
+        } else {
+            setupRealtimeForMatch(match.id);
+            matchmakingTimer = setTimeout(() => {
+                showToast('Nenhum jogador encontrado. Iniciando partida contra um bot.', 'info');
+                startBotMatch();
+            }, 15000); // 15 segundos
+        }
+    }
+    async function cancelMatchmaking(showUiUpdate = true) {
+        clearTimeout(matchmakingTimer);
+        matchmakingTimer = null;
+        if (state.realtimeChannel) {
+            await supabaseClient.removeChannel(state.realtimeChannel);
+            state.realtimeChannel = null;
+        }
+        if (state.onlineMatch && state.onlineMatch.status === 'searching') {
+            await supabaseClient.from('online_matches').delete().eq('id', state.onlineMatch.id);
+        }
+        state.onlineMatch = null;
+        if (showUiUpdate) togglePvpUi(false, 'Busca cancelada.');
+    }
+    function togglePvpUi(isSearching, text) {
+        document.getElementById('pvp-status-text').textContent = text;
+        document.getElementById('pvp-loader').classList.toggle('hidden', !isSearching);
+        document.getElementById('find-match-btn').classList.toggle('hidden', isSearching);
+        document.getElementById('cancel-search-btn').classList.toggle('hidden', !isSearching);
+    }
+    function setupRealtimeForMatch(matchId) {
+        if (state.realtimeChannel) supabaseClient.removeChannel(state.realtimeChannel);
+        
+        state.realtimeChannel = supabaseClient.channel(`online-match-${matchId}`);
+        state.realtimeChannel
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'online_matches', filter: `id=eq.${matchId}` }, async payload => {
+                if (payload.new.status === 'in_progress' && payload.new.player2_id) {
+                    clearTimeout(matchmakingTimer);
+                    showToast('Oponente encontrado!', 'success');
+                    await startOnlineMatch(payload.new);
+                }
+            })
+            .on('broadcast', { event: 'player_action' }, ({ payload }) => {
+                if (payload.sender_id !== state.user.id) {
+                    state.onlineMatch.opponentAction = payload.action;
+                    if (state.onlineMatch.myAction) resolveRound();
+                }
+            })
+            .on('broadcast', { event: 'rematch_request' }, ({payload}) => {
+                if(payload.sender_id !== state.user.id) {
+                    showModal('Revanche?', 'Seu oponente quer jogar de novo. Aceita?', [
+                        {id: 'modal-accept-rematch', text: 'Aceitar', class: 'bg-green-600'},
+                        {id: 'modal-decline-rematch', text: 'Recusar', class: 'bg-red-600'}
+                    ]);
+                    document.getElementById('modal-accept-rematch').onclick = async () => {
+                        await state.realtimeChannel.send({type: 'broadcast', event: 'rematch_accepted', payload: {}});
+                        closeModal();
+                        startOnlineMatch(state.onlineMatch, true);
+                    };
+                    document.getElementById('modal-decline-rematch').onclick = () => { closeModal(); showMainMenu(); };
+                }
+            })
+            .on('broadcast', { event: 'rematch_accepted' }, () => {
+                showToast('Revanche aceita!', 'success');
+                closeModal();
+                startOnlineMatch(state.onlineMatch, true);
+            })
+            .subscribe(status => {
+                if (status !== 'SUBSCRIBED') { console.error('Falha ao conectar ao canal Realtime'); }
+            });
+    }
+    
+    function startBotMatch() {
+        cancelMatchmaking(false);
+        state.onlineMatch = {
+            isBotMatch: true,
+            myScore: 0,
+            opponentScore: 0,
+            opponentName: "Robô Treinador"
+        };
+        setupMatchUI();
+    }
+
+    async function startOnlineMatch(match, isRematch = false) {
+        if (state.realtimeChannel && !isRematch) {
+            await supabaseClient.removeChannel(state.realtimeChannel);
+            state.realtimeChannel = null;
+        }
+
+        const opponentId = match.player1_id === state.user.id ? match.player2_id : match.player1_id;
+        const { data: opponentProfile } = await supabaseClient.from('profiles').select('email').eq('id', opponentId).single();
+        
+        state.onlineMatch = {
+            ...match,
+            isBotMatch: false,
+            myScore: 0,
+            opponentScore: 0,
+            myAction: null,
+            opponentAction: null,
+            opponentName: opponentProfile.email.split('@')[0],
+            opponentId: opponentId
+        };
+        
+        if (!isRematch) setupRealtimeForMatch(match.id);
+        setupMatchUI();
+    }
+
+    function setupMatchUI() {
+        const myName = state.user.email.split('@')[0];
+        const opponentName = state.onlineMatch.opponentName;
+
+        const content = `
+            <div id="match-screen" class="p-4 md:p-8 max-w-4xl mx-auto">
+                <div class="grid grid-cols-3 items-center text-center mb-4">
+                    <div id="my-player-name" class="text-xl font-bold text-blue-400">${myName}</div>
+                    <div id="score" class="text-4xl font-extrabold">${state.onlineMatch.myScore} x ${state.onlineMatch.opponentScore}</div>
+                    <div id="opponent-player-name" class="text-xl font-bold text-red-400">${opponentName}</div>
+                </div>
+                <div id="match-commentary" class="bg-gray-800 p-4 rounded-lg mb-6 overflow-y-auto text-gray-300">
+                    <p>A partida começou! Escolha sua ação.</p>
+                </div>
+                <div id="action-panel" class="grid grid-cols-3 gap-4">
+                    <button data-action="attack" class="action-btn bg-red-600 p-6 rounded-lg text-xl font-bold btn-action">Ataque</button>
+                    <button data-action="defend" class="action-btn bg-blue-600 p-6 rounded-lg text-xl font-bold btn-action">Defesa</button>
+                    <button data-action="counter" class="action-btn bg-green-600 p-6 rounded-lg text-xl font-bold btn-action">Contra-Ataque</button>
+                </div>
+                <div id="waiting-panel" class="hidden text-center p-6 bg-gray-700 rounded-lg">
+                    <p class="text-xl">Aguardando oponente...</p>
+                    <div class="loader mx-auto mt-4"></div>
+                </div>
+                <button id="leave-match-btn" class="w-full mt-8 bg-gray-600 p-2 rounded">Desistir da Partida</button>
+            </div>
+        `;
+        renderGameContainer(content);
+    }
+    
+    function playNextRound() {
+        state.onlineMatch.myAction = null;
+        state.onlineMatch.opponentAction = null;
+        document.getElementById('action-panel').classList.remove('hidden');
+        document.getElementById('waiting-panel').classList.add('hidden');
+        document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
+    }
+
+    async function handlePlayerAction(action) {
+        state.onlineMatch.myAction = action;
+        document.getElementById('action-panel').classList.add('hidden');
+        document.getElementById('waiting-panel').classList.remove('hidden');
+        document.querySelector(`.action-btn[data-action="${action}"]`).classList.add('selected');
+
+        if (state.onlineMatch.isBotMatch) {
+            const actions = ['attack', 'defend', 'counter'];
+            state.onlineMatch.opponentAction = actions[Math.floor(Math.random() * actions.length)];
+            setTimeout(resolveRound, 1000); // Simula o pensamento do bot
+        } else {
+            await state.realtimeChannel.send({
+                type: 'broadcast',
+                event: 'player_action',
+                payload: { sender_id: state.user.id, action: action }
+            });
+            if (state.onlineMatch.opponentAction) resolveRound();
+        }
+    }
+
+    function resolveRound() {
+        const myAction = state.onlineMatch.myAction;
+        const opAction = state.onlineMatch.opponentAction;
+        let commentaryText = `Você jogou ${myAction}. Oponente jogou ${opAction}.\n`;
+        let roundWinner = null; // 'me', 'opponent', 'draw'
+
+        if (myAction === opAction) {
+            commentaryText += "Ações iguais! Ninguém marcou.";
+            roundWinner = 'draw';
+        } else if (
+            (myAction === 'attack' && opAction === 'counter') ||
+            (myAction === 'counter' && opAction === 'defend') ||
+            (myAction === 'defend' && opAction === 'attack')
+        ) {
+            commentaryText += "Você levou a melhor na disputa! GOL!";
+            state.onlineMatch.myScore++;
+            roundWinner = 'me';
+        } else {
+            commentaryText += "O oponente previu sua jogada! Gol deles.";
+            state.onlineMatch.opponentScore++;
+            roundWinner = 'opponent';
+        }
+        
+        updateMatchUI(commentaryText);
+
+        if (state.onlineMatch.myScore >= 3 || state.onlineMatch.opponentScore >= 3) {
+            setTimeout(endMatch, 2000);
+        } else {
+            setTimeout(playNextRound, 2000);
+        }
+    }
+
+    function updateMatchUI(commentary) {
+        document.getElementById('score').textContent = `${state.onlineMatch.myScore} x ${state.onlineMatch.opponentScore}`;
+        const commentaryBox = document.getElementById('match-commentary');
+        commentaryBox.innerHTML = `<p>${commentary}</p>` + commentaryBox.innerHTML;
+    }
+    
+    async function endMatch() {
+        let title, message, winner, loser;
+        const iWon = state.onlineMatch.myScore > state.onlineMatch.opponentScore;
+
+        if (iWon) {
+            title = "VITÓRIA!";
+            message = "Você venceu a partida!";
+            winner = state.user.id;
+            loser = state.onlineMatch.opponentId;
+        } else {
+            title = "DERROTA";
+            message = "Não foi dessa vez. Mais sorte na próxima!";
+            winner = state.onlineMatch.opponentId;
+            loser = state.user.id;
+        }
+
+        if (!state.onlineMatch.isBotMatch) {
+            await supabaseClient.rpc('handle_match_result', { winner_id: winner, loser_id: loser });
+            showModal(title, message, [
+                {id: 'modal-rematch-btn', text: 'Revanche', class: 'bg-green-600'},
+                {id: 'modal-back-to-menu-btn', text: 'Voltar ao Menu', class: 'bg-gray-600'}
+            ]);
+            document.getElementById('modal-rematch-btn').onclick = async () => {
+                showModal('Aguarde', 'Enviando pedido de revanche...', []);
+                await state.realtimeChannel.send({type: 'broadcast', event: 'rematch_request', payload: {sender_id: state.user.id}});
+            };
+        } else {
+            showToast('Partida contra o bot finalizada.', 'info');
+             showModal(title, message, [{id: 'modal-back-to-menu-btn', text: 'Voltar ao Menu', class: 'bg-gray-600'}]);
+        }
+    }
+
     
     // --- MODOS DE CARREIRA ---
     async function loadOrCreateOnlineCareer(careerType) {
-        showModal('Aguarde', '<div class="loader mx-auto"></div><p class="mt-4">A carregar carreira online...</p>');
+        showModal('Aguarde', '<div class="loader mx-auto"></div><p class="mt-4">A carregar carreira online...</p>', []);
         const tableName = `online_${careerType}_careers`;
-        const { data } = await supabaseClient.from(tableName).select('*').eq('user_id', state.user.id).single();
+        const { data, error } = await supabaseClient.from(tableName).select('*').eq('user_id', state.user.id).single();
         closeModal();
         
         if (data) {
@@ -361,11 +592,145 @@ const Game = (() => {
         `;
         renderGameContainer(content);
     }
-    async function setupManagerMode(philosophy) { /* ... implementação completa ... */ }
-    function initManagerHub() { /* ... */ }
-    function switchManagerTab(tabId) { /* ... */ }
-    function renderManagerContent(tabId) { /* ... */ }
-    async function simulateRound() { /* ... */ }
+    async function setupManagerMode(philosophy) {
+        showModal('Criando Carreira...', '<div class="loader mx-auto"></div>', []);
+        let gameState = {
+            philosophy: philosophy,
+            budget: 0,
+            season: 1,
+            wins: 0,
+            draws: 0,
+            losses: 0,
+            teamStrength: 0
+        };
+
+        if (philosophy === 'cantera') { gameState.budget = 5000000; gameState.teamStrength = 65; }
+        else if (philosophy === 'galactic') { gameState.budget = 100000000; gameState.teamStrength = 80; }
+        else if (philosophy === 'moneyball') { gameState.budget = 20000000; gameState.teamStrength = 72; }
+
+        const { data, error } = await supabaseClient.from('online_manager_careers').insert({
+            user_id: state.user.id,
+            game_state: gameState,
+            rank_id: 0,
+            rank_xp: 0
+        }).select().single();
+
+        if (error) {
+            showToast('Erro ao criar carreira.', 'error');
+            closeModal();
+            return;
+        }
+
+        state.manager = data;
+        closeModal();
+        initManagerHub();
+    }
+    function initManagerHub() {
+        const content = `
+            <div id="manager-hub" class="max-w-6xl mx-auto">
+                <header class="bg-gray-800 p-4 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Central do Técnico</h2>
+                    <button id="back-to-menu-btn" class="bg-gray-600 p-2 rounded">Menu Principal</button>
+                </header>
+                <div class="p-4 grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="md:col-span-1 bg-gray-800 p-4 rounded-lg">
+                        <div id="manager-rank-display" class="mb-4"></div>
+                        <nav class="flex flex-col space-y-2">
+                             <button data-tab="manager-office" class="nav-item p-3 rounded text-left bg-gray-700 hover:bg-gray-600 active">Escritório</button>
+                             <button data-tab="manager-squad" class="nav-item p-3 rounded text-left bg-gray-700 hover:bg-gray-600">Elenco</button>
+                             <button data-tab="manager-finances" class="nav-item p-3 rounded text-left bg-gray-700 hover:bg-gray-600">Finanças</button>
+                        </nav>
+                    </div>
+                    <main id="manager-content-area" class="md:col-span-3 bg-gray-800 p-6 rounded-lg"></main>
+                </div>
+            </div>
+        `;
+        renderGameContainer(content);
+        renderCareerRank('manager');
+        renderManagerContent('manager-office');
+    }
+
+    function switchManagerTab(tabId) {
+        document.querySelectorAll('#manager-hub .nav-item').forEach(el => el.classList.remove('active'));
+        document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+        renderManagerContent(tabId);
+    }
+
+    function renderManagerContent(tabId) {
+        const area = document.getElementById('manager-content-area');
+        const gs = state.manager.game_state;
+        let content = '';
+        switch(tabId) {
+            case 'manager-office':
+                const nextOpponent = DB.AI_TEAMS[Math.min(gs.wins + gs.draws + gs.losses, DB.AI_TEAMS.length -1)];
+                content = `
+                    <h3 class="text-3xl font-bold mb-4">Escritório Principal</h3>
+                    <p class="text-lg mb-2">Temporada: ${gs.season}</p>
+                    <p class="text-lg mb-6">Campanha: ${gs.wins}V - ${gs.draws}E - ${gs.losses}D</p>
+                    <div class="bg-gray-900 p-6 rounded-lg">
+                        <h4 class="text-2xl font-semibold mb-4">Próxima Partida</h4>
+                        <p class="text-xl mb-1">Adversário: <span class="font-bold">${nextOpponent.nome}</span></p>
+                        <p class="mb-4">Força do Adversário: ${nextOpponent.forca}</p>
+                        <button id="simulate-round-btn" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Jogar Partida</button>
+                    </div>
+                `;
+                break;
+            case 'manager-squad':
+                content = `
+                    <h3 class="text-3xl font-bold mb-4">Gerenciamento do Elenco</h3>
+                    <p>Força Geral do Time: <span class="font-bold text-2xl text-teal-400">${gs.teamStrength}</span></p>
+                    <p class="text-gray-400 mt-4"> (Funcionalidade de gerenciamento detalhado do elenco em breve) </p>
+                `;
+                break;
+            case 'manager-finances':
+                content = `
+                    <h3 class="text-3xl font-bold mb-4">Finanças do Clube</h3>
+                    <p>Orçamento para Transferências:</p>
+                    <p class="font-bold text-3xl text-green-400">$${gs.budget.toLocaleString()}</p>
+                    <p class="text-gray-400 mt-4"> (Funcionalidade de transferências em breve) </p>
+                `;
+                break;
+        }
+        area.innerHTML = content;
+    }
+    
+    async function simulateRound() {
+        showModal('Simulando...', '<div class="loader mx-auto"></div><p class="mt-4">A partida está em andamento...</p>', []);
+        const gs = state.manager.game_state;
+        const nextOpponent = DB.AI_TEAMS[Math.min(gs.wins + gs.draws + gs.losses, DB.AI_TEAMS.length - 1)];
+
+        const myStrength = gs.teamStrength;
+        const opStrength = nextOpponent.forca;
+        const totalStrength = myStrength + opStrength;
+        
+        const winChance = (myStrength / totalStrength);
+        const roll = Math.random();
+
+        let resultText = '';
+        let xpGained = 0;
+        
+        if (roll < winChance) { // Win
+            gs.wins++;
+            xpGained = 50;
+            resultText = `VITÓRIA! Vencemos o ${nextOpponent.nome}.`;
+        } else if (roll < winChance + 0.15) { // Draw (15% chance after win check)
+            gs.draws++;
+            xpGained = 20;
+            resultText = `EMPATE. Jogo duro contra o ${nextOpponent.nome}.`;
+        } else { // Loss
+            gs.losses++;
+            xpGained = 10;
+            resultText = `DERROTA. Não foi possível superar o ${nextOpponent.nome}.`;
+        }
+
+        await updateCareerProgress('manager', xpGained);
+        
+        setTimeout(() => {
+            closeModal();
+            showModal('Resultado da Partida', resultText, [{id: 'modal-ok-btn', text: 'Continuar', class: 'bg-teal-600'}]);
+            renderManagerContent('manager-office');
+        }, 1500);
+    }
     
     // --- CARREIRA DE JOGADOR ---
     function initPlayerCreation() {
@@ -388,18 +753,134 @@ const Game = (() => {
                         <div id="attribute-inputs" class="space-y-2 mt-2 bg-gray-800 p-4 rounded"></div>
                     </div>
                     <button id="finalize-player-creation-btn" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Iniciar Carreira</button>
-                    <button id="back-to-menu-btn" class="w-full mt-2 bg-red-600 p-2 rounded">Voltar</button>
+                    <button id="back-to-menu-btn" class="w-full mt-2 bg-gray-600 p-2 rounded">Voltar</button>
                 </div>
             </div>`;
         renderGameContainer(content);
         renderAttributeInputs();
     }
-    function renderAttributeInputs() { /* ... */ }
-    async function finalizePlayerCreation() { /* ... */ }
-    function initPlayerHub() { /* ... */ }
-    function switchPlayerTab(tabId) { /* ... */ }
-    function renderPlayerContent(tabId) { /* ... */ }
-    async function trainAttribute(attribute) { /* ... */ }
+    function renderAttributeInputs() {
+        const position = document.getElementById('player-position-select').value;
+        const attributes = DB.ATTRIBUTES_MAP[position];
+        const container = document.getElementById('attribute-inputs');
+        container.innerHTML = Object.entries(attributes).map(([attr, value]) => `
+            <div class="flex justify-between items-center">
+                <label>${attr}</label>
+                <span class="font-bold text-teal-400">${value}</span>
+            </div>
+        `).join('');
+    }
+    async function finalizePlayerCreation() {
+        const name = document.getElementById('player-name-input').value.trim();
+        if (!name) {
+            showToast('Por favor, insira um nome para o jogador.', 'error');
+            return;
+        }
+        
+        showModal('Criando Craque...', '<div class="loader mx-auto"></div>', []);
+        const position = document.getElementById('player-position-select').value;
+        const attributes = DB.ATTRIBUTES_MAP[position];
+
+        const gameState = {
+            name,
+            position,
+            attributes,
+            trainingPoints: 5,
+            overall: Math.round(Object.values(attributes).reduce((a, b) => a + b, 0) / Object.values(attributes).length * 10)
+        };
+
+        const { data, error } = await supabaseClient.from('online_player_careers').insert({
+            user_id: state.user.id,
+            game_state: gameState,
+            rank_id: 0,
+            rank_xp: 0
+        }).select().single();
+
+        if (error) {
+            showToast('Erro ao criar jogador.', 'error');
+            closeModal();
+            return;
+        }
+        
+        state.player = data;
+        closeModal();
+        initPlayerHub();
+    }
+    function initPlayerHub() {
+        const content = `
+            <div id="player-hub" class="max-w-6xl mx-auto">
+                <header class="bg-gray-800 p-4 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Central do Jogador</h2>
+                    <button id="back-to-menu-btn" class="bg-gray-600 p-2 rounded">Menu Principal</button>
+                </header>
+                <div class="p-4 grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="md:col-span-1 bg-gray-800 p-4 rounded-lg">
+                        <div id="player-rank-display" class="mb-4"></div>
+                        <nav class="flex flex-col space-y-2">
+                             <button data-tab="player-training" class="nav-item p-3 rounded text-left bg-gray-700 hover:bg-gray-600 active">Treinamento</button>
+                             <button data-tab="player-profile" class="nav-item p-3 rounded text-left bg-gray-700 hover:bg-gray-600">Perfil</button>
+                        </nav>
+                    </div>
+                    <main id="player-content-area" class="md:col-span-3 bg-gray-800 p-6 rounded-lg"></main>
+                </div>
+            </div>
+        `;
+        renderGameContainer(content);
+        renderCareerRank('player');
+        renderPlayerContent('player-training');
+    }
+    function switchPlayerTab(tabId) {
+        document.querySelectorAll('#player-hub .nav-item').forEach(el => el.classList.remove('active'));
+        document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+        renderPlayerContent(tabId);
+    }
+    function renderPlayerContent(tabId) {
+        const area = document.getElementById('player-content-area');
+        const gs = state.player.game_state;
+        let content = '';
+        switch(tabId) {
+            case 'player-training':
+                const attributesHTML = Object.entries(gs.attributes).map(([attr, value]) => `
+                    <div class="flex items-center justify-between bg-gray-900 p-3 rounded">
+                        <span class="font-semibold">${attr}: <span class="text-xl text-teal-400">${value}</span></span>
+                        <button data-attribute="${attr}" class="bg-blue-600 hover:bg-blue-500 px-4 py-1 rounded text-sm font-bold" ${gs.trainingPoints <= 0 ? 'disabled' : ''}>Treinar</button>
+                    </div>
+                `).join('');
+                content = `
+                    <h3 class="text-3xl font-bold mb-2">Centro de Treinamento</h3>
+                    <p class="mb-4">Pontos de Treino: <span class="font-bold text-2xl">${gs.trainingPoints}</span></p>
+                    <div class="space-y-3">${attributesHTML}</div>
+                    <p class="text-gray-400 mt-4 text-sm">Você ganha mais pontos de treino jogando partidas.</p>
+                `;
+                break;
+            case 'player-profile':
+                gs.overall = Math.round(Object.values(gs.attributes).reduce((a, b) => a + b, 0) / Object.values(gs.attributes).length * 10);
+                content = `
+                    <h3 class="text-3xl font-bold mb-4">${gs.name}</h3>
+                    <p class="text-xl mb-1">Posição: ${gs.position}</p>
+                    <p class="text-xl mb-6">Overall: <span class="font-bold text-3xl text-amber-400">${gs.overall}</span></p>
+                    <h4 class="text-2xl font-semibold mb-2">Atributos</h4>
+                    <div class="grid grid-cols-2 gap-2">
+                        ${Object.entries(gs.attributes).map(([attr, val]) => `
+                            <div class="bg-gray-900 p-3 rounded"><strong>${attr}:</strong> ${val}</div>
+                        `).join('')}
+                    </div>
+                `;
+                break;
+        }
+        area.innerHTML = content;
+    }
+    async function trainAttribute(attribute) {
+        const gs = state.player.game_state;
+        if (gs.trainingPoints > 0) {
+            gs.trainingPoints--;
+            gs.attributes[attribute]++;
+            await updateCareerProgress('player', 15); // Ganha 15 XP por treino
+            renderPlayerContent('player-training');
+        } else {
+            showToast("Sem pontos de treino suficientes.", 'error');
+        }
+    }
     
     // --- PONTO DE ENTRADA E DELEGAÇÃO DE EVENTOS ---
     async function init() {
@@ -428,7 +909,14 @@ const Game = (() => {
             if (targetId === 'cancel-search-btn') await cancelMatchmaking(true);
             const actionBtn = closest('.action-btn[data-action]');
             if (actionBtn) handlePlayerAction(actionBtn.dataset.action);
-            if (targetId === 'leave-match-btn') { showToast("Você desistiu da partida.", "error"); await cancelMatchmaking(true); showMainMenu(); }
+            if (targetId === 'leave-match-btn') { 
+                if (!state.onlineMatch.isBotMatch) {
+                   await supabaseClient.rpc('handle_match_result', { winner_id: state.onlineMatch.opponentId, loser_id: state.user.id });
+                }
+                showToast("Você desistiu da partida.", "error"); 
+                await cancelMatchmaking(false); 
+                showMainMenu(); 
+            }
 
             // Carreira de Técnico
             const philosophyCard = closest('[data-philosophy]');
@@ -447,6 +935,25 @@ const Game = (() => {
 
         document.addEventListener('change', (e) => {
             if (e.target.id === 'player-position-select') renderAttributeInputs();
+        });
+
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+             if (event === 'SIGNED_OUT') {
+                Object.keys(state).forEach(key => state[key] = null);
+                state.communityCreations = { players: [], teams: [], leagues: [] };
+                closeModal();
+                renderAuthScreen();
+             } else if (event === 'SIGNED_IN') {
+                 const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
+                 if (profile) {
+                    state.user = session.user;
+                    state.profile = profile;
+                    renderMainMenu();
+                 } else {
+                    console.error("Usuário autenticado mas sem perfil. Deslogando.", error);
+                    await handleLogout();
+                 }
+             }
         });
 
         // Inicia o Jogo
