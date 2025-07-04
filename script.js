@@ -351,10 +351,12 @@ const Game = (() => {
                 .single();
 
             if (profileError) {
-                authError.textContent = 'Erro ao criar o perfil. Tente novamente.';
-                // Opcional: deletar o usuário recém-criado para evitar usuários órfãos
-                // NOTA: A linha abaixo requer privilégios de admin e não funcionará no browser por padrão.
-                // await supabaseClient.auth.admin.deleteUser(authData.user.id); 
+                authError.textContent = 'Erro ao criar o perfil. O nome de usuário pode já existir.';
+                // É importante apagar o usuário da autenticação se a criação do perfil falhar.
+                // Esta chamada requer privilégios de admin, então pode não funcionar no browser.
+                // A melhor abordagem é ter uma função de servidor para lidar com isso.
+                // Por agora, vamos apenas informar o erro.
+                // await supabaseClient.auth.admin.deleteUser(authData.user.id);
                 authForm.classList.remove('hidden');
                 authLoading.classList.add('hidden');
                 return;
