@@ -89,17 +89,17 @@ const Game = (() => {
     }
 
     // --- 4. FUNÇÕES DE RENDERIZAÇÃO DE TELA ---
+    // MODIFICADO: Tela de autenticação agora só tem o botão do Google
     function renderAuthScreen() {
         root.innerHTML = `
             <div id="auth-screen" class="main-menu-bg">
                 <div class="auth-panel p-8 rounded-lg text-center shadow-2xl w-full max-w-md">
                     <h1 class="text-5xl font-black text-white mb-6">SevenxFoot</h1>
                     <div id="auth-form" class="space-y-4">
-                        <input type="text" id="username-input" class="w-full" placeholder="nome de usuário">
-                        <input type="email" id="email-input" class="w-full" placeholder="seu@email.com">
-                        <input type="password" id="password-input" class="w-full" placeholder="senha">
-                        <button id="login-btn" class="w-full btn-action btn-primary">Entrar</button>
-                        <button id="signup-btn" class="w-full btn-action">Cadastrar</button>
+                        <button id="google-login-btn" class="w-full btn-action btn-primary flex items-center justify-center gap-3">
+                            <svg class="w-6 h-6" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.022,35.37,44,30.038,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                            <span>Entrar com o Google</span>
+                        </button>
                         <div class="relative flex py-2 items-center">
                             <div class="flex-grow border-t border-gray-600"></div>
                             <span class="flex-shrink mx-4 text-slate-dark">ou</span>
@@ -115,9 +115,9 @@ const Game = (() => {
 
     function renderMainMenu() {
         const isGuest = !state.profile;
-        const welcomeMessage = isGuest ? `Bem-vindo, Convidado!` : `Bem-vindo, ${state.profile.username || state.user.email.split('@')[0]}!`;
+        const welcomeMessage = isGuest ? `Bem-vindo, Convidado!` : `Bem-vindo, ${state.profile.full_name || state.profile.username || 'Jogador'}!`;
         const rankDisplayHTML = isGuest 
-            ? `<div class="panel p-4 text-slate-dark">Para ver seu ranking, por favor, crie uma conta.</div>`
+            ? `<div class="panel p-4 text-slate-dark">Para jogar, por favor, faça login com o Google.</div>`
             : `<div id="player-rank-display" class="mb-8 panel p-4"></div>`;
         
         const careerButtonsDisabled = isGuest ? 'disabled' : '';
@@ -130,7 +130,7 @@ const Game = (() => {
                     <p style="color: var(--accent-green);" class="font-semibold text-lg mb-4">${welcomeMessage}</p>
                     ${rankDisplayHTML}
                     <div class="space-y-4">
-                        <button id="start-online-mode" class="w-full md:w-96 btn-action btn-primary">Partida Rápida 1x1</button>
+                        <button id="start-online-mode" class="w-full md:w-96 btn-action btn-primary" ${careerButtonsDisabled}>Partida Rápida 1x1</button>
                         <button id="start-manager-career" class="w-full md:w-96 btn-action btn-primary" ${careerButtonsDisabled}>Carreira de Técnico</button>
                         <button id="start-player-career" class="w-full md:w-96 btn-action btn-primary" ${careerButtonsDisabled}>Carreira de Jogador</button>
                         <button id="start-community-hub" class="w-full md:w-96 btn-action btn-primary" ${communityButtonDisabled}>Centro da Comunidade</button>
@@ -243,39 +243,15 @@ const Game = (() => {
     }
 
     // --- 6. AUTENTICAÇÃO E NAVEGAÇÃO ---
-    async function handleLogin() {
-        const authForm = document.getElementById('auth-form');
-        const authLoading = document.getElementById('auth-loading');
-        const authError = document.getElementById('auth-error');
-        const emailInput = document.getElementById('email-input');
-        const passwordInput = document.getElementById('password-input');
-
-        authForm.classList.add('hidden');
-        authLoading.classList.remove('hidden');
-        authError.textContent = '';
-        
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: emailInput.value, password: passwordInput.value });
-        
-        if (error) { 
-            authError.textContent = "Email ou senha inválidos.";
-            authForm.classList.remove('hidden');
-            authLoading.classList.add('hidden');
-            return;
-        }
-        
-        if (data.user) {
-            const { data: profile, error: profileError } = await supabaseClient.from('profiles').select('*').eq('id', data.user.id).single();
-            
-            if (profileError || !profile) {
-                authError.textContent = 'Perfil de jogador não encontrado. Tente se cadastrar novamente.';
-                await supabaseClient.auth.signOut();
-                authForm.classList.remove('hidden');
-                authLoading.classList.add('hidden');
-            } else {
-                state.user = data.user;
-                state.profile = profile;
-                renderMainMenu();
-            }
+    // NOVO: Função para iniciar o login com Google
+    async function handleGoogleLogin() {
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+        });
+        if (error) {
+            const authError = document.getElementById('auth-error');
+            if(authError) authError.textContent = "Erro ao tentar fazer login com o Google.";
+            console.error('Google Sign-In Error:', error);
         }
     }
 
@@ -297,74 +273,6 @@ const Game = (() => {
         } else if (data.user) {
             state.user = data.user;
             state.profile = null;
-            renderMainMenu();
-        }
-    }
-
-    // NOVA LÓGICA DE CADASTRO - MAIS ROBUSTA
-    async function handleSignup() {
-        const authForm = document.getElementById('auth-form');
-        const authLoading = document.getElementById('auth-loading');
-        const authError = document.getElementById('auth-error');
-        const emailInput = document.getElementById('email-input');
-        const passwordInput = document.getElementById('password-input');
-        const usernameInput = document.getElementById('username-input');
-
-        const username = usernameInput.value.trim();
-        const email = emailInput.value.trim();
-        const password = passwordInput.value.trim();
-
-        if (!username || !email || !password) {
-            authError.textContent = "Por favor, preencha todos os campos.";
-            return;
-        }
-
-        authForm.classList.add('hidden');
-        authLoading.classList.remove('hidden');
-        authError.textContent = '';
-
-        // 1. Cria o usuário na autenticação do Supabase
-        const { data: authData, error: authErrorMsg } = await supabaseClient.auth.signUp({ 
-            email: email, 
-            password: password
-        });
-        
-        if (authErrorMsg) {
-            authError.textContent = "Erro no cadastro. O e-mail pode já estar em uso.";
-            authForm.classList.remove('hidden');
-            authLoading.classList.add('hidden');
-            return;
-        }
-
-        if (authData.user) {
-            // 2. Imediatamente cria o perfil na tabela 'profiles'
-            const { data: profile, error: profileError } = await supabaseClient
-                .from('profiles')
-                .insert({
-                    id: authData.user.id,
-                    email: email,
-                    username: username,
-                    rank_id: 0,
-                    rank_stars: 0
-                })
-                .select()
-                .single();
-
-            if (profileError) {
-                authError.textContent = 'Erro ao criar o perfil. O nome de usuário pode já existir.';
-                // É importante apagar o usuário da autenticação se a criação do perfil falhar.
-                // Esta chamada requer privilégios de admin, então pode não funcionar no browser.
-                // A melhor abordagem é ter uma função de servidor para lidar com isso.
-                // Por agora, vamos apenas informar o erro.
-                // await supabaseClient.auth.admin.deleteUser(authData.user.id);
-                authForm.classList.remove('hidden');
-                authLoading.classList.add('hidden');
-                return;
-            }
-
-            // 3. Define o estado do jogo e renderiza o menu principal
-            state.user = authData.user;
-            state.profile = profile;
             renderMainMenu();
         }
     }
@@ -1246,9 +1154,8 @@ const Game = (() => {
             const closest = (selector) => target.closest(selector);
 
             // Autenticação e Navegação
-            if (targetId === 'login-btn') await handleLogin();
+            if (targetId === 'google-login-btn') await handleGoogleLogin();
             if (targetId === 'guest-login-btn') await handleGuestLogin();
-            if (targetId === 'signup-btn') await handleSignup();
             if (targetId === 'logout-btn') confirmLogout();
             if (targetId === 'back-to-menu-btn') showMainMenu();
             if (targetId === 'modal-cancel-btn') closeModal();
@@ -1337,8 +1244,18 @@ const Game = (() => {
                             state.profile = profile;
                             renderMainMenu();
                         } else {
-                            console.error("Utilizador autenticado mas sem perfil. A terminar sessão.");
-                            await handleLogout();
+                             // Espera um pouco para o gatilho do DB rodar antes de desistir
+                            setTimeout(async () => {
+                                const { data: retryProfile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
+                                if (retryProfile) {
+                                    state.user = session.user;
+                                    state.profile = retryProfile;
+                                    renderMainMenu();
+                                } else {
+                                    console.error("Utilizador autenticado mas sem perfil. A terminar sessão.");
+                                    await handleLogout();
+                                }
+                            }, 1500);
                         }
                     }
                 }
