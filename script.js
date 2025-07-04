@@ -228,7 +228,6 @@ const Game = (() => {
         }
     }
 
-    // --- 6. AUTENTICAÇÃO E NAVEGAÇÃO ---
     async function handleGoogleLogin() {
         const { error } = await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
@@ -261,7 +260,6 @@ const Game = (() => {
         renderMainMenu();
     }
     
-    // --- 7. MODO ONLINE 1X1 (PVP) ---
     function initPvpMode() {
         const content = `
             <div id="online-mode">
@@ -1214,7 +1212,7 @@ const Game = (() => {
                                 id: session.user.id,
                                 email: session.user.email,
                                 full_name: session.user.user_metadata.full_name,
-                                avatar_url: session.user.user_metadata.avatar_url
+                                avatar_url: session.user.user_metadata.avatar_url,
                             })
                             .select()
                             .single();
