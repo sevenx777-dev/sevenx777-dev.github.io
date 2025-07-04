@@ -9,6 +9,15 @@ const Game = (() => {
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJzdXBhYmFzZSIsInJlZiI6ImZ3d3dwZHp2bnB0Y2Jjb2FyZWptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NjM2MTQsImV4cCI6MjA2NzEzOTYxNH0.uozT2nfKs4EINeF6Suyp6AbmkrQ4V8W1sG9SWiokU1o';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    const ICONS = {
+        office: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>`,
+        squad: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>`,
+        transfers: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>`,
+        finances: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01M12 6v-1h4v1m-4 0h-4v-1h4m0-4h.01M12 4h4v1h-4V4zM4 4h4v1H4V4z" /></svg>`,
+        dashboard: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>`,
+        profile: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>`
+    };
+
     const CONSTANTS = {
         RANKS: [
             { name: 'Bronze III', starsToPromote: 3, color: '#a97142' }, { name: 'Bronze II',  starsToPromote: 3, color: '#a97142' }, { name: 'Bronze I',   starsToPromote: 4, color: '#a97142' },
@@ -55,10 +64,15 @@ const Game = (() => {
     }
     
     function showModal(title, message, buttons = []) {
-        let buttonsHTML = buttons.map(btn => `<button id="${btn.id}" class="w-full md:w-auto px-6 py-2 rounded-lg font-bold text-white ${btn.class}">${btn.text}</button>`).join('');
+        let buttonsHTML = buttons.map(btn => {
+            let baseClass = 'btn-action';
+            if (btn.class.includes('primary')) baseClass += ' btn-primary';
+            if (btn.class.includes('danger')) baseClass += ' btn-danger';
+            return `<button id="${btn.id}" class="${baseClass}">${btn.text}</button>`
+        }).join('');
         modalContent.innerHTML = `
             <h2 class="text-3xl font-bold mb-4">${title}</h2>
-            <div class="text-gray-300 mb-6 whitespace-pre-wrap">${message}</div>
+            <div class="text-slate-dark mb-6 whitespace-pre-wrap">${message}</div>
             <div class="flex justify-center gap-4 flex-wrap">${buttonsHTML}</div>`;
         modal.classList.remove('hidden');
     }
@@ -77,16 +91,16 @@ const Game = (() => {
     function renderAuthScreen() {
         root.innerHTML = `
             <div id="auth-screen" class="main-menu-bg">
-                <div class="bg-black bg-opacity-70 p-8 rounded-lg text-center shadow-2xl w-full max-w-md">
-                    <h1 class="text-4xl font-extrabold text-white mb-6">SevenxFoot Online</h1>
-                    <div id="auth-form">
-                        <input type="email" id="email-input" class="w-full p-3 rounded bg-gray-700 border border-gray-600 mb-4" placeholder="seu@email.com">
-                        <input type="password" id="password-input" class="w-full p-3 rounded bg-gray-700 border border-gray-600 mb-6" placeholder="senha">
-                        <button id="login-btn" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-6 rounded-lg text-xl btn-action">Entrar</button>
-                        <button id="signup-btn" class="w-full mt-2 bg-amber-500 hover:bg-amber-400 text-white font-bold py-3 px-6 rounded-lg text-xl btn-action">Cadastrar</button>
+                <div class="auth-panel p-8 rounded-lg text-center shadow-2xl w-full max-w-md">
+                    <h1 class="text-5xl font-black text-white mb-6">SevenxFoot</h1>
+                    <div id="auth-form" class="space-y-4">
+                        <input type="email" id="email-input" class="w-full" placeholder="seu@email.com">
+                        <input type="password" id="password-input" class="w-full" placeholder="senha">
+                        <button id="login-btn" class="w-full btn-action btn-primary">Entrar</button>
+                        <button id="signup-btn" class="w-full btn-action">Cadastrar</button>
                     </div>
                     <div id="auth-loading" class="hidden"><div class="loader mx-auto"></div></div>
-                    <p id="auth-error" class="text-red-500 mt-4 h-6"></p>
+                    <p id="auth-error" class="text-red-400 mt-4 h-6"></p>
                 </div>
             </div>`;
     }
@@ -94,17 +108,17 @@ const Game = (() => {
     function renderMainMenu() {
         root.innerHTML = `
             <div id="main-menu" class="main-menu-bg">
-                <div class="bg-black bg-opacity-70 p-10 rounded-lg text-center shadow-2xl w-full max-w-xl">
-                    <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-2">SevenxFoot</h1>
-                    <p class="text-teal-400 font-semibold text-lg mb-4">Bem-vindo, ${state.user.email.split('@')[0]}!</p>
-                    <div id="player-rank-display" class="mb-8 bg-gray-800 p-4 rounded-lg"></div>
+                <div class="auth-panel p-10 rounded-lg text-center shadow-2xl w-full max-w-xl">
+                    <h1 class="text-5xl md:text-7xl font-black text-white mb-2">SevenxFoot</h1>
+                    <p style="color: var(--accent-green);" class="font-semibold text-lg mb-4">Bem-vindo, ${state.user.email.split('@')[0]}!</p>
+                    <div id="player-rank-display" class="mb-8 panel p-4"></div>
                     <div class="space-y-4">
-                        <button id="start-online-mode" class="w-full md:w-96 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Partida Rápida 1x1</button>
-                        <button id="start-manager-career" class="w-full md:w-96 bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira de Técnico (Online)</button>
-                        <button id="start-player-career" class="w-full md:w-96 bg-amber-500 hover:bg-amber-400 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Carreira de Jogador (Online)</button>
-                        <button id="start-community-hub" class="w-full md:w-96 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Centro da Comunidade</button>
+                        <button id="start-online-mode" class="w-full md:w-96 btn-action btn-primary">Partida Rápida 1x1</button>
+                        <button id="start-manager-career" class="w-full md:w-96 btn-action btn-primary">Carreira de Técnico</button>
+                        <button id="start-player-career" class="w-full md:w-96 btn-action btn-primary">Carreira de Jogador</button>
+                        <button id="start-community-hub" class="w-full md:w-96 btn-action btn-primary">Centro da Comunidade</button>
                     </div>
-                    <button id="logout-btn" class="mt-8 text-gray-400 hover:text-white">Sair</button>
+                    <button id="logout-btn" class="mt-8 text-slate-dark hover:text-white transition-colors">Sair</button>
                 </div>
             </div>`;
         updatePvpRankDisplay();
@@ -124,9 +138,9 @@ const Game = (() => {
 
         const currentRank = CONSTANTS.RANKS[data.rank_id];
         display.innerHTML = `
-            <h3 class="text-lg font-semibold text-gray-400">RANK ATUAL 1x1</h3>
+            <h4 class="text-sm font-semibold text-slate-dark uppercase tracking-widest">Rank 1x1</h4>
             <div class="text-3xl font-extrabold" style="color: ${currentRank.color};">${currentRank.name}</div>
-            <div class="rank-star mt-2 text-yellow-400">${'★'.repeat(data.rank_stars)}${'☆'.repeat(currentRank.starsToPromote > 0 ? Math.max(0, currentRank.starsToPromote - data.rank_stars) : 0)}</div>
+            <div class="rank-star mt-2">${'★'.repeat(data.rank_stars)}${'☆'.repeat(currentRank.starsToPromote > 0 ? Math.max(0, currentRank.starsToPromote - data.rank_stars) : 0)}</div>
         `;
     }
 
@@ -144,16 +158,16 @@ const Game = (() => {
         const xpNeededForRankUp = xpForNextRank - xpForCurrentRank;
         
         const progressPercentage = (xpNeededForRankUp > 0) ? Math.max(0, Math.min(100, Math.floor((xpInCurrentRank / xpNeededForRankUp) * 100))) : 100;
-        const rankTitle = mode === 'manager' ? 'PATENTE DE TÉCNICO' : 'PATENTE DO JOGADOR';
+        const rankTitle = mode === 'manager' ? 'Patente de Técnico' : 'Patente do Jogador';
 
         displayElement.innerHTML = `
-            <h3 class="text-sm font-semibold text-gray-400 uppercase">${rankTitle}</h3>
+            <h4 class="text-sm font-semibold text-slate-dark uppercase tracking-widest">${rankTitle}</h4>
             <div class="text-2xl font-extrabold mt-1" style="color: ${currentRank.color};">${currentRank.name}</div>
-            <div class="mt-2 text-sm text-gray-300">
+            <div class="mt-2 text-sm text-slate-dark">
                 <span>XP: ${currentXP.toLocaleString()} / ${xpForNextRank.toLocaleString()}</span>
             </div>
-            <div class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
-                <div class="bg-teal-500 h-2.5 rounded-full" style="width: ${progressPercentage}%"></div>
+            <div class="w-full bg-slate-700 rounded-full h-2.5 mt-2" style="background-color: var(--bg-dark-navy);">
+                <div class="h-2.5 rounded-full" style="width: ${progressPercentage}%; background-color: var(--accent-green);"></div>
             </div>
         `;
     }
@@ -290,8 +304,8 @@ const Game = (() => {
     
     function confirmLogout() {
         showModal('Confirmar Saída', 'Você tem certeza que deseja sair?', [
-            { id: 'modal-cancel-btn', text: 'Cancelar', class: 'bg-gray-600' },
-            { id: 'modal-logout-btn', text: 'Sair', class: 'bg-red-600' }
+            { id: 'modal-cancel-btn', text: 'Cancelar', class: '' },
+            { id: 'modal-logout-btn', text: 'Sair', class: 'danger' }
         ]);
     }
 
@@ -313,16 +327,16 @@ const Game = (() => {
     function initPvpMode() {
         const content = `
             <div id="online-mode">
-                <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Partida Rápida 1x1</h2></header>
+                <header class="panel p-4 text-center"><h2 class="text-3xl font-bold">Partida Rápida 1x1</h2></header>
                 <div class="p-4 md:p-8 max-w-lg mx-auto text-center">
-                    <div id="lobby-rank-display" class="mb-6 bg-gray-800 p-4 rounded-lg"></div>
-                    <div class="bg-gray-800 p-8 rounded-lg">
-                        <p id="pvp-status-text" class="text-2xl font-semibold text-gray-300 mb-6">Pronto para encontrar um oponente?</p>
+                    <div id="lobby-rank-display" class="mb-6 panel p-4"></div>
+                    <div class="panel p-8">
+                        <p id="pvp-status-text" class="text-2xl font-semibold text-slate-light mb-6">Pronto para encontrar um oponente?</p>
                         <div id="pvp-loader" class="loader mx-auto hidden mb-4"></div>
-                        <button id="find-match-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-lg text-2xl btn-action">Procurar Partida</button>
-                        <button id="cancel-search-btn" class="w-full mt-2 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg btn-action hidden">Cancelar Busca</button>
+                        <button id="find-match-btn" class="w-full btn-action btn-primary">Procurar Partida</button>
+                        <button id="cancel-search-btn" class="w-full mt-2 btn-action btn-danger hidden">Cancelar Busca</button>
                     </div>
-                    <button id="back-to-menu-btn" class="w-full mt-8 bg-gray-600 p-2 rounded">Voltar ao Menu Principal</button>
+                    <button id="back-to-menu-btn" class="w-full mt-8 btn-action">Voltar ao Menu Principal</button>
                 </div>
             </div>`;
         renderGameContainer(content);
@@ -397,8 +411,8 @@ const Game = (() => {
             .on('broadcast', { event: 'rematch_request' }, ({payload}) => {
                 if(payload.sender_id !== state.user.id) {
                     showModal('Revanche?', 'Seu oponente quer jogar de novo. Aceita?', [
-                        {id: 'modal-accept-rematch', text: 'Aceitar', class: 'bg-green-600'},
-                        {id: 'modal-decline-rematch', text: 'Recusar', class: 'bg-red-600'}
+                        {id: 'modal-accept-rematch', text: 'Aceitar', class: 'primary'},
+                        {id: 'modal-decline-rematch', text: 'Recusar', class: 'danger'}
                     ]);
                     document.getElementById('modal-accept-rematch').onclick = async () => {
                         await state.realtimeChannel.send({type: 'broadcast', event: 'rematch_accepted', payload: {}});
@@ -460,23 +474,23 @@ const Game = (() => {
         const content = `
             <div id="match-screen" class="p-4 md:p-8 max-w-4xl mx-auto">
                 <div class="grid grid-cols-3 items-center text-center mb-4">
-                    <div id="my-player-name" class="text-xl font-bold text-blue-400">${myName}</div>
+                    <div id="my-player-name" class="text-xl font-bold" style="color: #64b5f6;">${myName}</div>
                     <div id="score" class="text-4xl font-extrabold">${state.onlineMatch.myScore} x ${state.onlineMatch.opponentScore}</div>
-                    <div id="opponent-player-name" class="text-xl font-bold text-red-400">${opponentName}</div>
+                    <div id="opponent-player-name" class="text-xl font-bold" style="color: #e57373;">${opponentName}</div>
                 </div>
-                <div id="match-commentary" class="bg-gray-800 p-4 rounded-lg mb-6 overflow-y-auto text-gray-300 h-32">
+                <div id="match-commentary" class="panel p-4 mb-6 overflow-y-auto text-slate-dark h-32">
                     <p>A partida começou! Escolha sua ação.</p>
                 </div>
                 <div id="action-panel" class="grid grid-cols-3 gap-4">
-                    <button data-action="attack" class="action-btn bg-red-600 p-6 rounded-lg text-xl font-bold btn-action">Ataque</button>
-                    <button data-action="defend" class="action-btn bg-blue-600 p-6 rounded-lg text-xl font-bold btn-action">Defesa</button>
-                    <button data-action="counter" class="action-btn bg-green-600 p-6 rounded-lg text-xl font-bold btn-action">Contra-Ataque</button>
+                    <button data-action="attack" class="action-btn p-6 text-xl font-bold" style="border-color: #e57373; color: #e57373;">Ataque</button>
+                    <button data-action="defend" class="action-btn p-6 text-xl font-bold" style="border-color: #64b5f6; color: #64b5f6;">Defesa</button>
+                    <button data-action="counter" class="action-btn p-6 text-xl font-bold" style="border-color: #81c784; color: #81c784;">Contra-Ataque</button>
                 </div>
-                <div id="waiting-panel" class="hidden text-center p-6 bg-gray-700 rounded-lg">
+                <div id="waiting-panel" class="hidden text-center p-6 panel">
                     <p class="text-xl">Aguardando oponente...</p>
                     <div class="loader mx-auto mt-4"></div>
                 </div>
-                <button id="leave-match-btn" class="w-full mt-8 bg-gray-600 p-2 rounded">Desistir da Partida</button>
+                <button id="leave-match-btn" class="w-full mt-8 btn-action btn-danger">Desistir da Partida</button>
             </div>
         `;
         renderGameContainer(content);
@@ -554,8 +568,8 @@ const Game = (() => {
             const loser = iWon ? state.onlineMatch.opponentId : state.user.id;
             await supabaseClient.rpc('handle_match_result', { winner_id: winner, loser_id: loser });
             showModal(title, message, [
-                {id: 'modal-rematch-btn', text: 'Revanche', class: 'bg-green-600'},
-                {id: 'modal-back-to-menu-btn', text: 'Voltar ao Menu', class: 'bg-gray-600'}
+                {id: 'modal-rematch-btn', text: 'Revanche', class: 'primary'},
+                {id: 'modal-back-to-menu-btn', text: 'Voltar ao Menu', class: ''}
             ]);
             document.getElementById('modal-rematch-btn').onclick = async () => {
                 showModal('Aguarde', 'Enviando pedido de revanche...', []);
@@ -563,7 +577,7 @@ const Game = (() => {
             };
         } else {
             showToast('Partida contra o bot finalizada.', 'info');
-            showModal(title, message, [{id: 'modal-back-to-menu-btn', text: 'Voltar ao Menu', class: 'bg-gray-600'}]);
+            showModal(title, message, [{id: 'modal-back-to-menu-btn', text: 'Voltar ao Menu', class: ''}]);
         }
     }
 
@@ -593,7 +607,7 @@ const Game = (() => {
         const targetOverall = Math.floor(Math.random() * (maxOverall - minOverall + 1) + minOverall);
 
         for(const attr in baseAttrs){
-            const randomFactor = (Math.random() - 0.5) * 4; // de -2 a +2
+            const randomFactor = (Math.random() - 0.5) * 4;
             attributes[attr] = Math.max(1, Math.round(targetOverall/10 + randomFactor));
             totalPoints += attributes[attr];
         }
@@ -616,19 +630,19 @@ const Game = (() => {
     function initManagerCreation() {
         const content = `
             <div id="manager-career-mode">
-                <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Defina a Filosofia do Clube</h2></header>
+                <header class="panel p-4 text-center"><h2 class="text-3xl font-bold">Defina a Filosofia do Clube</h2></header>
                 <div class="p-4 md:p-8 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer" data-philosophy="cantera">
-                        <h3 class="text-2xl font-bold mb-2">Cantera</h3><p class="text-gray-400 mb-4">Foco na base. Orçamento menor, academia de elite. Paciência da diretoria com resultados.</p>
+                    <div class="card p-6 text-center cursor-pointer" data-philosophy="cantera">
+                        <h3 class="text-2xl font-bold mb-2">Cantera</h3><p class="text-slate-dark mb-4">Foco na base. Orçamento menor, academia de elite. Paciência da diretoria com resultados.</p>
                     </div>
-                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer" data-philosophy="galactic">
-                        <h3 class="text-2xl font-bold mb-2">Galácticos</h3><p class="text-gray-400 mb-4">Orçamento gigante para contratar estrelas. A pressão por títulos é imediata.</p>
+                    <div class="card p-6 text-center cursor-pointer" data-philosophy="galactic">
+                        <h3 class="text-2xl font-bold mb-2">Galácticos</h3><p class="text-slate-dark mb-4">Orçamento gigante para contratar estrelas. A pressão por títulos é imediata.</p>
                     </div>
-                    <div class="card bg-gray-800 p-6 rounded-lg text-center border-2 border-transparent hover:border-teal-500 cursor-pointer" data-philosophy="moneyball">
-                        <h3 class="text-2xl font-bold mb-2">Moneyball</h3><p class="text-gray-400 mb-4">Gestão inteligente. Foco em contratar jogadores subvalorizados e vender caro.</p>
+                    <div class="card p-6 text-center cursor-pointer" data-philosophy="moneyball">
+                        <h3 class="text-2xl font-bold mb-2">Moneyball</h3><p class="text-slate-dark mb-4">Gestão inteligente. Foco em contratar jogadores subvalorizados e vender caro.</p>
                     </div>
                 </div>
-                <button id="back-to-menu-btn" class="w-full max-w-xs mx-auto mt-8 bg-gray-600 p-2 rounded block">Voltar</button>
+                <button id="back-to-menu-btn" class="w-full max-w-xs mx-auto mt-8 btn-action">Voltar</button>
             </div>
         `;
         renderGameContainer(content);
@@ -667,22 +681,22 @@ const Game = (() => {
 
     function initManagerHub() {
         const content = `
-            <div id="manager-hub" class="max-w-6xl mx-auto">
-                <header class="bg-gray-800 p-4 flex justify-between items-center">
+            <div id="manager-hub" class="max-w-6xl mx-auto p-4">
+                <header class="panel p-4 flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold">Central do Técnico</h2>
-                    <button id="back-to-menu-btn" class="bg-gray-600 p-2 rounded">Menu Principal</button>
+                    <button id="back-to-menu-btn" class="btn-action">Menu Principal</button>
                 </header>
-                <div class="p-4 grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="md:col-span-1 bg-gray-800 p-4 rounded-lg">
-                        <div id="manager-rank-display" class="mb-4"></div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="md:col-span-1 panel p-4">
+                        <div id="manager-rank-display" class="mb-6"></div>
                         <nav class="flex flex-col space-y-2">
-                             <button data-tab="manager-office" class="nav-item p-3 rounded text-left bg-gray-700 hover:bg-gray-600 active">Escritório</button>
-                             <button data-tab="manager-squad" class="nav-item p-3 rounded text-left bg-gray-700 hover:bg-gray-600">Elenco</button>
-                             <button data-tab="manager-transfers" class="nav-item p-3 rounded text-left bg-gray-700 hover:bg-gray-600">Transferências</button>
-                             <button data-tab="manager-finances" class="nav-item p-3 rounded text-left bg-gray-700 hover:bg-gray-600">Finanças</button>
+                             <button data-tab="manager-office" class="nav-item active">${ICONS.office} Escritório</button>
+                             <button data-tab="manager-squad" class="nav-item">${ICONS.squad} Elenco</button>
+                             <button data-tab="manager-transfers" class="nav-item">${ICONS.transfers} Transferências</button>
+                             <button data-tab="manager-finances" class="nav-item">${ICONS.finances} Finanças</button>
                         </nav>
                     </div>
-                    <main id="manager-content-area" class="md:col-span-3 bg-gray-800 p-6 rounded-lg"></main>
+                    <main id="manager-content-area" class="md:col-span-3 panel p-6"></main>
                 </div>
             </div>`;
         renderGameContainer(content);
@@ -717,36 +731,36 @@ const Game = (() => {
                 const nextOpponent = CONSTANTS.DB.AI_TEAMS[Math.min(gs.wins + gs.draws + gs.losses, CONSTANTS.DB.AI_TEAMS.length -1)];
                 content = `
                     <h3 class="text-3xl font-bold mb-4">Escritório Principal</h3>
-                    <p class="text-lg mb-2">Temporada: ${gs.season}</p>
-                    <p class="text-lg mb-6">Campanha: ${gs.wins}V - ${gs.draws}E - ${gs.losses}D</p>
-                    <div class="bg-gray-900 p-6 rounded-lg">
+                    <p class="text-lg mb-2 text-slate-dark">Temporada: ${gs.season}</p>
+                    <p class="text-lg mb-6 text-slate-dark">Campanha: ${gs.wins}V - ${gs.draws}E - ${gs.losses}D</p>
+                    <div class="panel p-6" style="background-color: var(--bg-dark-navy);">
                         <h4 class="text-2xl font-semibold mb-4">Próxima Partida</h4>
-                        <p class="text-xl mb-1">Adversário: <span class="font-bold">${nextOpponent.nome}</span></p>
-                        <p class="mb-4">Força do Adversário: ${nextOpponent.forca}</p>
+                        <p class="text-xl mb-1">Adversário: <span class="font-bold text-white">${nextOpponent.nome}</span></p>
+                        <p class="mb-4 text-slate-dark">Força do Adversário: ${nextOpponent.forca}</p>
                         <div class="mb-4">
-                            <label for="tactic-select" class="block mb-2 text-gray-400">Tática para a partida:</label>
-                            <select id="tactic-select" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                            <label for="tactic-select" class="block mb-2 text-slate-dark">Tática para a partida:</label>
+                            <select id="tactic-select" class="w-full">
                                 <option value="Equilibrada" ${gs.tactic === 'Equilibrada' ? 'selected' : ''}>Equilibrada (Padrão)</option>
                                 <option value="Ofensiva" ${gs.tactic === 'Ofensiva' ? 'selected' : ''}>Ofensiva (+5 Força, Risco Maior)</option>
                                 <option value="Defensiva" ${gs.tactic === 'Defensiva' ? 'selected' : ''}>Defensiva (-5 Força, Risco Menor)</option>
                             </select>
                         </div>
-                        <button id="simulate-round-btn" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Jogar Partida</button>
+                        <button id="simulate-round-btn" class="w-full btn-action btn-primary">Jogar Partida</button>
                     </div>
                 `;
                 break;
 
             case 'manager-squad':
                 const squadHTML = gs.squad.map(p => `
-                    <div class="grid grid-cols-5 gap-2 items-center bg-gray-900 p-3 rounded">
+                    <div class="grid grid-cols-5 gap-2 items-center panel p-3" style="background-color: var(--bg-dark-navy);">
                         <span class="col-span-2">${p.name}</span>
                         <span>${p.position}</span>
-                        <span class="font-bold text-teal-400 text-lg">${p.overall}</span>
-                        <button class="sell-player-btn bg-red-600 text-xs py-1 px-2 rounded" data-player-id="${p.id}">Vender ($${(p.value / 2).toLocaleString()})</button>
+                        <span class="font-bold text-lg" style="color: var(--accent-green);">${p.overall}</span>
+                        <button class="sell-player-btn btn-action btn-danger text-xs py-1 px-2" data-player-id="${p.id}">Vender ($${(p.value / 2).toLocaleString()})</button>
                     </div>`).join('');
                 content = `
                     <h3 class="text-3xl font-bold mb-4">Gerenciamento do Elenco</h3>
-                    <p class="mb-4">Força do Time (11 Titulares): <span class="font-bold text-2xl text-teal-400">${teamStrength}</span></p>
+                    <p class="mb-4">Força do Time (11 Titulares): <span class="font-bold text-2xl" style="color: var(--accent-green);">${teamStrength}</span></p>
                     <div class="space-y-2">${squadHTML}</div>
                 `;
                 break;
@@ -757,19 +771,19 @@ const Game = (() => {
                     const pos = ["GOL", "DEF", "MEI", "ATA"][Math.floor(Math.random()*4)];
                     const player = generatePlayer(pos, teamStrength - 10, teamStrength + 10);
                     marketPlayers += `
-                        <div class="grid grid-cols-5 gap-2 items-center bg-gray-900 p-3 rounded">
+                        <div class="grid grid-cols-5 gap-2 items-center panel p-3" style="background-color: var(--bg-dark-navy);">
                             <span class="col-span-2">${player.name}</span>
                             <span>${player.position}</span>
-                            <span class="font-bold text-teal-400 text-lg">${player.overall}</span>
-                            <button class="buy-player-btn bg-green-600 text-xs py-1 px-2 rounded" data-player-info='${JSON.stringify(player)}'>Comprar ($${player.value.toLocaleString()})</button>
+                            <span class="font-bold text-lg" style="color: var(--accent-green);">${player.overall}</span>
+                            <button class="buy-player-btn btn-action btn-primary text-xs py-1 px-2" data-player-info='${JSON.stringify(player)}'>Comprar ($${player.value.toLocaleString()})</button>
                         </div>`;
                 }
                 content = `
                     <h3 class="text-3xl font-bold mb-4">Mercado de Transferências</h3>
-                    <p class="mb-4">Orçamento Disponível: <span class="font-bold text-green-400">$${gs.budget.toLocaleString()}</span></p>
+                    <p class="mb-4">Orçamento Disponível: <span class="font-bold" style="color: var(--accent-green);">$${gs.budget.toLocaleString()}</span></p>
                     <h4 class="text-xl font-semibold mb-2">Jogadores disponíveis:</h4>
                     <div class="space-y-2">${marketPlayers}</div>
-                    <p class="text-xs text-gray-500 mt-4">O mercado é atualizado a cada visita.</p>
+                    <p class="text-xs text-slate-dark mt-4">O mercado é atualizado a cada visita.</p>
                 `;
                 break;
 
@@ -777,8 +791,8 @@ const Game = (() => {
                 content = `
                     <h3 class="text-3xl font-bold mb-4">Finanças do Clube</h3>
                     <p>Orçamento para Transferências:</p>
-                    <p class="font-bold text-3xl text-green-400">$${gs.budget.toLocaleString()}</p>
-                    <p class="text-gray-400 mt-4"> (Funcionalidade de transferências em breve) </p>
+                    <p class="font-bold text-3xl" style="color: var(--accent-green);">$${gs.budget.toLocaleString()}</p>
+                    <p class="text-slate-dark mt-4"> (Funcionalidade de transferências em breve) </p>
                 `;
                 break;
         }
@@ -824,7 +838,7 @@ const Game = (() => {
         
         setTimeout(() => {
             closeModal();
-            showModal('Resultado da Partida', `${resultText}\n\nVocê ganhou ${xpGained} XP de Técnico.`, [{id: 'modal-ok-btn', text: 'Continuar', class: 'bg-teal-600'}]);
+            showModal('Resultado da Partida', `${resultText}\n\nVocê ganhou ${xpGained} XP de Técnico.`, [{id: 'modal-ok-btn', text: 'Continuar', class: 'primary'}]);
             renderManagerContent('manager-office');
         }, 1500);
     }
@@ -864,24 +878,24 @@ const Game = (() => {
     function initPlayerCreation() {
         const content = `
             <div id="player-career-mode">
-                <header class="bg-gray-800 p-4 text-center"><h2 class="text-3xl font-bold">Crie seu Craque</h2></header>
+                <header class="panel p-4 text-center"><h2 class="text-3xl font-bold">Crie seu Craque</h2></header>
                 <div class="p-4 md:p-8 max-w-2xl mx-auto">
                     <div class="mb-4">
                         <label for="player-name-input" class="block mb-2">Nome:</label>
-                        <input type="text" id="player-name-input" class="w-full p-2 rounded bg-gray-700 border border-gray-600" placeholder="Ex: Léo da Silva">
+                        <input type="text" id="player-name-input" class="w-full" placeholder="Ex: Léo da Silva">
                     </div>
                     <div class="mb-4">
                         <label class="block mb-2">Posição:</label>
-                        <select id="player-position-select" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                        <select id="player-position-select" class="w-full">
                             <option value="ATA">Atacante</option><option value="MEI">Meio-campista</option><option value="DEF">Defensor</option><option value="GOL">Goleiro</option>
                         </select>
                     </div>
                     <div class="mb-6">
                         <h3 class="font-semibold mb-2">Atributos Iniciais:</h3>
-                        <div id="attribute-inputs" class="space-y-2 mt-2 bg-gray-800 p-4 rounded"></div>
+                        <div id="attribute-inputs" class="space-y-2 mt-2 panel p-4"></div>
                     </div>
-                    <button id="finalize-player-creation-btn" class="w-full bg-teal-600 p-3 rounded-lg text-xl btn-action">Iniciar Carreira</button>
-                    <button id="back-to-menu-btn" class="w-full mt-2 bg-gray-600 p-2 rounded">Voltar</button>
+                    <button id="finalize-player-creation-btn" class="w-full btn-action btn-primary">Iniciar Carreira</button>
+                    <button id="back-to-menu-btn" class="w-full mt-2 btn-action">Voltar</button>
                 </div>
             </div>`;
         renderGameContainer(content);
@@ -895,7 +909,7 @@ const Game = (() => {
         container.innerHTML = Object.entries(attributes).map(([attr, value]) => `
             <div class="flex justify-between items-center">
                 <label>${attr}</label>
-                <span class="font-bold text-teal-400">${value}</span>
+                <span class="font-bold" style="color: var(--accent-green);">${value}</span>
             </div>
         `).join('');
     }
@@ -944,20 +958,20 @@ const Game = (() => {
 
     function initPlayerHub() {
         const content = `
-            <div id="player-hub" class="max-w-6xl mx-auto">
-                <header class="bg-gray-800 p-4 flex justify-between items-center">
+            <div id="player-hub" class="max-w-6xl mx-auto p-4">
+                <header class="panel p-4 flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold">Central do Jogador</h2>
-                    <button id="back-to-menu-btn" class="bg-gray-600 p-2 rounded">Menu Principal</button>
+                    <button id="back-to-menu-btn" class="btn-action">Menu Principal</button>
                 </header>
-                <div class="p-4 grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="md:col-span-1 bg-gray-800 p-4 rounded-lg">
-                        <div id="player-rank-display" class="mb-4"></div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="md:col-span-1 panel p-4">
+                        <div id="player-rank-display" class="mb-6"></div>
                         <nav class="flex flex-col space-y-2">
-                             <button data-tab="player-dashboard" class="nav-item p-3 rounded text-left bg-gray-700 hover:bg-gray-600 active">Visão Geral</button>
-                             <button data-tab="player-profile" class="nav-item p-3 rounded text-left bg-gray-700 hover:bg-gray-600">Perfil & Atributos</button>
+                             <button data-tab="player-dashboard" class="nav-item active">${ICONS.dashboard} Visão Geral</button>
+                             <button data-tab="player-profile" class="nav-item">${ICONS.profile} Perfil & Atributos</button>
                         </nav>
                     </div>
-                    <main id="player-content-area" class="md:col-span-3 bg-gray-800 p-6 rounded-lg"></main>
+                    <main id="player-content-area" class="md:col-span-3 panel p-6"></main>
                 </div>
             </div>
         `;
@@ -981,27 +995,27 @@ const Game = (() => {
                 content = `
                     <h3 class="text-3xl font-bold mb-4">Visão Geral da Carreira</h3>
                     <div class="grid grid-cols-2 gap-4 mb-6">
-                        <div class="bg-gray-900 p-4 rounded"><strong>Clube Atual:</strong><br> ${gs.club}</div>
-                        <div class="bg-gray-900 p-4 rounded"><strong>Reputação:</strong><br> ${gs.reputation}</div>
-                        <div class="bg-gray-900 p-4 rounded"><strong>Salário Semanal:</strong><br> $${gs.salary.toLocaleString()}</div>
-                        <div class="bg-gray-900 p-4 rounded"><strong>Dinheiro:</strong><br> $${gs.cash.toLocaleString()}</div>
+                        <div class="panel p-4" style="background-color: var(--bg-dark-navy);"><strong>Clube Atual:</strong><br> ${gs.club}</div>
+                        <div class="panel p-4" style="background-color: var(--bg-dark-navy);"><strong>Reputação:</strong><br> ${gs.reputation}</div>
+                        <div class="panel p-4" style="background-color: var(--bg-dark-navy);"><strong>Salário Semanal:</strong><br> $${gs.salary.toLocaleString()}</div>
+                        <div class="panel p-4" style="background-color: var(--bg-dark-navy);"><strong>Dinheiro:</strong><br> $${gs.cash.toLocaleString()}</div>
                     </div>
-                    <div class="bg-gray-900 p-6 rounded-lg text-center">
+                    <div class="panel p-6 text-center" style="background-color: var(--bg-dark-navy);">
                         <h4 class="text-xl font-semibold mb-2">Próxima Oportunidade</h4>
-                        <p class="text-gray-400 mb-4">Jogue a próxima partida para ganhar XP, reputação e seu salário.</p>
-                        <button id="play-player-match-btn" class="w-full bg-green-600 p-3 rounded-lg text-lg btn-action">Jogar Partida</button>
+                        <p class="text-slate-dark mb-4">Jogue a próxima partida para ganhar XP, reputação e seu salário.</p>
+                        <button id="play-player-match-btn" class="w-full btn-action btn-primary">Jogar Partida</button>
                     </div>
                 `;
                 break;
             case 'player-profile':
                 gs.overall = Math.round(Object.values(gs.attributes).reduce((a, b) => a + b, 0) / Object.values(gs.attributes).length * 10);
                 const attributesHTML = Object.entries(gs.attributes).map(([attr, val]) => `
-                    <div class="bg-gray-900 p-3 rounded flex justify-between"><span>${attr}</span> <strong>${val}</strong></div>
+                    <div class="panel p-3 flex justify-between" style="background-color: var(--bg-dark-navy);"><span>${attr}</span> <strong style="color: var(--accent-green);">${val}</strong></div>
                 `).join('');
                 content = `
                     <h3 class="text-3xl font-bold mb-4">${gs.name}</h3>
-                    <p class="text-xl mb-1">Posição: ${gs.position}</p>
-                    <p class="text-xl mb-6">Overall: <span class="font-bold text-3xl text-amber-400">${gs.overall}</span></p>
+                    <p class="text-xl mb-1 text-slate-dark">Posição: ${gs.position}</p>
+                    <p class="text-xl mb-6">Overall: <span class="font-bold text-3xl" style="color: #ffca28;">${gs.overall}</span></p>
                     <h4 class="text-2xl font-semibold mb-2">Atributos</h4>
                     <div class="grid grid-cols-2 gap-2">${attributesHTML}</div>
                 `;
@@ -1027,11 +1041,11 @@ const Game = (() => {
             choices = [{ text: "Dar o bote", attr: "Defesa" }, { text: "Cercar e esperar o momento certo", attr: "Marcacao" }];
         }
         
-        const buttonsHTML = choices.map(c => `<button class="player-action-btn w-full md:w-auto px-6 py-4 rounded-lg font-bold text-white bg-blue-600" data-attr="${c.attr}">${c.text}</button>`).join('');
+        const buttonsHTML = choices.map(c => `<button class="player-action-btn btn-primary w-full md:w-auto" data-attr="${c.attr}">${c.text}</button>`).join('');
 
         modalContent.innerHTML = `
             <h2 class="text-3xl font-bold mb-4">Momento Decisivo!</h2>
-            <div id="player-match-commentary" class="text-gray-300 mb-6 whitespace-pre-wrap">${commentary.join("<br>")}</div>
+            <div id="player-match-commentary" class="text-slate-dark mb-6 whitespace-pre-wrap">${commentary.join("<br>")}</div>
             <div id="player-match-choices" class="flex justify-center gap-4 flex-wrap">${buttonsHTML}</div>`;
         modal.classList.remove('hidden');
     }
@@ -1067,7 +1081,7 @@ const Game = (() => {
 
         setTimeout(() => {
             commentaryEl.innerHTML += `<br><br>${resultText}<br>+${xpGained} XP, ${repGained > 0 ? `+${repGained}` : repGained} Rep, +$${gs.salary.toLocaleString()} Salário`;
-            document.getElementById('player-match-choices').innerHTML = `<button id="modal-ok-btn" class="w-full md:w-auto px-6 py-2 rounded-lg font-bold text-white bg-gray-600">Continuar</button>`;
+            document.getElementById('player-match-choices').innerHTML = `<button id="modal-ok-btn" class="btn-action">Continuar</button>`;
         }, 1500);
     }
     
