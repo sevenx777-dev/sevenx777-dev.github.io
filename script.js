@@ -353,7 +353,8 @@ const Game = (() => {
             if (profileError) {
                 authError.textContent = 'Erro ao criar o perfil. Tente novamente.';
                 // Opcional: deletar o usuário recém-criado para evitar usuários órfãos
-                await supabaseClient.auth.admin.deleteUser(authData.user.id);
+                // NOTA: A linha abaixo requer privilégios de admin e não funcionará no browser por padrão.
+                // await supabaseClient.auth.admin.deleteUser(authData.user.id); 
                 authForm.classList.remove('hidden');
                 authLoading.classList.add('hidden');
                 return;
@@ -1053,8 +1054,7 @@ const Game = (() => {
                     </div>
                     <main id="player-content-area" class="md:col-span-3 panel p-6"></main>
                 </div>
-            </div>
-        `;
+            </div>`;
         renderGameContainer(content);
         renderCareerRank('player');
         renderPlayerContent('player-dashboard');
