@@ -1234,12 +1234,11 @@ const Game = (() => {
             }
         });
 
-        // CORREÇÃO: Adiciona a verificação inicial da sessão ao carregar a página
+        // Verificação inicial da sessão ao carregar a página
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) {
             renderAuthScreen();
         }
-        // Se houver uma sessão, onAuthStateChange será acionado e tratará da lógica.
     }
 
     return { init };
