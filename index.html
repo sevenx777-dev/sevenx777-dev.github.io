@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- LINHA ATUALIZADA: Política de Segurança de Conteúdo mais permissiva -->
-    <meta http-equiv="Content-Security-Policy" content="default-src *; script-src 'self' 'unsafe-inline' 'unsafe-eval' *; style-src 'self' 'unsafe-inline' *; font-src 'self' *; connect-src *;">
+    <!-- LINHA DE CORREÇÃO: Define a Política de Segurança de Conteúdo (CSP) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src *; script-src 'self' 'unsafe-inline' 'unsafe-eval' *; style-src 'self' 'unsafe-inline' *; font-src 'self' 'unsafe-inline' data: *; connect-src *;">
 
     <title>SevenxFoot - Jogo Completo</title>
     
@@ -19,7 +19,7 @@
     <!-- Folha de Estilo Local -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-900 text-white">
+<body>
 
     <!-- Container para Notificações Toast -->
     <div id="toast-container"></div>
@@ -31,7 +31,7 @@
     
     <!-- Modal Universal (sempre presente, mas escondido) -->
     <div id="modal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
-        <div id="modal-content" class="bg-gray-800 p-6 md:p-8 rounded-lg text-center max-w-lg w-full shadow-2xl">
+        <div id="modal-content" class="panel p-6 md:p-8 rounded-lg text-center max-w-lg w-full shadow-2xl">
             <!-- Conteúdo do modal gerado pelo JS -->
         </div>
     </div>
